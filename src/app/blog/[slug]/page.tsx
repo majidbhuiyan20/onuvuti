@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Clock, Calendar, BookOpen, ArrowRight } from "lucide-react";
 import { BLOG_POSTS } from "@/data/blogData";
 import { BOOK_INFO } from "@/data/bookData";
+import StoryInteractions from "@/components/StoryInteractions";
 
 export default async function BlogPostPage({
   params,
@@ -16,6 +17,8 @@ export default async function BlogPostPage({
   if (!post) {
     notFound();
   }
+
+  const relatedPosts = BLOG_POSTS.filter((p) => p.slug !== slug).slice(0, 2);
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] text-[#142230]">
@@ -36,7 +39,7 @@ export default async function BlogPostPage({
               className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-stone-500 hover:text-[#80131E] transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>ব্লগ</span>
+              <span>সকল গল্প</span>
             </Link>
           </div>
 
@@ -51,10 +54,10 @@ export default async function BlogPostPage({
       </header>
 
       {/* Article Content */}
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-8">
         <div className="space-y-3 pb-6 border-b border-stone-200">
           <span className="inline-block px-3 py-0.5 rounded-full bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-bold">
-            {post.category}
+            {post.category === "না বলা কথা" ? "💌 না বলা কথা" : post.category}
           </span>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold text-[#142230] leading-snug">
@@ -62,7 +65,7 @@ export default async function BlogPostPage({
           </h1>
 
           <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500 pt-1">
-            <span>লেখক: {post.author}</span>
+            <span className="font-bold text-stone-700">লেখক: {post.author}</span>
             <span className="inline-flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-[#80131E]" />
               {post.dateBn}
@@ -74,14 +77,21 @@ export default async function BlogPostPage({
           </div>
         </div>
 
-        <article className="py-8 space-y-5 text-base sm:text-lg text-stone-800 leading-relaxed">
+        <article className="space-y-5 text-base sm:text-lg text-stone-800 leading-relaxed bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/80 shadow-xs">
           {post.content.map((para, i) => (
             <p key={i}>{para}</p>
           ))}
         </article>
 
+        {/* Love Reaction, Share Buttons & Comments Box */}
+        <StoryInteractions
+          storyId={post.id}
+          storyTitle={post.title}
+          initialLikes={post.likesCount}
+        />
+
         {/* Minimal Book Callout at End of Article */}
-        <div className="mt-6 rounded-2xl bg-white border border-stone-200 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+        <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/45 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
           <div className="space-y-1">
             <div className="text-xs text-[#80131E] font-bold">
               অনুভূতি পাবলিকেশন্সের ই-বুক
@@ -90,7 +100,8 @@ export default async function BlogPostPage({
               {BOOK_INFO.titleBn}: {BOOK_INFO.subtitleBn}
             </h3>
             <p className="text-xs text-stone-600">
-              মূল্য মাত্র ৳{BOOK_INFO.offerPriceBn} • ইনস্ট্যান্ট PDF ডাউনলোড
+              রেগুলার মূল্য <span className="line-through">৳{BOOK_INFO.regularPriceBn}</span> •{" "}
+              <strong>{BOOK_INFO.discountPercentBn}ে মাত্র ৳{BOOK_INFO.offerPriceBn}</strong>
             </p>
           </div>
 
@@ -101,6 +112,30 @@ export default async function BlogPostPage({
             <span>বইটি দেখুন</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
+        </div>
+
+        {/* Related Stories */}
+        <div className="pt-4 space-y-4">
+          <h3 className="text-lg font-extrabold text-[#142230]">
+            আরও গল্প পড়ুন
+          </h3>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {relatedPosts.map((rp) => (
+              <Link
+                key={rp.id}
+                href={`/blog/${rp.slug}`}
+                className="rounded-2xl bg-white border border-stone-200 p-4 hover:border-[#80131E]/50 transition space-y-1.5"
+              >
+                <span className="text-[11px] font-bold text-[#80131E]">
+                  {rp.category}
+                </span>
+                <h4 className="text-sm sm:text-base font-extrabold text-[#142230] line-clamp-2">
+                  {rp.title}
+                </h4>
+                <p className="text-xs text-stone-500">— {rp.author}</p>
+              </Link>
+            ))}
+          </div>
         </div>
       </main>
     </div>
