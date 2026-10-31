@@ -1,26 +1,31 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Kalpurush";
+  src: url("/fonts/kalpurush.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fcfaf6;
+  --foreground: #142230;
+  --imperial-crimson: #6e1a2c;
+  --midnight-slate: #142230;
+  --champagne-gold: #c59b27;
+  --soft-gold-tint: #faf4e6;
+  --warm-parchment: #fcfaf6;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: "Kalpurush", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
