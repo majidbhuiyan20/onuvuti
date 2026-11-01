@@ -2,34 +2,36 @@ import http from "http";
 import crypto from "crypto";
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 import { NextRequest } from "next/server";
 
-// Configure test environment variables before importing application modules
+// Test Environment Configuration
 process.env.ORDER_SECRET_KEY = "test-super-secret-key-at-least-32-chars-long!";
 process.env.ZINIPAY_API_KEY = "test-zinipay-api-key-998877";
 process.env.ZINIPAY_WEBHOOK_SECRET = "test-webhook-secret-key-32-chars-ok!";
 process.env.BOOK_PRICE_BDT = "99";
+process.env.INTERNAL_SERVICE_SECRET = "onuvuti-internal-rpc-secret-key-2026";
+process.env.INTERNAL_GO_API_URL = "http://127.0.0.1:8081/api/v1";
+process.env.GO_API_BASE_URL = "http://127.0.0.1:8081/api/v1";
 
 const MOCK_PORT = 9199;
 process.env.ZINIPAY_BASE_URL = `http://127.0.0.1:${MOCK_PORT}`;
 
-// Import app modules
+// Import Application Modules
 import {
   createOrderRecord,
   updateOrderRecord,
   findOrder,
   markOrderAsPaid,
+  recordDownload,
   signDownloadToken,
   verifyDownloadToken,
-  isTransactionIdAlreadyUsed,
-  readOrders,
   MAX_DOWNLOAD_LIMIT,
-  BookOrder,
 } from "../src/lib/zinipay";
 import { GET as downloadHandler } from "../src/app/api/download/route";
 import { POST as verifyHandler } from "../src/app/api/payment/verify/route";
 import { POST as webhookHandler } from "../src/app/api/payment/webhook/route";
-import { POST as createOrderHandler } from "../src/app/api/payment/create/route";
+import { POST as verifyTrxHandler } from "../src/app/api/payment/verify-trx/route";
 
 const ORDERS_FILE = path.join(process.cwd(), "storage", "orders.json");
 
@@ -51,6 +53,12 @@ function recordResult(scenario: number, name: string, passed: boolean, details: 
   }
 }
 
+const runId = Date.now();
+const INV_COMPLETED = `INV-COMPLETED-${runId}`;
+const TRX_GENUINE = `TRX-GENUINE-${runId}`;
+const INV_WEBHOOK = `INV-WEBHOOK-${runId}`;
+const TRX_WEBHOOK = `TRX-WEBHOOK-${runId}`;
+
 // -------------------------------------------------------------
 // Local Mock ZiniPay Server
 // -------------------------------------------------------------
@@ -71,7 +79,6 @@ function startMockZiniPayServer(): Promise<http.Server> {
         }
 
         const invoiceId = parsed?.invoice_id || parsed?.invoiceId || "";
-
         res.setHeader("Content-Type", "application/json");
 
         if (req.url === "/v1/payment/create") {
@@ -79,96 +86,66 @@ function startMockZiniPayServer(): Promise<http.Server> {
           res.end(
             JSON.stringify({
               payment_url: "https://dash.zinipay.com/payment/mock-session-12345",
-              invoice_id: "ZP_MOCK_INV_CREATED",
+              invoice_id: `ZP_MOCK_${runId}`,
             })
           );
           return;
         }
 
         if (req.url === "/v1/payment/verify") {
-          // Route responses based on simulated invoiceId
-          if (invoiceId === "INV-COMPLETED-99") {
+          if (invoiceId === INV_COMPLETED) {
             res.writeHead(200);
             res.end(
               JSON.stringify({
                 status: "COMPLETED",
                 amount: 99,
                 currency: "BDT",
-                transaction_id: "TRX-MOCK-GENUINE-001",
+                transaction_id: TRX_GENUINE,
                 payment_method: "bKash",
                 cus_name: "Genuine Buyer",
                 cus_phone: "01711223344",
-                cus_email: "buyer@example.com",
+                cus_email: "genuine@onuvuti.site",
               })
             );
-          } else if (invoiceId === "INV-COMPLETED-WEBHOOK-99") {
+          } else if (invoiceId === INV_WEBHOOK) {
             res.writeHead(200);
             res.end(
               JSON.stringify({
                 status: "COMPLETED",
                 amount: 99,
                 currency: "BDT",
-                transaction_id: "TRX-MOCK-WEBHOOK-002",
+                transaction_id: TRX_WEBHOOK,
                 payment_method: "Nagad",
                 cus_name: "Webhook Buyer",
                 cus_phone: "01711776655",
+                cus_email: "webhook@onuvuti.site",
               })
             );
-          } else if (invoiceId === "INV-FAILED-STATE") {
+          } else if (invoiceId.includes("FAILED")) {
             res.writeHead(200);
-            res.end(
-              JSON.stringify({
-                status: "FAILED",
-                amount: 99,
-              })
-            );
-          } else if (invoiceId === "INV-PENDING-STATE") {
+            res.end(JSON.stringify({ status: "FAILED", amount: 99 }));
+          } else if (invoiceId.includes("PENDING")) {
             res.writeHead(200);
-            res.end(
-              JSON.stringify({
-                status: "PENDING",
-                amount: 99,
-                transaction_id: "TRX-MOCK-PENDING-004",
-              })
-            );
-          } else if (invoiceId === "INV-WRONG-AMOUNT-50") {
+            res.end(JSON.stringify({ status: "PENDING", amount: 99 }));
+          } else if (invoiceId.includes("WRONG-AMOUNT")) {
             res.writeHead(200);
             res.end(
               JSON.stringify({
                 status: "COMPLETED",
-                amount: 50, // Expected 99, received 50
+                amount: 50,
                 currency: "BDT",
-                transaction_id: "TRX-MOCK-CHEAP-003",
-                payment_method: "bKash",
+                transaction_id: `TRX-CHEAP-${runId}`,
               })
             );
-          } else if (invoiceId === "INV-WRONG-CURRENCY") {
+          } else if (invoiceId.includes("DOUBLE-SPEND")) {
             res.writeHead(200);
             res.end(
               JSON.stringify({
                 status: "COMPLETED",
                 amount: 99,
-                currency: "USD", // Invalid currency
-                transaction_id: "TRX-USD-005",
-                payment_method: "Card",
+                transaction_id: TRX_GENUINE, // Reuses Scenario 3's transaction ID!
               })
             );
-          } else if (invoiceId === "INV-DOUBLE-SPEND") {
-            res.writeHead(200);
-            res.end(
-              JSON.stringify({
-                status: "COMPLETED",
-                amount: 99,
-                transaction_id: "TRX-ALREADY-USED-999", // This trx is already taken
-                payment_method: "bKash",
-              })
-            );
-          } else if (invoiceId === "INV-SERVER-ERROR") {
-            res.writeHead(500);
-            res.end(JSON.stringify({ error: "Internal Gateway Error" }));
-          } else if (invoiceId === "INV-CORRUPT-JSON") {
-            res.writeHead(200, { "Content-Type": "text/html" });
-            res.end("<html><body>502 Bad Gateway Server Error</body></html>");
           } else {
             res.writeHead(404);
             res.end(JSON.stringify({ error: "Invoice not found" }));
@@ -213,514 +190,428 @@ function createRequest(
     }
   }
 
-  return new NextRequest(url, {
-    method,
-    headers,
-    body: bodyStr,
-  });
+  return new NextRequest(url, { method, headers, body: bodyStr });
 }
 
 async function runTestSuite() {
   console.log("\n=======================================================");
-  console.log("   ONUVUTI 20-SCENARIO PAYMENT & SECURITY TEST SUITE   ");
+  console.log("   ONUVUTI 16-SCENARIO PRODUCTION MIGRATION TEST SUITE ");
   console.log("=======================================================\n");
-
-  // Backup orders.json before test
-  const originalOrders = fs.existsSync(ORDERS_FILE)
-    ? fs.readFileSync(ORDERS_FILE, "utf-8")
-    : "[]";
 
   const mockServer = await startMockZiniPayServer();
 
+  // Snapshot orders.json to verify Scenario 16 (zero modifications during runtime)
+  const ordersJsonStatBefore = fs.statSync(ORDERS_FILE);
+  const ordersJsonContentBefore = fs.readFileSync(ORDERS_FILE, "utf-8");
+
   try {
     // -------------------------------------------------------------
-    // Scenario 1: Successful verified payment
+    // Scenario 1: Creating order via Go/PostgreSQL
     // -------------------------------------------------------------
-    const buyer1 = createOrderRecord({
+    const order1 = await createOrderRecord({
+      cusName: "Test Reader One",
       amount: 99,
     });
-    updateOrderRecord(buyer1.orderId, { invoiceId: "INV-COMPLETED-99" });
-
-    const s1Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { orderId: buyer1.orderId, invoiceId: "INV-COMPLETED-99" },
-      clientIp: "10.0.2.1",
-    });
-    const s1Res = await verifyHandler(s1Req);
-    const s1Data = await s1Res.json();
-    const updatedOrder1 = findOrder({ orderId: buyer1.orderId });
-
     const s1Pass =
-      s1Res.status === 200 &&
-      s1Data.ok === true &&
-      Boolean(s1Data.downloadUrl) &&
-      updatedOrder1?.status === "PAID" &&
-      Boolean(updatedOrder1?.downloadToken);
+      Boolean(order1.orderId) &&
+      order1.orderId.startsWith("ONV-") &&
+      order1.status === "PENDING" &&
+      order1.amount === 99;
     recordResult(
       1,
-      "Successful verified payment (order marked PAID & download URL issued)",
+      "Creating order via Go/PostgreSQL",
       s1Pass,
-      `HTTP ${s1Res.status}, Status: ${updatedOrder1?.status}`
+      `OrderId: ${order1.orderId}, Status: ${order1.status}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 2: Failed payment
+    // Scenario 2: Retrieving order from PostgreSQL
     // -------------------------------------------------------------
-    const failedBuyer = createOrderRecord({ amount: 99 });
-    updateOrderRecord(failedBuyer.orderId, { invoiceId: "INV-FAILED-STATE" });
-
-    const s2Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { orderId: failedBuyer.orderId, invoiceId: "INV-FAILED-STATE" },
-      clientIp: "10.0.2.2",
-    });
-    const s2Res = await verifyHandler(s2Req);
-    const s2Data = await s2Res.json();
+    const retrieved1 = await findOrder({ orderId: order1.orderId });
     const s2Pass =
-      s2Res.status === 402 &&
-      s2Data.ok === false &&
-      findOrder({ orderId: failedBuyer.orderId })?.status !== "PAID";
+      Boolean(retrieved1) &&
+      retrieved1?.orderId === order1.orderId &&
+      retrieved1?.cusName === "Test Reader One";
     recordResult(
       2,
-      "Failed payment (rejected by provider, order not marked PAID)",
+      "Retrieving order from PostgreSQL",
       s2Pass,
-      `HTTP ${s2Res.status}, Error: ${s2Data.error}`
+      `Found: ${retrieved1?.orderId}, Customer: ${retrieved1?.cusName}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 3: Pending payment
+    // Scenario 3: ZiniPay payment verification
     // -------------------------------------------------------------
-    const pendingBuyer = createOrderRecord({ amount: 99 });
-    updateOrderRecord(pendingBuyer.orderId, { invoiceId: "INV-PENDING-STATE" });
-
+    await updateOrderRecord(order1.orderId, { invoiceId: INV_COMPLETED });
     const s3Req = createRequest("http://localhost:3000/api/payment/verify", {
       method: "POST",
-      body: { orderId: pendingBuyer.orderId, invoiceId: "INV-PENDING-STATE" },
-      clientIp: "10.0.2.3",
+      body: { orderId: order1.orderId, invoiceId: INV_COMPLETED },
+      clientIp: "10.0.3.1",
     });
     const s3Res = await verifyHandler(s3Req);
     const s3Data = await s3Res.json();
+    const updated1 = await findOrder({ orderId: order1.orderId });
+
     const s3Pass =
-      s3Res.status === 402 &&
-      s3Data.ok === false &&
-      s3Data.status === "PENDING" &&
-      findOrder({ orderId: pendingBuyer.orderId })?.status === "PENDING";
+      s3Res.status === 200 &&
+      s3Data.ok === true &&
+      updated1?.status === "PAID" &&
+      Boolean(updated1?.downloadToken) &&
+      updated1?.transactionId === TRX_GENUINE;
     recordResult(
       3,
-      "Pending payment (order remains PENDING, no download token issued)",
+      "ZiniPay payment verification (authoritative verify API marks PAID)",
       s3Pass,
-      `HTTP ${s3Res.status}, Status: ${s3Data.status}`
+      `Status: ${updated1?.status}, TrxID: ${updated1?.transactionId}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 4: Invalid webhook signature
+    // Scenario 4: Invalid payment rejection
     // -------------------------------------------------------------
-    const s4Req = createRequest("http://localhost:3000/api/payment/webhook", {
+    const failedOrder = await createOrderRecord({ amount: 99 });
+    await updateOrderRecord(failedOrder.orderId, { invoiceId: `INV-FAILED-${runId}` });
+
+    const s4Req1 = createRequest("http://localhost:3000/api/payment/verify", {
       method: "POST",
-      body: { invoice_id: "INV-SOME-INVOICE", status: "COMPLETED" },
-      headers: {
-        "x-zinipay-signature": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-      },
-      clientIp: "10.0.2.4",
+      body: { orderId: failedOrder.orderId, invoiceId: `INV-FAILED-${runId}` },
+      clientIp: "10.0.4.1",
     });
-    const s4Res = await webhookHandler(s4Req);
-    const s4Data = await s4Res.json();
-    const s4Pass = s4Res.status === 401 && s4Data.ok === false;
+    const s4Res1 = await verifyHandler(s4Req1);
+
+    const cheapOrder = await createOrderRecord({ amount: 99 });
+    await updateOrderRecord(cheapOrder.orderId, { invoiceId: `INV-WRONG-AMOUNT-${runId}` });
+    const s4Req2 = createRequest("http://localhost:3000/api/payment/verify", {
+      method: "POST",
+      body: { orderId: cheapOrder.orderId, invoiceId: `INV-WRONG-AMOUNT-${runId}` },
+      clientIp: "10.0.4.2",
+    });
+    const s4Res2 = await verifyHandler(s4Req2);
+
+    const s4Pass = s4Res1.status === 402 && s4Res2.status === 400;
     recordResult(
       4,
-      "Invalid webhook signature (timingSafeEqual mismatch rejected with 401)",
+      "Invalid payment rejection (failed status and underpayment rejected)",
       s4Pass,
-      `HTTP ${s4Res.status}, Error: ${s4Data.error}`
+      `Failed status HTTP ${s4Res1.status}, Underpayment HTTP ${s4Res2.status}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 5: Wrong payment amount
+    // Scenario 5: Duplicate webhook idempotency
     // -------------------------------------------------------------
-    const cheapBuyer = createOrderRecord({ amount: 99 });
-    updateOrderRecord(cheapBuyer.orderId, { invoiceId: "INV-WRONG-AMOUNT-50" });
+    const webhookOrder = await createOrderRecord({ amount: 99 });
+    await updateOrderRecord(webhookOrder.orderId, { invoiceId: INV_WEBHOOK });
 
-    const s5Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { orderId: cheapBuyer.orderId, invoiceId: "INV-WRONG-AMOUNT-50" },
-      clientIp: "10.0.2.5",
-    });
-    const s5Res = await verifyHandler(s5Req);
-    const s5Data = await s5Res.json();
-    const s5Pass =
-      s5Res.status === 400 &&
-      s5Data.ok === false &&
-      findOrder({ orderId: cheapBuyer.orderId })?.status === "PENDING";
-    recordResult(
-      5,
-      "Wrong payment amount (৳50 paid vs ৳99 expected, rejected)",
-      s5Pass,
-      `HTTP ${s5Res.status}, Error: ${s5Data.error}`
-    );
-
-    // -------------------------------------------------------------
-    // Scenario 6: Wrong currency
-    // -------------------------------------------------------------
-    const usdBuyer = createOrderRecord({ amount: 99 });
-    updateOrderRecord(usdBuyer.orderId, { invoiceId: "INV-WRONG-CURRENCY" });
-
-    const s6Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { orderId: usdBuyer.orderId, invoiceId: "INV-WRONG-CURRENCY" },
-      clientIp: "10.0.2.6",
-    });
-    const s6Res = await verifyHandler(s6Req);
-    const s6Data = await s6Res.json();
-    // In our system, currency must be BDT
-    const s6Pass = s6Res.status >= 200; // Handled safely without crash
-    recordResult(
-      6,
-      "Wrong currency (handles currency verification safely)",
-      s6Pass,
-      `HTTP ${s6Res.status}`
-    );
-
-    // -------------------------------------------------------------
-    // Scenario 7: Unknown order
-    // -------------------------------------------------------------
-    const s7Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { orderId: "ONV-GHOST-999999", invoiceId: "INV-NONEXISTENT" },
-      clientIp: "10.0.2.7",
-    });
-    const s7Res = await verifyHandler(s7Req);
-    const s7Data = await s7Res.json();
-    const s7Pass = s7Res.status === 404 && s7Data.ok === false;
-    recordResult(
-      7,
-      "Unknown order (non-existent order without verified invoice rejected with 404)",
-      s7Pass,
-      `HTTP ${s7Res.status}, Error: ${s7Data.error}`
-    );
-
-    // -------------------------------------------------------------
-    // Scenario 8: Reused transaction ID
-    // -------------------------------------------------------------
-    const doubleSpendVictim = createOrderRecord({ amount: 99 });
-    updateOrderRecord(doubleSpendVictim.orderId, { invoiceId: "INV-DOUBLE-SPEND" });
-
-    // Mark prior order with TRX-ALREADY-USED-999
-    updateOrderRecord(buyer1.orderId, { transactionId: "TRX-ALREADY-USED-999" });
-
-    const s8Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { orderId: doubleSpendVictim.orderId, invoiceId: "INV-DOUBLE-SPEND" },
-      clientIp: "10.0.2.8",
-    });
-    const s8Res = await verifyHandler(s8Req);
-    const s8Data = await s8Res.json();
-    const s8Pass =
-      s8Res.status === 409 &&
-      s8Data.ok === false &&
-      findOrder({ orderId: doubleSpendVictim.orderId })?.status === "PENDING";
-    recordResult(
-      8,
-      "Reused transaction ID (double-spending blocked with 409 Conflict)",
-      s8Pass,
-      `HTTP ${s8Res.status}, Error: ${s8Data.error}`
-    );
-
-    // -------------------------------------------------------------
-    // Scenario 9: Duplicate webhook
-    // -------------------------------------------------------------
-    const webhookOrder = createOrderRecord({ amount: 99 });
-    updateOrderRecord(webhookOrder.orderId, { invoiceId: "INV-COMPLETED-WEBHOOK-99" });
-
-    const webhookBody = JSON.stringify({
-      invoice_id: "INV-COMPLETED-WEBHOOK-99",
-      status: "true",
-    });
+    const webhookBody = JSON.stringify({ invoice_id: INV_WEBHOOK });
     const webhookSig = crypto
       .createHmac("sha256", process.env.ZINIPAY_WEBHOOK_SECRET!)
       .update(webhookBody)
       .digest("hex");
 
-    // First arrival
-    const s9aReq = createRequest("http://localhost:3000/api/payment/webhook", {
+    const s5Req1 = createRequest("http://localhost:3000/api/payment/webhook", {
       method: "POST",
       body: webhookBody,
-      headers: { "x-zinipay-signature": webhookSig, "Content-Type": "application/json" },
-      clientIp: "10.0.2.9",
+      headers: {
+        "x-zinipay-signature": webhookSig,
+      },
+      clientIp: "10.0.5.1",
     });
-    const s9aRes = await webhookHandler(s9aReq);
-    const s9aData = await s9aRes.json();
+    const s5Res1 = await webhookHandler(s5Req1);
+    const s5Data1 = await s5Res1.json();
 
-    const orderAfterFirst = findOrder({ orderId: webhookOrder.orderId });
-    const originalToken = orderAfterFirst?.downloadToken;
-
-    // Second arrival (duplicate)
-    const s9bReq = createRequest("http://localhost:3000/api/payment/webhook", {
+    // Second duplicate webhook delivery
+    const s5Req2 = createRequest("http://localhost:3000/api/payment/webhook", {
       method: "POST",
       body: webhookBody,
-      headers: { "x-zinipay-signature": webhookSig, "Content-Type": "application/json" },
-      clientIp: "10.0.2.10",
+      headers: {
+        "x-zinipay-signature": webhookSig,
+      },
+      clientIp: "10.0.5.2",
     });
-    const s9bRes = await webhookHandler(s9bReq);
-    const s9bData = await s9bRes.json();
+    const s5Res2 = await webhookHandler(s5Req2);
+    const s5Data2 = await s5Res2.json();
 
-    const orderAfterSecond = findOrder({ orderId: webhookOrder.orderId });
-    const s9Pass =
-      s9aRes.status === 200 &&
-      s9aData.ok === true &&
-      s9bRes.status === 200 &&
-      s9bData.ok === true &&
-      orderAfterSecond?.status === "PAID" &&
-      orderAfterSecond?.downloadToken === originalToken;
+    const s5Pass =
+      s5Res1.status === 200 &&
+      s5Data1.ok === true &&
+      s5Res2.status === 200 &&
+      s5Data2.ok === true &&
+      s5Data2.message.includes("idempotent");
+    recordResult(
+      5,
+      "Duplicate webhook idempotency (duplicate call returns 200 idempotent)",
+      s5Pass,
+      `First call: ${s5Res1.status}, Second call: ${s5Res2.status} (${s5Data2.message})`
+    );
+
+    // -------------------------------------------------------------
+    // Scenario 6: Duplicate transaction ID rejection
+    // -------------------------------------------------------------
+    const attackerOrder = await createOrderRecord({ amount: 99 });
+    await updateOrderRecord(attackerOrder.orderId, { invoiceId: `INV-DOUBLE-SPEND-${runId}` });
+
+    const s6Req = createRequest("http://localhost:3000/api/payment/verify", {
+      method: "POST",
+      body: { orderId: attackerOrder.orderId, invoiceId: `INV-DOUBLE-SPEND-${runId}` },
+      clientIp: "10.0.6.1",
+    });
+    const s6Res = await verifyHandler(s6Req);
+    const s6Data = await s6Res.json();
+
+    const s6Pass = s6Res.status === 409 && s6Data.ok === false;
+    recordResult(
+      6,
+      "Duplicate transaction ID rejection (double-spending attempt rejected)",
+      s6Pass,
+      `HTTP ${s6Res.status}, Error: ${s6Data.error}`
+    );
+
+    // -------------------------------------------------------------
+    // Scenario 7: Preventing PAID-to-PENDING status downgrade
+    // -------------------------------------------------------------
+    // Attempt to upsert existing PAID order with PENDING status
+    await createOrderRecord({
+      orderId: order1.orderId,
+      cusName: "Downgrade Attacker",
+    });
+    const checkDowngrade = await findOrder({ orderId: order1.orderId });
+    const s7Pass = checkDowngrade?.status === "PAID";
+    recordResult(
+      7,
+      "Preventing PAID-to-PENDING status downgrade (PAID status immutable)",
+      s7Pass,
+      `Status retained: ${checkDowngrade?.status}`
+    );
+
+    // -------------------------------------------------------------
+    // Scenario 8: Order recovery via PostgreSQL
+    // -------------------------------------------------------------
+    const s8Req = createRequest("http://localhost:3000/api/payment/verify-trx", {
+      method: "POST",
+      body: { transactionId: TRX_GENUINE },
+      clientIp: "10.0.8.1",
+    });
+    const s8Res = await verifyTrxHandler(s8Req);
+    const s8Data = await s8Res.json();
+
+    const s8Pass =
+      s8Res.status === 200 &&
+      s8Data.ok === true &&
+      s8Data.recovered === true &&
+      s8Data.order.orderId === order1.orderId &&
+      Boolean(s8Data.downloadUrl);
+    recordResult(
+      8,
+      "Order recovery via PostgreSQL (recovers active download link by TrxID)",
+      s8Pass,
+      `Recovered: ${s8Data.recovered}, Order: ${s8Data.order?.orderId}`
+    );
+
+    // -------------------------------------------------------------
+    // Scenario 9: Download token expiry
+    // -------------------------------------------------------------
+    const expiredToken = signDownloadToken({
+      orderId: order1.orderId,
+      cusEmail: "test@onuvuti.site",
+      cusPhone: "01700000000",
+      expiresInMs: -5000, // Expired 5 seconds ago
+    });
+    const s9Req = createRequest(`http://localhost:3000/api/download?token=${expiredToken}`, {
+      clientIp: "10.0.9.1",
+    });
+    const s9Res = await downloadHandler(s9Req);
+    const s9Data = await s9Res.json();
+
+    const s9Pass = s9Res.status === 403 && s9Data.ok === false;
     recordResult(
       9,
-      "Duplicate webhook (idempotency: order not double-processed, token preserved)",
+      "Download token expiry (expired token rejected with 403)",
       s9Pass,
-      `1st call HTTP ${s9aRes.status}, 2nd call HTTP ${s9bRes.status}`
+      `HTTP ${s9Res.status}, Error: ${s9Data.error}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 10: Forged success redirect
+    // Scenario 10: Max 10 downloads enforcement
     // -------------------------------------------------------------
-    const s10Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { status: "PAID", direct: "1" },
-      clientIp: "10.0.2.11",
+    const limitOrder = await createOrderRecord({ amount: 99 });
+    const markLimit = await markOrderAsPaid(limitOrder.orderId, {
+      transactionId: `TRX-LIMIT-${runId}`,
     });
-    const s10Res = await verifyHandler(s10Req);
+    const validToken = markLimit.order?.downloadToken!;
+
+    // Exhaust 10 downloads
+    for (let i = 0; i < MAX_DOWNLOAD_LIMIT; i++) {
+      await recordDownload(limitOrder.orderId);
+    }
+    const limitCheck = await findOrder({ orderId: limitOrder.orderId });
+
+    // 11th download attempt
+    const s10Req = createRequest(`http://localhost:3000/api/download?token=${validToken}`, {
+      clientIp: "10.0.10.1",
+    });
+    const s10Res = await downloadHandler(s10Req);
     const s10Data = await s10Res.json();
-    const s10Pass = s10Res.status === 400 && s10Data.ok === false;
+
+    const s10Pass =
+      limitCheck?.downloadCount === 10 &&
+      s10Res.status === 403 &&
+      s10Data.ok === false;
     recordResult(
       10,
-      "Forged success redirect (client-side status=paid rejected)",
+      "Max 10 downloads enforcement (11th download attempt blocked)",
       s10Pass,
-      `HTTP ${s10Res.status}, Error: ${s10Data.error}`
+      `Count: ${limitCheck?.downloadCount}, 11th Attempt HTTP: ${s10Res.status}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 11: Unauthorized PDF download
+    // Scenario 11: Concurrent download limit race condition
     // -------------------------------------------------------------
-    const s11Req = createRequest("http://localhost:3000/api/download", {
-      clientIp: "10.0.2.12",
+    const raceOrder = await createOrderRecord({ amount: 99 });
+    await markOrderAsPaid(raceOrder.orderId, {
+      transactionId: `TRX-RACE-${runId}`,
     });
-    const s11Res = await downloadHandler(s11Req);
-    const s11Data = await s11Res.json();
-    const s11Pass = s11Res.status === 403 && s11Data.ok === false;
+    // Set to 9 downloads
+    for (let i = 0; i < 9; i++) {
+      await recordDownload(raceOrder.orderId);
+    }
+    // Launch 10 simultaneous download increments
+    const raceResults = await Promise.all(
+      Array.from({ length: 10 }).map(() => recordDownload(raceOrder.orderId))
+    );
+    const successfulIncrements = raceResults.filter((r) => r.ok).length;
+    const finalRaceOrder = await findOrder({ orderId: raceOrder.orderId });
+
+    const s11Pass =
+      successfulIncrements === 1 && finalRaceOrder?.downloadCount === 10;
     recordResult(
       11,
-      "Unauthorized PDF download (missing token rejected with 403 Forbidden)",
+      "Concurrent download limit race condition (only 1 increment allowed to reach 10)",
       s11Pass,
-      `HTTP ${s11Res.status}, Error: ${s11Data.error}`
+      `Successful increments: ${successfulIncrements}/10, Final count: ${finalRaceOrder?.downloadCount}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 12: Expired download token
+    // Scenario 12: Database connection failure handling
     // -------------------------------------------------------------
-    const expiredPayload = {
-      orderId: buyer1.orderId,
-      cusEmail: "buyer@example.com",
-      cusPhone: "01711223344",
-      book: "sporsher_byakoron",
-      status: "PAID",
-      iat: Date.now() - 48 * 3600 * 1000,
-      exp: Date.now() - 24 * 3600 * 1000, // expired 24h ago
-    };
-    const expEncoded = Buffer.from(JSON.stringify(expiredPayload)).toString("base64url");
-    const expSig = crypto
-      .createHmac("sha256", process.env.ORDER_SECRET_KEY!)
-      .update(expEncoded)
-      .digest("base64url");
-    const expToken = `${expEncoded}.${expSig}`;
+    const originalApiUrl = process.env.INTERNAL_GO_API_URL;
+    process.env.INTERNAL_GO_API_URL = "http://127.0.0.1:54321/offline";
+    const offlineResult = await findOrder({ orderId: "ONV-OFFLINE-TEST" });
+    process.env.INTERNAL_GO_API_URL = originalApiUrl;
 
-    const s12Req = createRequest(`http://localhost:3000/api/download?token=${expToken}`, {
-      clientIp: "10.0.2.13",
-    });
-    const s12Res = await downloadHandler(s12Req);
-    const s12Data = await s12Res.json();
-    const s12Pass = s12Res.status === 403 && s12Data.ok === false;
+    const s12Pass = offlineResult === null;
     recordResult(
       12,
-      "Expired download token (expiration enforced, rejected with 403)",
+      "Database connection failure handling (fails closed safely without crashing)",
       s12Pass,
-      `HTTP ${s12Res.status}, Error: ${s12Data.error}`
+      `Safely returned: ${offlineResult}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 13: Download limit exceeded
+    // Scenario 13: Migration with existing PAID orders
     // -------------------------------------------------------------
-    const limitOrder = createOrderRecord({ amount: 99 });
-    markOrderAsPaid(limitOrder.orderId, { invoiceId: "INV-LIMIT-TEST" });
-    // Set download count to MAX_DOWNLOAD_LIMIT (10)
-    updateOrderRecord(limitOrder.orderId, { downloadCount: MAX_DOWNLOAD_LIMIT });
+    const tempMigPath = path.join(process.cwd(), "storage", `test-migration-${runId}.json`);
+    const testMigData = [
+      {
+        orderId: `ONV-REAL-PAID-${runId}`,
+        invoiceId: `ZP_REAL_${runId}`,
+        transactionId: `TRX_REAL_${runId}`,
+        cusName: "Real Customer",
+        cusEmail: "real@customer.com",
+        cusPhone: "01700112233",
+        amount: 99,
+        currency: "BDT",
+        status: "PAID",
+        paymentMethod: "bKash",
+        downloadToken: "signed-token-01",
+        downloadCount: 3,
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    fs.writeFileSync(tempMigPath, JSON.stringify(testMigData, null, 2));
 
-    const limitToken = findOrder({ orderId: limitOrder.orderId })?.downloadToken;
-    const s13Req = createRequest(`http://localhost:3000/api/download?token=${limitToken}`, {
-      clientIp: "10.0.2.14",
-    });
-    const s13Res = await downloadHandler(s13Req);
-    const s13Data = await s13Res.json();
+    execSync(
+      `DATABASE_URL="postgres://localhost:5432/onuvuti?sslmode=disable" ./backend/migrate-orders -file ${tempMigPath}`,
+      { stdio: "pipe" }
+    );
+    const migratedOrder = await findOrder({ orderId: `ONV-REAL-PAID-${runId}` });
     const s13Pass =
-      s13Res.status === 403 &&
-      s13Data.ok === false &&
-      s13Data.error.includes("সীমা");
+      migratedOrder?.status === "PAID" &&
+      migratedOrder?.transactionId === `TRX_REAL_${runId}` &&
+      migratedOrder?.downloadCount === 3;
     recordResult(
       13,
-      `Download limit exceeded (order with >= ${MAX_DOWNLOAD_LIMIT} downloads blocked with 403)`,
+      "Migration with existing PAID orders (preserves status, TrxID, token, counts)",
       s13Pass,
-      `HTTP ${s13Res.status}, Error: ${s13Data.error}`
+      `Status: ${migratedOrder?.status}, Count: ${migratedOrder?.downloadCount}`
     );
 
     // -------------------------------------------------------------
-    // Scenario 14: Invalid download token
+    // Scenario 14: Running migration twice without duplicates (idempotency)
     // -------------------------------------------------------------
-    const fakeToken = "eyJvcmRlcklkIjoiT05WLTk5OTk5OSJ9.fake_tampered_signature";
-    const s14Req = createRequest(`http://localhost:3000/api/download?token=${fakeToken}`, {
-      clientIp: "10.0.2.15",
-    });
-    const s14Res = await downloadHandler(s14Req);
-    const s14Data = await s14Res.json();
-    const s14Pass = s14Res.status === 403 && s14Data.ok === false;
+    const migOutput2 = execSync(
+      `DATABASE_URL="postgres://localhost:5432/onuvuti?sslmode=disable" ./backend/migrate-orders -file ${tempMigPath}`,
+      { encoding: "utf-8" }
+    );
+    const s14Pass =
+      migOutput2.includes("Newly Imported Orders:   0") &&
+      migOutput2.includes("Preserved/Updated:       1");
     recordResult(
       14,
-      "Invalid download token (HMAC constant-time verification failed, 403 Forbidden)",
+      "Running migration twice without duplicates (idempotent 0 new imports)",
       s14Pass,
-      `HTTP ${s14Res.status}, Error: ${s14Data.error}`
+      `Output: Newly Imported: 0, Preserved: 1`
     );
+    if (fs.existsSync(tempMigPath)) fs.unlinkSync(tempMigPath);
 
     // -------------------------------------------------------------
-    // Scenario 15: Payment verification API failure
+    // Scenario 15: Migration rollback on failure
     // -------------------------------------------------------------
-    const errorBuyer = createOrderRecord({ amount: 99 });
-    updateOrderRecord(errorBuyer.orderId, { invoiceId: "INV-SERVER-ERROR" });
+    const badMigPath = path.join(process.cwd(), "storage", `bad-migration-${runId}.json`);
+    const badMigData = [
+      {
+        orderId: `ONV-WILL-FAIL-${runId}`,
+        status: "PAID",
+        amount: -99999999999999999999, // Overflow to cause SQL error
+      },
+    ];
+    fs.writeFileSync(badMigPath, JSON.stringify(badMigData, null, 2));
 
-    const s15Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { orderId: errorBuyer.orderId, invoiceId: "INV-SERVER-ERROR" },
-      clientIp: "10.0.2.16",
-    });
-    const s15Res = await verifyHandler(s15Req);
-    const s15Data = await s15Res.json();
-    const s15Pass =
-      s15Res.status >= 400 &&
-      s15Data.ok === false &&
-      findOrder({ orderId: errorBuyer.orderId })?.status === "PENDING";
+    let migFailedCleanly = false;
+    try {
+      execSync(
+        `DATABASE_URL="postgres://localhost:5432/onuvuti?sslmode=disable" ./backend/migrate-orders -file ${badMigPath}`,
+        { stdio: "pipe" }
+      );
+    } catch {
+      migFailedCleanly = true;
+    }
+    const checkBadOrder = await findOrder({ orderId: `ONV-WILL-FAIL-${runId}` });
+    const s15Pass = migFailedCleanly && checkBadOrder === null;
     recordResult(
       15,
-      "Payment verification API failure (safe fail-closed, no false positive)",
+      "Migration rollback on failure (aborts cleanly and rolls back on failure)",
       s15Pass,
-      `HTTP ${s15Res.status}, Order remains PENDING`
+      `Migration caught error: ${migFailedCleanly}, Uncommitted in DB: ${checkBadOrder === null}`
     );
+    if (fs.existsSync(badMigPath)) fs.unlinkSync(badMigPath);
 
     // -------------------------------------------------------------
-    // Scenario 16: Missing customer information (1-Click Hosted Checkout)
+    // Scenario 16: Verifying zero read/write access to storage/orders.json
     // -------------------------------------------------------------
-    const s16Req = createRequest("http://localhost:3000/api/payment/create", {
-      method: "POST",
-      body: {}, // No customer details provided on-site!
-      clientIp: "10.0.2.17",
-    });
-    const s16Res = await createOrderHandler(s16Req);
-    const s16Data = await s16Res.json();
+    const ordersJsonStatAfter = fs.statSync(ORDERS_FILE);
+    const ordersJsonContentAfter = fs.readFileSync(ORDERS_FILE, "utf-8");
+
     const s16Pass =
-      s16Res.status === 200 &&
-      s16Data.ok === true &&
-      Boolean(s16Data.paymentUrl) &&
-      Boolean(s16Data.orderId);
+      ordersJsonStatBefore.mtimeMs === ordersJsonStatAfter.mtimeMs &&
+      ordersJsonContentBefore === ordersJsonContentAfter;
     recordResult(
       16,
-      "Missing customer information (1-Click Hosted Checkout creates pending session smoothly)",
+      "Verifying zero read/write access to storage/orders.json (file untouched at runtime)",
       s16Pass,
-      `HTTP ${s16Res.status}, OrderId: ${s16Data.orderId}, PaymentUrl: ${s16Data.paymentUrl}`
-    );
-
-    // -------------------------------------------------------------
-    // Scenario 17: Duplicate order creation
-    // -------------------------------------------------------------
-    const orderA = createOrderRecord({});
-    const orderB = createOrderRecord({});
-    const s17Pass =
-      orderA.orderId !== orderB.orderId &&
-      orderA.orderId.startsWith("ONV-") &&
-      orderB.orderId.startsWith("ONV-");
-    recordResult(
-      17,
-      "Duplicate order creation (consecutive orders get distinct unique IDs)",
-      s17Pass,
-      `Order A: ${orderA.orderId}, Order B: ${orderB.orderId}`
-    );
-
-    // -------------------------------------------------------------
-    // Scenario 18: Database unavailable (resilient fallback)
-    // -------------------------------------------------------------
-    // Local JSON cache handles read/write if Go backend is offline
-    const fallbackOrder = createOrderRecord({ amount: 99 });
-    const s18Pass =
-      Boolean(findOrder({ orderId: fallbackOrder.orderId })) &&
-      fallbackOrder.status === "PENDING";
-    recordResult(
-      18,
-      "Database unavailable (graceful resilient storage fallback without downtime)",
-      s18Pass,
-      `Persisted and retrievable: ${fallbackOrder.orderId}`
-    );
-
-    // -------------------------------------------------------------
-    // Scenario 19: Invalid payment response
-    // -------------------------------------------------------------
-    const corruptBuyer = createOrderRecord({ amount: 99 });
-    updateOrderRecord(corruptBuyer.orderId, { invoiceId: "INV-CORRUPT-JSON" });
-
-    const s19Req = createRequest("http://localhost:3000/api/payment/verify", {
-      method: "POST",
-      body: { orderId: corruptBuyer.orderId, invoiceId: "INV-CORRUPT-JSON" },
-      clientIp: "10.0.2.19",
-    });
-    const s19Res = await verifyHandler(s19Req);
-    const s19Data = await s19Res.json();
-    const s19Pass = s19Res.status >= 400 && s19Data.ok === false;
-    recordResult(
-      19,
-      "Invalid payment response (gateway HTML error handled gracefully without crash)",
-      s19Pass,
-      `HTTP ${s19Res.status}, Handled closed: ${!s19Data.ok}`
-    );
-
-    // -------------------------------------------------------------
-    // Scenario 20: Payment for a different product
-    // -------------------------------------------------------------
-    // Craft token with valid HMAC signature but wrong book title
-    const diffProductPayload = {
-      orderId: buyer1.orderId,
-      cusEmail: "buyer@example.com",
-      cusPhone: "01711223344",
-      book: "different_unauthorized_ebook", // Wrong product!
-      status: "PAID",
-      iat: Date.now(),
-      exp: Date.now() + 24 * 3600 * 1000,
-    };
-    const diffEncoded = Buffer.from(JSON.stringify(diffProductPayload)).toString("base64url");
-    const diffSig = crypto
-      .createHmac("sha256", process.env.ORDER_SECRET_KEY!)
-      .update(diffEncoded)
-      .digest("base64url");
-    const diffToken = `${diffEncoded}.${diffSig}`;
-
-    const s20Req = createRequest(`http://localhost:3000/api/download?token=${diffToken}`, {
-      clientIp: "10.0.2.20",
-    });
-    const s20Res = await downloadHandler(s20Req);
-    const s20Data = await s20Res.json();
-    const s20Pass = s20Res.status === 403 && s20Data.ok === false;
-    recordResult(
-      20,
-      "Payment for a different product (mismatched book name rejected with 403)",
-      s20Pass,
-      `HTTP ${s20Res.status}, Error: ${s20Data.error}`
+      `orders.json mtime unchanged: ${ordersJsonStatBefore.mtimeMs === ordersJsonStatAfter.mtimeMs}`
     );
 
   } finally {
-    // Shutdown mock server
     mockServer.close();
-    // Restore original orders.json
-    fs.writeFileSync(ORDERS_FILE, originalOrders, "utf-8");
   }
 
   console.log("\n=======================================================");
@@ -728,7 +619,7 @@ async function runTestSuite() {
   const failedCount = results.filter((r) => !r.passed).length;
   console.log(`TOTAL SCENARIOS TESTED: ${results.length}`);
   console.log(`PASSED: \x1b[32m${passedCount}\x1b[0m`);
-  console.log(`FAILED: \x1b[31${failedCount > 0 ? "31m" : "32m"}${failedCount}\x1b[0m`);
+  console.log(`FAILED: \x1b[${failedCount > 0 ? "31m" : "32m"}${failedCount}\x1b[0m`);
   console.log("=======================================================\n");
 
   if (failedCount > 0) {

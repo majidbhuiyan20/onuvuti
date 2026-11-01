@@ -92,52 +92,17 @@ export function getBookPriceBdt(): number {
 }
 
 /**
- * Internal order file reader (JSON fallback & cache)
+ * @deprecated Legacy JSON file reader. All production orders are stored and queried in PostgreSQL.
  */
 export function readOrders(): BookOrder[] {
-  try {
-    if (!fs.existsSync(ORDERS_FILE)) {
-      return [];
-    }
-    const raw = fs.readFileSync(ORDERS_FILE, "utf-8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+  return [];
 }
 
 /**
- * Internal order file writer (JSON fallback & cache)
+ * @deprecated Legacy JSON file writer. All production orders are stored and queried in PostgreSQL.
  */
-export function writeOrders(orders: BookOrder[]): void {
-  try {
-    const dir = path.dirname(ORDERS_FILE);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(ORDERS_FILE, JSON.stringify(orders, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed to write orders.json:", err);
-  }
-}
-
-/**
- * Syncs an order with Go Backend PostgreSQL database
- */
-async function syncOrderToPostgres(order: BookOrder): Promise<void> {
-  try {
-    await fetch(`${GO_API_BASE_URL}/orders`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getInternalAuthHeaders(),
-      },
-      body: JSON.stringify(order),
-    });
-  } catch {
-    // Non-blocking: local JSON backup remains authoritative if backend is starting up
-  }
+export function writeOrders(_orders: BookOrder[]): void {
+  // No-op: PostgreSQL is the single source of truth for all orders.
 }
 
 /**
@@ -238,19 +203,19 @@ export function verifyDownloadToken(token: string): {
 }
 
 /**
- * Creates a unique pending book order in the database.
+ * Creates a unique pending book order in PostgreSQL.
  * Supports 1-click hosted checkout (customer details captured on ZiniPay).
  */
-export function createOrderRecord(params?: {
+export async function createOrderRecord(params?: {
   cusName?: string;
   cusEmail?: string;
   cusPhone?: string;
   amount?: number;
   invoiceId?: string;
-}): BookOrder {
-  const orders = readOrders();
+  orderId?: string;
+}): Promise<BookOrder> {
   const randomSuffix = Math.floor(100000 + Math.random() * 900000);
-  const orderId = `ONV-${randomSuffix}`;
+  const orderId = params?.orderId || `ONV-${randomSuffix}`;
 
   const cleanName = (params?.cusName || "সম্মানিত পাঠক").trim();
   const cleanEmail = (params?.cusEmail || "").trim();
@@ -269,64 +234,105 @@ export function createOrderRecord(params?: {
     createdAt: new Date().toISOString(),
   };
 
-  orders.unshift(newOrder);
-  writeOrders(orders.slice(0, 1000));
-  syncOrderToPostgres(newOrder);
+  try {
+    const res = await fetch(`${GO_API_BASE_URL}/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getInternalAuthHeaders(),
+      },
+      body: JSON.stringify(newOrder),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.order) return data.order;
+    }
+  } catch (err) {
+    console.error("Failed to persist order to Go Backend PostgreSQL:", err);
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("অর্ডার ডাটাবেজে সংরক্ষণ করা সম্ভব হয়নি। ডাটাবেজ সাময়িকভাবে অনুপলব্ধ।");
+    }
+  }
 
   return newOrder;
 }
 
 /**
- * Updates an order record safely.
+ * Updates an order record safely in PostgreSQL.
  */
-export function updateOrderRecord(
+export async function updateOrderRecord(
   orderId: string,
   updates: Partial<BookOrder>
-): BookOrder | null {
-  const orders = readOrders();
-  const idx = orders.findIndex(
-    (o) => o.orderId.toLowerCase() === orderId.trim().toLowerCase()
-  );
-  if (idx === -1) return null;
+): Promise<BookOrder | null> {
+  const existing = await findOrder({ orderId });
+  if (!existing) return null;
 
-  orders[idx] = { ...orders[idx], ...updates };
-  writeOrders(orders);
-  syncOrderToPostgres(orders[idx]);
-
-  return orders[idx];
+  const merged: BookOrder = { ...existing, ...updates };
+  try {
+    const res = await fetch(`${GO_API_BASE_URL}/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...getInternalAuthHeaders(),
+      },
+      body: JSON.stringify(merged),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data?.order || merged;
+    }
+  } catch (err) {
+    console.error("updateOrderRecord error:", err);
+  }
+  return merged;
 }
 
 /**
- * Searches for an order strictly by orderId, invoiceId, or transactionId.
+ * Searches for an order strictly by orderId, invoiceId, or transactionId via PostgreSQL.
  * Does NOT permit querying by arbitrary phone/email to avoid customer data leakage.
  */
-export function findOrder(query: {
+export async function findOrder(query: {
   orderId?: string;
   invoiceId?: string;
   transactionId?: string;
-}): BookOrder | null {
-  const orders = readOrders();
+}): Promise<BookOrder | null> {
+  const authHeaders = getInternalAuthHeaders();
 
-  if (query.orderId) {
-    const target = query.orderId.trim().toLowerCase();
-    const found = orders.find((o) => o.orderId.toLowerCase() === target);
-    if (found) return found;
-  }
+  try {
+    if (query.orderId) {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/orders/${encodeURIComponent(query.orderId.trim())}`,
+        { headers: authHeaders, cache: "no-store" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.order) return data.order;
+      }
+    }
 
-  if (query.invoiceId) {
-    const target = query.invoiceId.trim().toLowerCase();
-    const found = orders.find(
-      (o) => o.invoiceId && o.invoiceId.toLowerCase() === target
-    );
-    if (found) return found;
-  }
+    if (query.invoiceId) {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/orders/${encodeURIComponent(query.invoiceId.trim())}`,
+        { headers: authHeaders, cache: "no-store" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.order) return data.order;
+      }
+    }
 
-  if (query.transactionId) {
-    const target = query.transactionId.trim().toUpperCase();
-    const found = orders.find(
-      (o) => o.transactionId && o.transactionId.toUpperCase() === target
-    );
-    if (found) return found;
+    if (query.transactionId) {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/orders/trx/${encodeURIComponent(query.transactionId.trim())}`,
+        { headers: authHeaders, cache: "no-store" }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.exists && data?.order) return data.order;
+      }
+    }
+  } catch (err) {
+    console.error("findOrder database lookup error:", err);
   }
 
   return null;
@@ -335,28 +341,37 @@ export function findOrder(query: {
 /**
  * Checks if a transaction ID is already attached to any other paid order (prevents double-spending).
  */
-export function isTransactionIdAlreadyUsed(
+export async function isTransactionIdAlreadyUsed(
   transactionId: string,
   currentOrderId?: string
-): boolean {
+): Promise<boolean> {
   const cleanTrx = transactionId.trim().toUpperCase();
   if (!cleanTrx) return false;
 
-  const orders = readOrders();
-  return orders.some(
-    (o) =>
-      o.transactionId &&
-      o.transactionId.toUpperCase() === cleanTrx &&
-      (!currentOrderId ||
-        o.orderId.toLowerCase() !== currentOrderId.toLowerCase())
-  );
+  try {
+    const res = await fetch(
+      `${GO_API_BASE_URL}/orders/trx/${encodeURIComponent(cleanTrx)}`,
+      { headers: getInternalAuthHeaders(), cache: "no-store" }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.exists && data?.order) {
+        if (!currentOrderId || data.order.orderId.toLowerCase() !== currentOrderId.toLowerCase()) {
+          return true;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("isTransactionIdAlreadyUsed error:", err);
+  }
+  return false;
 }
 
 /**
- * Transitions an EXISTING pending order to PAID.
+ * Transitions an EXISTING pending order to PAID atomically in PostgreSQL.
  * Fails safely if the order does not exist or if transactionId is already used.
  */
-export function markOrderAsPaid(
+export async function markOrderAsPaid(
   orderId: string,
   extra: {
     invoiceId?: string;
@@ -366,8 +381,8 @@ export function markOrderAsPaid(
     cusEmail?: string;
     cusPhone?: string;
   } = {}
-): { ok: boolean; order?: BookOrder; error?: string } {
-  const existing = findOrder({ orderId });
+): Promise<{ ok: boolean; order?: BookOrder; error?: string }> {
+  const existing = await findOrder({ orderId });
 
   if (!existing) {
     return {
@@ -377,7 +392,7 @@ export function markOrderAsPaid(
   }
 
   const cleanTrx = (extra.transactionId || "").trim().toUpperCase();
-  if (cleanTrx && isTransactionIdAlreadyUsed(cleanTrx, orderId)) {
+  if (cleanTrx && (await isTransactionIdAlreadyUsed(cleanTrx, orderId))) {
     return {
       ok: false,
       error: `ট্রানজেকশন আইডি ${cleanTrx} ইতোমধ্যে অন্য অর্ডারে ব্যবহৃত হয়েছে। ডুপ্লিকেট পেমেন্ট নিষিদ্ধ।`,
@@ -399,24 +414,70 @@ export function markOrderAsPaid(
     cusPhone: finalPhone,
   });
 
-  const updated = updateOrderRecord(existing.orderId, {
-    status: "PAID",
-    cusName: finalName,
-    cusEmail: finalEmail,
-    cusPhone: finalPhone,
-    invoiceId: extra.invoiceId || existing.invoiceId,
-    transactionId: cleanTrx || existing.transactionId,
-    paymentMethod:
-      extra.paymentMethod || existing.paymentMethod || "ZiniPay Official",
-    downloadToken: token,
-    verifiedAt: new Date().toISOString(),
-  });
+  try {
+    const res = await fetch(
+      `${GO_API_BASE_URL}/orders/${encodeURIComponent(existing.orderId)}/paid`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...getInternalAuthHeaders(),
+        },
+        body: JSON.stringify({
+          invoiceId: extra.invoiceId || existing.invoiceId || "",
+          transactionId: cleanTrx || existing.transactionId || "",
+          paymentMethod:
+            extra.paymentMethod || existing.paymentMethod || "ZiniPay Official",
+          downloadToken: token,
+          cusName: finalName,
+          cusEmail: finalEmail,
+          cusPhone: finalPhone,
+        }),
+      }
+    );
 
-  if (!updated) {
-    return { ok: false, error: "অর্ডার আপডেট করা সম্ভব হয়নি।" };
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.ok) {
+      return {
+        ok: false,
+        error: data?.error || "অর্ডার স্ট্যাটাস আপডেট করতে ব্যর্থ হয়েছে।",
+      };
+    }
+
+    return { ok: true, order: data.order };
+  } catch (err: any) {
+    return {
+      ok: false,
+      error: err?.message || "ডাটাবেজ সংযোগে সমস্যা হয়েছে।",
+    };
   }
+}
 
-  return { ok: true, order: updated };
+/**
+ * Atomically increments download count in PostgreSQL with max limit 10 enforcement.
+ */
+export async function recordDownload(
+  orderId: string
+): Promise<{ ok: boolean; downloadCount?: number; error?: string }> {
+  try {
+    const res = await fetch(
+      `${GO_API_BASE_URL}/orders/${encodeURIComponent(orderId)}/download`,
+      {
+        method: "PATCH",
+        headers: getInternalAuthHeaders(),
+      }
+    );
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: data?.error || "ডাউনলোড সীমা অতিক্রম করেছে বা ডাটাবেজ ত্রুটি।",
+      };
+    }
+    return { ok: true, downloadCount: data?.downloadCount };
+  } catch (err: any) {
+    return { ok: false, error: err?.message || "ডাটাবেজ সংযোগ ত্রুটি।" };
+  }
 }
 
 /**
@@ -500,7 +561,7 @@ export async function createZiniPayInvoice(
 
     if (response.ok && paymentUrl) {
       if (invoiceId) {
-        updateOrderRecord(order.orderId, { invoiceId });
+        await updateOrderRecord(order.orderId, { invoiceId });
       }
       return {
         ok: true,
@@ -694,7 +755,7 @@ export async function verifyAndConfirmZiniPayTrx(params: {
     process.env.APP_ENV === "production";
 
   // Prevent double-spending: check if this TrxID is already used
-  if (isTransactionIdAlreadyUsed(cleanTrx)) {
+  if (await isTransactionIdAlreadyUsed(cleanTrx)) {
     return {
       verified: false,
       message: "এই Transaction ID ইতোমধ্যে সিস্টেমে ব্যবহৃত হয়েছে। একই ট্রানজেকশন একাধিকবার ব্যবহার করা যাবে না।",

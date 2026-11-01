@@ -4,11 +4,10 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   findOrder,
   verifyDownloadToken,
-  updateOrderRecord,
+  recordDownload,
   MAX_DOWNLOAD_LIMIT,
 } from "@/lib/zinipay";
 import { checkRateLimit, getClientIp } from "@/lib/security";
-import { GO_API_BASE_URL, getInternalAuthHeaders } from "@/lib/goApi";
 
 export async function GET(req: NextRequest) {
   // 1. Enforce strict rate limiting per client IP to prevent token brute-forcing / DDoS
@@ -58,7 +57,7 @@ export async function GET(req: NextRequest) {
   }
 
   // 4. Authoritative Database Verification: Order must exist and have status 'PAID'
-  const order = findOrder({ orderId: tokenCheck.orderId });
+  const order = await findOrder({ orderId: tokenCheck.orderId });
   if (!order || order.status !== "PAID") {
     return NextResponse.json(
       {
@@ -94,19 +93,21 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // 7. Increment download count in local storage and Go backend
-  updateOrderRecord(order.orderId, { downloadCount: currentDownloads + 1 });
-
-  try {
-    fetch(`${GO_API_BASE_URL}/orders/${encodeURIComponent(order.orderId)}/download`, {
-      method: "PATCH",
-      headers: getInternalAuthHeaders(),
-    }).catch(() => {});
-  } catch {
-    // Non-blocking telemetry
+  // 7. Increment download count atomically in PostgreSQL
+  const recordRes = await recordDownload(order.orderId);
+  if (!recordRes.ok) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          recordRes.error ||
+          `ডাউনলোড সীমা (সর্বোচ্চ ${MAX_DOWNLOAD_LIMIT} বার) অতিক্রম করেছে।`,
+      },
+      { status: 403 }
+    );
   }
 
-  // 7. Stream the PDF safely with hardened headers
+  // 8. Stream the PDF safely with hardened headers
   const fileBuffer = fs.readFileSync(pdfPath);
 
   return new NextResponse(fileBuffer, {

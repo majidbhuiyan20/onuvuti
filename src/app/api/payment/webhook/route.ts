@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Look up order associated with this invoice ID
-    let existingOrder = findOrder({ invoiceId });
+    let existingOrder = await findOrder({ invoiceId });
 
     // 4. Idempotency check: If order is already fulfilled/PAID, return 200 OK immediately
     if (existingOrder && existingOrder.status === "PAID") {
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
 
     // If order was created directly on ZiniPay hosted product checkout, synthesize order record
     if (!existingOrder) {
-      existingOrder = createOrderRecord({
+      existingOrder = await createOrderRecord({
         cusName: verification.cusName || "সম্মানিত পাঠক",
         cusEmail: verification.cusEmail || "",
         cusPhone: verification.cusPhone || "",
@@ -127,7 +127,7 @@ export async function POST(req: NextRequest) {
 
     // 7. Validate transaction ID uniqueness (double-spending protection)
     const cleanTrx = (verification.transactionId || "").trim().toUpperCase();
-    if (cleanTrx && isTransactionIdAlreadyUsed(cleanTrx, existingOrder.orderId)) {
+    if (cleanTrx && (await isTransactionIdAlreadyUsed(cleanTrx, existingOrder.orderId))) {
       return NextResponse.json(
         {
           ok: false,
@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 8. Safely and idempotently mark the order as PAID
-    const markResult = markOrderAsPaid(existingOrder.orderId, {
+    const markResult = await markOrderAsPaid(existingOrder.orderId, {
       invoiceId,
       transactionId: cleanTrx,
       paymentMethod: verification.paymentMethod || "ZiniPay Webhook Verified",
@@ -152,22 +152,6 @@ export async function POST(req: NextRequest) {
         { ok: false, error: markResult.error || "Failed to update order status" },
         { status: 500 }
       );
-    }
-
-    // Authoritative Go backend PostgreSQL sync
-    try {
-      fetch(`${GO_API_BASE_URL}/orders/${encodeURIComponent(existingOrder.orderId)}/paid`, {
-        method: "PATCH",
-        headers: getInternalAuthHeaders(),
-        body: JSON.stringify({
-          invoiceId,
-          transactionId: cleanTrx,
-          paymentMethod: verification.paymentMethod || "ZiniPay Webhook Verified",
-          downloadToken: markResult.order.downloadToken,
-        }),
-      }).catch(() => {});
-    } catch {
-      // Non-blocking telemetry
     }
 
     return NextResponse.json({

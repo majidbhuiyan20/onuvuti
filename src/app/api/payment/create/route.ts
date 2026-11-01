@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const cusPhone = sanitizeText(String(body?.cusPhone || ""), 30);
 
     // Creates the pending order (1-click checkout: customer enters full details on ZiniPay hosted page)
-    const order = createOrderRecord({
+    const order = await createOrderRecord({
       cusName: cusName || "সম্মানিত পাঠক",
       cusEmail,
       cusPhone,

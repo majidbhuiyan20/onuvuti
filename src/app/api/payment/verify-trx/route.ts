@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Check if this transactionId or orderId was already verified previously (allows order recovery!)
-    const existingOrder = findOrder({
+    const existingOrder = await findOrder({
       transactionId,
       orderId: transactionId.startsWith("ONV-") ? transactionId : undefined,
     });
@@ -83,14 +83,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const newOrder = createOrderRecord({
+    const newOrder = await createOrderRecord({
       cusName: cusName || "সম্মানিত পাঠক",
       cusPhone: cusPhone || trxCheck.sender || "01700000000",
       cusEmail: cusEmail || "reader@onuvuti.site",
       amount,
     });
 
-    const markResult = markOrderAsPaid(newOrder.orderId, {
+    const markResult = await markOrderAsPaid(newOrder.orderId, {
       transactionId,
       paymentMethod: trxCheck.provider || "ZiniPay TrxID",
     });

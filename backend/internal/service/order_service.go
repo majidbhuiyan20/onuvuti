@@ -17,7 +17,7 @@ func NewOrderService(repo *repository.Repository) *OrderService {
 	return &OrderService{repo: repo}
 }
 
-func (s *OrderService) CreatePendingOrder(order models.BookOrder) models.BookOrder {
+func (s *OrderService) CreatePendingOrder(order models.BookOrder) (*models.BookOrder, error) {
 	order.OrderID = strings.TrimSpace(order.OrderID)
 	order.InvoiceID = strings.TrimSpace(order.InvoiceID)
 	order.CusName = sanitizer.Text(order.CusName, 100)
@@ -36,7 +36,7 @@ func (s *OrderService) CreatePendingOrder(order models.BookOrder) models.BookOrd
 	return s.repo.CreateOrder(order)
 }
 
-func (s *OrderService) RecordBookOrder(order models.BookOrder) models.BookOrder {
+func (s *OrderService) RecordBookOrder(order models.BookOrder) (*models.BookOrder, error) {
 	return s.CreatePendingOrder(order)
 }
 
@@ -48,7 +48,7 @@ func (s *OrderService) GetOrderByTransactionID(trxID string) *models.BookOrder {
 	return s.repo.FindOrderByTransactionID(trxID)
 }
 
-func (s *OrderService) MarkOrderPaid(orderID, invoiceID, transactionID, paymentMethod, downloadToken string) (*models.BookOrder, error) {
+func (s *OrderService) MarkOrderPaid(orderID, invoiceID, transactionID, paymentMethod, downloadToken, cusName, cusPhone, cusEmail string) (*models.BookOrder, error) {
 	cleanID := strings.TrimSpace(orderID)
 	cleanTrx := strings.TrimSpace(transactionID)
 	cleanInv := strings.TrimSpace(invoiceID)
@@ -57,9 +57,9 @@ func (s *OrderService) MarkOrderPaid(orderID, invoiceID, transactionID, paymentM
 		return nil, fmt.Errorf("order ID is required")
 	}
 
-	return s.repo.UpdateOrderPaid(cleanID, cleanInv, cleanTrx, paymentMethod, downloadToken)
+	return s.repo.UpdateOrderPaid(cleanID, cleanInv, cleanTrx, paymentMethod, downloadToken, cusName, cusPhone, cusEmail)
 }
 
-func (s *OrderService) RecordDownload(orderID string) error {
+func (s *OrderService) RecordDownload(orderID string) (int, error) {
 	return s.repo.IncrementDownloadCount(strings.TrimSpace(orderID))
 }

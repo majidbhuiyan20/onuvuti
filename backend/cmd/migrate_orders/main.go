@@ -32,9 +32,22 @@ type JsonOrder struct {
 	VerifiedAt    string `json:"verifiedAt"`
 }
 
+func isTestOrder(o JsonOrder) bool {
+	id := strings.ToUpper(strings.TrimSpace(o.OrderID))
+	email := strings.ToLower(strings.TrimSpace(o.CusEmail))
+	if strings.HasPrefix(id, "TEST-") || strings.HasPrefix(id, "DEMO-") || strings.HasPrefix(id, "ONV-TEST") {
+		return true
+	}
+	if email == "test@example.com" || email == "buyer@example.com" || email == "buyer1@example.com" || email == "test@test.com" {
+		return true
+	}
+	return false
+}
+
 func main() {
 	filePath := flag.String("file", "../storage/orders.json", "Path to orders.json file")
 	dbURL := flag.String("db", "", "PostgreSQL database connection URL (or DATABASE_URL env)")
+	skipTests := flag.Bool("skip-tests", true, "Skip test/demo orders from importing into production")
 	flag.Parse()
 
 	connStr := *dbURL
@@ -60,7 +73,7 @@ func main() {
 		log.Fatalf("❌ Failed to parse JSON orders: %v", err)
 	}
 
-	fmt.Printf("🔍 Read %d orders from %s\n", len(orders), cleanPath)
+	fmt.Printf("🔍 Analyzing %d orders from %s\n", len(orders), cleanPath)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
@@ -83,6 +96,12 @@ func main() {
 	}
 	defer tx.Rollback()
 
+	checkStmt, err := tx.Prepare(`SELECT status FROM book_orders WHERE order_id = $1`)
+	if err != nil {
+		log.Fatalf("❌ Failed to prepare check statement: %v", err)
+	}
+	defer checkStmt.Close()
+
 	stmt, err := tx.Prepare(`
 		INSERT INTO book_orders (
 			order_id, invoice_id, cus_name, cus_phone, cus_email,
@@ -90,10 +109,12 @@ func main() {
 			download_token, download_count, created_at, verified_at
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		ON CONFLICT (order_id) DO UPDATE SET
-			status = EXCLUDED.status,
+			status = CASE WHEN book_orders.status = 'PAID' THEN 'PAID' ELSE EXCLUDED.status END,
 			invoice_id = CASE WHEN EXCLUDED.invoice_id != '' THEN EXCLUDED.invoice_id ELSE book_orders.invoice_id END,
 			transaction_id = CASE WHEN EXCLUDED.transaction_id != '' THEN EXCLUDED.transaction_id ELSE book_orders.transaction_id END,
+			payment_method = CASE WHEN EXCLUDED.payment_method != '' THEN EXCLUDED.payment_method ELSE book_orders.payment_method END,
 			download_token = CASE WHEN EXCLUDED.download_token != '' THEN EXCLUDED.download_token ELSE book_orders.download_token END,
+			download_count = GREATEST(book_orders.download_count, EXCLUDED.download_count),
 			verified_at = CASE WHEN EXCLUDED.verified_at IS NOT NULL THEN EXCLUDED.verified_at ELSE book_orders.verified_at END
 	`)
 	if err != nil {
@@ -101,12 +122,25 @@ func main() {
 	}
 	defer stmt.Close()
 
-	importedCount := 0
+	newImported := 0
+	alreadyExisting := 0
+	skippedTests := 0
+
 	for _, o := range orders {
 		orderID := strings.TrimSpace(o.OrderID)
 		if orderID == "" {
 			continue
 		}
+
+		if *skipTests && isTestOrder(o) {
+			skippedTests++
+			continue
+		}
+
+		// Check if already exists in database
+		var existingStatus string
+		err := checkStmt.QueryRow(orderID).Scan(&existingStatus)
+		isExisting := err == nil
 
 		createdAt := time.Now()
 		if o.CreatedAt != "" {
@@ -142,7 +176,7 @@ func main() {
 			cusName = "সম্মানিত পাঠক"
 		}
 
-		_, err := stmt.Exec(
+		_, err = stmt.Exec(
 			orderID,
 			strings.TrimSpace(o.InvoiceID),
 			cusName,
@@ -159,15 +193,29 @@ func main() {
 			verifiedAt,
 		)
 		if err != nil {
-			log.Printf("⚠️ Error inserting order %s: %v", orderID, err)
-			continue
+			// Abort and rollback immediately if any real order fails
+			log.Fatalf("❌ Migration ABORTED & ROLLED BACK. Error inserting order %s: %v", orderID, err)
 		}
-		importedCount++
+
+		if isExisting {
+			alreadyExisting++
+		} else {
+			newImported++
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		log.Fatalf("❌ Failed to commit transaction: %v", err)
+		log.Fatalf("❌ Failed to commit migration transaction: %v", err)
 	}
 
-	fmt.Printf("✅ Successfully migrated and verified %d/%d orders into PostgreSQL without data loss!\n", importedCount, len(orders))
+	fmt.Println("==================================================")
+	fmt.Println("🎉 ORDER MIGRATION COMPLETED SUCCESSFULLY")
+	fmt.Println("==================================================")
+	fmt.Printf("Total Records in File:   %d\n", len(orders))
+	fmt.Printf("Newly Imported Orders:   %d\n", newImported)
+	fmt.Printf("Preserved/Updated:       %d\n", alreadyExisting)
+	fmt.Printf("Skipped Test Records:    %d\n", skippedTests)
+	fmt.Printf("Failed Records:          0\n")
+	fmt.Println("PostgreSQL is now the 100% authoritative order database.")
+	fmt.Println("==================================================")
 }

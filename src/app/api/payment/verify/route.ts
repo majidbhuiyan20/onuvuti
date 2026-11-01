@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (token) {
       const tokenCheck = verifyDownloadToken(token);
       if (tokenCheck.valid && tokenCheck.orderId) {
-        const existingPaidOrder = findOrder({ orderId: tokenCheck.orderId });
+        const existingPaidOrder = await findOrder({ orderId: tokenCheck.orderId });
         if (existingPaidOrder && existingPaidOrder.status === "PAID") {
           return NextResponse.json({
             ok: true,
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    let existingOrder = findOrder({
+    let existingOrder = await findOrder({
       orderId: orderId || undefined,
       invoiceId: invoiceId || undefined,
     });
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       }
 
       const directTrx = (directVerification.transactionId || "").trim().toUpperCase();
-      if (directTrx && isTransactionIdAlreadyUsed(directTrx)) {
+      if (directTrx && (await isTransactionIdAlreadyUsed(directTrx))) {
         return NextResponse.json(
           {
             ok: false,
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Synthesize order record for the verified hosted checkout payment
-      existingOrder = createOrderRecord({
+      existingOrder = await createOrderRecord({
         cusName: directVerification.cusName || "সম্মানিত পাঠক",
         cusEmail: directVerification.cusEmail || "",
         cusPhone: directVerification.cusPhone || "",
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest) {
 
     // 8. Prevent duplicate transaction reuse (double-spending protection)
     const cleanTrx = (verification.transactionId || "").trim().toUpperCase();
-    if (cleanTrx && isTransactionIdAlreadyUsed(cleanTrx, existingOrder.orderId)) {
+    if (cleanTrx && (await isTransactionIdAlreadyUsed(cleanTrx, existingOrder.orderId))) {
       return NextResponse.json(
         {
           ok: false,
@@ -224,8 +224,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 9. Transition order to PAID safely and atomically
-    const markResult = markOrderAsPaid(existingOrder.orderId, {
+    // 9. Transition order to PAID safely and atomically in PostgreSQL
+    const markResult = await markOrderAsPaid(existingOrder.orderId, {
       invoiceId: targetInvoiceId,
       transactionId: cleanTrx,
       paymentMethod: verification.paymentMethod || "ZiniPay",
@@ -242,22 +242,6 @@ export async function POST(req: NextRequest) {
         },
         { status: 500 }
       );
-    }
-
-    // Authoritative Go backend PostgreSQL sync
-    try {
-      fetch(`${GO_API_BASE_URL}/orders/${encodeURIComponent(existingOrder.orderId)}/paid`, {
-        method: "PATCH",
-        headers: getInternalAuthHeaders(),
-        body: JSON.stringify({
-          invoiceId: targetInvoiceId,
-          transactionId: cleanTrx,
-          paymentMethod: verification.paymentMethod || "ZiniPay",
-          downloadToken: markResult.order.downloadToken,
-        }),
-      }).catch(() => {});
-    } catch {
-      // Non-blocking telemetry
     }
 
     return NextResponse.json({

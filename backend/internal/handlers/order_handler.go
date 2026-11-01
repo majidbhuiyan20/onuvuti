@@ -25,7 +25,11 @@ func (h *OrderHandler) RecordOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	saved := h.orderSvc.RecordBookOrder(order)
+	saved, err := h.orderSvc.RecordBookOrder(order)
+	if err != nil {
+		response.Error(w, http.StatusConflict, err.Error())
+		return
+	}
 	response.JSON(w, http.StatusCreated, map[string]any{
 		"ok":    true,
 		"order": saved,
@@ -81,6 +85,9 @@ type MarkPaidRequest struct {
 	TransactionID string `json:"transactionId"`
 	PaymentMethod string `json:"paymentMethod"`
 	DownloadToken string `json:"downloadToken"`
+	CusName       string `json:"cusName,omitempty"`
+	CusPhone      string `json:"cusPhone,omitempty"`
+	CusEmail      string `json:"cusEmail,omitempty"`
 }
 
 func (h *OrderHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +101,7 @@ func (h *OrderHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updated, err := h.orderSvc.MarkOrderPaid(id, req.InvoiceID, req.TransactionID, req.PaymentMethod, req.DownloadToken)
+	updated, err := h.orderSvc.MarkOrderPaid(id, req.InvoiceID, req.TransactionID, req.PaymentMethod, req.DownloadToken, req.CusName, req.CusPhone, req.CusEmail)
 	if err != nil {
 		response.Error(w, http.StatusConflict, err.Error())
 		return
@@ -111,12 +118,18 @@ func (h *OrderHandler) RecordDownload(w http.ResponseWriter, r *http.Request) {
 	id = strings.TrimSuffix(id, "/download")
 	id = strings.TrimSpace(id)
 
-	if err := h.orderSvc.RecordDownload(id); err != nil {
+	count, err := h.orderSvc.RecordDownload(id)
+	if err != nil {
+		if strings.Contains(err.Error(), "limit exceeded") {
+			response.Error(w, http.StatusForbidden, err.Error())
+			return
+		}
 		response.Error(w, http.StatusInternalServerError, "ডাউনলোড কাউন্ট আপডেট করা যায়নি।")
 		return
 	}
 
 	response.JSON(w, http.StatusOK, map[string]any{
-		"ok": true,
+		"ok":            true,
+		"downloadCount": count,
 	})
 }

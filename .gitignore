@@ -37,6 +37,7 @@ yarn-error.log*
 
 # backend binaries
 backend/onuvuti-server
+backend/migrate-orders
 backend/*.exe
 backend/*.log
 
