@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   findOrder,
+  createOrderRecord,
   markOrderAsPaid,
   verifyZiniPayInvoice,
   isTransactionIdAlreadyUsed,
@@ -9,6 +10,7 @@ import {
   getBookPriceBdt,
 } from "@/lib/zinipay";
 import { checkRateLimit, getClientIp } from "@/lib/security";
+import { GO_API_BASE_URL, getInternalAuthHeaders } from "@/lib/goApi";
 
 export async function POST(req: NextRequest) {
   try {
@@ -63,20 +65,71 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingOrder = findOrder({
+    let existingOrder = findOrder({
       orderId: orderId || undefined,
       invoiceId: invoiceId || undefined,
     });
 
-    // CRITICAL SECURITY CHECK: Do not allow payment confirmation if order doesn't exist in system
+    // Support static product link checkout: If no pending order exists but an invoiceId was passed,
+    // verify authoritatively with ZiniPay before synthesizing an order record.
     if (!existingOrder) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "সিস্টেমে এই অর্ডারের কোনো প্রাথমিক তথ্য পাওয়া যায়নি। অর্ডারবিহীন পেমেন্ট গ্রহণযোগ্য নয়।",
-        },
-        { status: 404 }
-      );
+      if (!invoiceId) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "সিস্টেমে এই অর্ডারের কোনো প্রাথমিক তথ্য পাওয়া যায়নি। অর্ডারবিহীন পেমেন্ট গ্রহণযোগ্য নয়।",
+          },
+          { status: 404 }
+        );
+      }
+
+      const directVerification = await verifyZiniPayInvoice(invoiceId);
+      if (!directVerification.verified || directVerification.status !== "COMPLETED") {
+        return NextResponse.json(
+          {
+            ok: false,
+            status: directVerification.status || "PENDING",
+            error:
+              directVerification.message ||
+              "সিস্টেমে এই অর্ডারের কোনো প্রাথমিক তথ্য পাওয়া যায়নি অথবা পেমেন্ট এখনো সম্পন্ন হয়নি।",
+          },
+          { status: 404 }
+        );
+      }
+
+      const expectedAmount = getBookPriceBdt();
+      if (
+        typeof directVerification.amount === "number" &&
+        directVerification.amount < expectedAmount
+      ) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `টাকার পরিমাণ সঠিক নয়। আবশ্যক: ৳${expectedAmount}, পরিশোধিত: ৳${directVerification.amount}।`,
+          },
+          { status: 400 }
+        );
+      }
+
+      const directTrx = (directVerification.transactionId || "").trim().toUpperCase();
+      if (directTrx && isTransactionIdAlreadyUsed(directTrx)) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: "এই ট্রানজেকশন আইডি ইতোমধ্যে অন্য অর্ডারে ব্যবহৃত হয়েছে। ডুপ্লিকেট পেমেন্ট নিষিদ্ধ।",
+          },
+          { status: 409 }
+        );
+      }
+
+      // Synthesize order record for the verified hosted checkout payment
+      existingOrder = createOrderRecord({
+        cusName: directVerification.cusName || "সম্মানিত পাঠক",
+        cusEmail: directVerification.cusEmail || "",
+        cusPhone: directVerification.cusPhone || "",
+        amount: directVerification.amount || expectedAmount,
+        invoiceId,
+      });
     }
 
     // CRITICAL SECURITY CHECK: Prevent cross-order invoice hijacking
@@ -176,6 +229,9 @@ export async function POST(req: NextRequest) {
       invoiceId: targetInvoiceId,
       transactionId: cleanTrx,
       paymentMethod: verification.paymentMethod || "ZiniPay",
+      cusName: verification.cusName,
+      cusEmail: verification.cusEmail,
+      cusPhone: verification.cusPhone,
     });
 
     if (!markResult.ok || !markResult.order || !markResult.order.downloadToken) {
@@ -186,6 +242,22 @@ export async function POST(req: NextRequest) {
         },
         { status: 500 }
       );
+    }
+
+    // Authoritative Go backend PostgreSQL sync
+    try {
+      fetch(`${GO_API_BASE_URL}/orders/${encodeURIComponent(existingOrder.orderId)}/paid`, {
+        method: "PATCH",
+        headers: getInternalAuthHeaders(),
+        body: JSON.stringify({
+          invoiceId: targetInvoiceId,
+          transactionId: cleanTrx,
+          paymentMethod: verification.paymentMethod || "ZiniPay",
+          downloadToken: markResult.order.downloadToken,
+        }),
+      }).catch(() => {});
+    } catch {
+      // Non-blocking telemetry
     }
 
     return NextResponse.json({

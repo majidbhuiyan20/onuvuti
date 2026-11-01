@@ -1,9 +1,14 @@
 import fs from "fs";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
-import { findOrder, verifyDownloadToken } from "@/lib/zinipay";
+import {
+  findOrder,
+  verifyDownloadToken,
+  updateOrderRecord,
+  MAX_DOWNLOAD_LIMIT,
+} from "@/lib/zinipay";
 import { checkRateLimit, getClientIp } from "@/lib/security";
-import { GO_API_BASE_URL } from "@/lib/goApi";
+import { GO_API_BASE_URL, getInternalAuthHeaders } from "@/lib/goApi";
 
 export async function GET(req: NextRequest) {
   // 1. Enforce strict rate limiting per client IP to prevent token brute-forcing / DDoS
@@ -64,7 +69,19 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // 5. Secure file resolution (prevents path traversal)
+  // 5. Enforce Maximum Download Limit (prevents unlimited link sharing/leaks)
+  const currentDownloads = order.downloadCount || 0;
+  if (currentDownloads >= MAX_DOWNLOAD_LIMIT) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: `ডাউনলোড সীমা (সর্বোচ্চ ${MAX_DOWNLOAD_LIMIT} বার) অতিক্রম করেছে। অতিরিক্ত ডাউনলোডের জন্য অনভূতি সাপোর্টে যোগাযোগ করুন।`,
+      },
+      { status: 403 }
+    );
+  }
+
+  // 6. Secure file resolution (prevents path traversal)
   const pdfPath = path.resolve(process.cwd(), "storage", "sporsher_byakoron.pdf");
 
   if (!fs.existsSync(pdfPath)) {
@@ -77,10 +94,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // 6. Record download count in database
+  // 7. Increment download count in local storage and Go backend
+  updateOrderRecord(order.orderId, { downloadCount: currentDownloads + 1 });
+
   try {
     fetch(`${GO_API_BASE_URL}/orders/${encodeURIComponent(order.orderId)}/download`, {
       method: "PATCH",
+      headers: getInternalAuthHeaders(),
     }).catch(() => {});
   } catch {
     // Non-blocking telemetry

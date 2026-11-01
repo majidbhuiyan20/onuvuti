@@ -46,12 +46,12 @@ func NewRouter(deps RouterDeps) http.Handler {
 	// 3. Public Visitor Traffic Tracking Route
 	mux.HandleFunc("POST /api/v1/analytics/track", deps.AnalyticsHandler.TrackVisit)
 
-	// 4. Book Order Recording & Verification Routes
-	mux.HandleFunc("POST /api/v1/orders", deps.OrderHandler.RecordOrder)
-	mux.HandleFunc("GET /api/v1/orders/trx/{trx}", deps.OrderHandler.CheckTransaction)
-	mux.HandleFunc("GET /api/v1/orders/{id}", deps.OrderHandler.GetOrder)
-	mux.HandleFunc("PATCH /api/v1/orders/{id}/paid", deps.OrderHandler.MarkPaid)
-	mux.HandleFunc("PATCH /api/v1/orders/{id}/download", deps.OrderHandler.RecordDownload)
+	// 4. Book Order Recording & Verification Routes (Protected by Internal Service Secret or Admin)
+	mux.HandleFunc("POST /api/v1/orders", middleware.RequireInternalOrAdmin(cfg, deps.OrderHandler.RecordOrder))
+	mux.HandleFunc("GET /api/v1/orders/trx/{trx}", middleware.RequireInternalOrAdmin(cfg, deps.OrderHandler.CheckTransaction))
+	mux.HandleFunc("GET /api/v1/orders/{id}", middleware.RequireInternalOrAdmin(cfg, deps.OrderHandler.GetOrder))
+	mux.HandleFunc("PATCH /api/v1/orders/{id}/paid", middleware.RequireInternalOrAdmin(cfg, deps.OrderHandler.MarkPaid))
+	mux.HandleFunc("PATCH /api/v1/orders/{id}/download", middleware.RequireInternalOrAdmin(cfg, deps.OrderHandler.RecordDownload))
 
 	// 5. Admin Authentication & Protected Admin Routes
 	mux.HandleFunc("POST /api/v1/admin/login", deps.AdminHandler.Login)

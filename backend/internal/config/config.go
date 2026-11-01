@@ -10,6 +10,7 @@ type Config struct {
 	DatabaseURL        string
 	AdminPassword      string
 	AdminTokenSecret   string
+	InternalSecret     string
 	CorsAllowedOrigins []string
 	Environment        string // "production" or "development"
 }
@@ -41,6 +42,7 @@ func Load() *Config {
 		DatabaseURL:        defaultDB,
 		AdminPassword:      getEnv("ADMIN_PASSWORD", "onuvuti-admin-2026"),
 		AdminTokenSecret:   getEnv("ADMIN_TOKEN_SECRET", "onuvuti-go-jwt-hmac-secret-2026"),
+		InternalSecret:     getEnv("INTERNAL_SERVICE_SECRET", "onuvuti-internal-rpc-secret-key-2026"),
 		CorsAllowedOrigins: origins,
 		Environment:        envMode,
 	}

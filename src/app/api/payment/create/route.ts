@@ -26,24 +26,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
+    const body = await req.json().catch(() => ({}));
     const cusName = sanitizeText(String(body?.cusName || ""), 100);
     const cusEmail = sanitizeText(String(body?.cusEmail || ""), 120);
     const cusPhone = sanitizeText(String(body?.cusPhone || ""), 30);
 
-    if (!cusName || !cusPhone) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "অনুগ্রহ করে আপনার নাম এবং মোবাইল নম্বর প্রদান করুন।",
-        },
-        { status: 400 }
-      );
-    }
-
+    // Creates the pending order (1-click checkout: customer enters full details on ZiniPay hosted page)
     const order = createOrderRecord({
-      cusName,
-      cusEmail: cusEmail || `${cusPhone.replace(/\D/g, "")}@onuvuti.site`,
+      cusName: cusName || "সম্মানিত পাঠক",
+      cusEmail,
       cusPhone,
       amount: getBookPriceBdt(),
     });

@@ -248,21 +248,8 @@ func SeedPostgresIfEmpty(db *sql.DB) error {
 		log.Printf("✅ Seeded initial %d stories into PostgreSQL", len(stories))
 	}
 
-	var trafficCount int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM daily_traffic`).Scan(&trafficCount); err == nil && trafficCount == 0 {
-		traffic := InitialDailyTraffic()
-		for _, stat := range traffic {
-			_, err := db.Exec(`
-				INSERT INTO daily_traffic (date_key, page_views, unique_visits, story_reads, book_page_views, book_orders, revenue_bdt)
-				VALUES ($1,$2,$3,$4,$5,$6,$7)
-				ON CONFLICT (date_key) DO NOTHING
-			`, stat.Date, stat.PageViews, stat.UniqueVisits, stat.StoryReads, stat.BookPageViews, stat.BookOrders, stat.RevenueBdt)
-			if err != nil {
-				log.Printf("⚠️ Seed traffic error: %v", err)
-			}
-		}
-		log.Printf("✅ Seeded initial 365 days of traffic data into PostgreSQL")
-	}
+	// NOTE: In production, daily_traffic is strictly populated by genuine real-time visitor tracking
+	// and verified book payments. We do NOT seed fabricated traffic, orders, or historical revenue.
 
 	return nil
 }

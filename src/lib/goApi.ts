@@ -1,10 +1,32 @@
 /**
  * Go Backend API Client Helper
- * Connects Next.js Frontend to the Onuvuti Go Backend (default: http://localhost:8081/api/v1)
+ * Connects Next.js Frontend and Server-Side routes to the Onuvuti Go Backend (:8081)
  */
 
-export const GO_API_BASE_URL =
-  process.env.NEXT_PUBLIC_GO_API_URL || "http://localhost:8081/api/v1";
+export function getGoApiBaseUrl(): string {
+  if (typeof window !== "undefined") {
+    // In browser: use relative proxy path so requests go through Nginx to backend
+    return process.env.NEXT_PUBLIC_GO_API_URL || "/api/v1";
+  }
+  // Server-side (Node.js runtime on AWS): use direct loopback
+  return (
+    process.env.INTERNAL_GO_API_URL ||
+    process.env.GO_API_BASE_URL ||
+    "http://127.0.0.1:8081/api/v1"
+  );
+}
+
+export const GO_API_BASE_URL = getGoApiBaseUrl();
+
+export function getInternalAuthHeaders(): Record<string, string> {
+  const secret =
+    process.env.INTERNAL_SERVICE_SECRET ||
+    "onuvuti-internal-rpc-secret-key-2026";
+  return {
+    "Content-Type": "application/json",
+    "X-Internal-Secret": secret,
+  };
+}
 
 export function getAdminAuthHeaders(): Record<string, string> {
   if (typeof window === "undefined") return { "Content-Type": "application/json" };

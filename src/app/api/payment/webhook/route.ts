@@ -2,11 +2,13 @@ import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import {
   findOrder,
+  createOrderRecord,
   markOrderAsPaid,
   verifyZiniPayInvoice,
   isTransactionIdAlreadyUsed,
   getBookPriceBdt,
 } from "@/lib/zinipay";
+import { GO_API_BASE_URL, getInternalAuthHeaders } from "@/lib/goApi";
 
 export async function POST(req: NextRequest) {
   try {
@@ -73,17 +75,10 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Look up order associated with this invoice ID
-    const existingOrder = findOrder({ invoiceId });
-    if (!existingOrder) {
-      // Unknown invoice not matching any order in our system -> reject
-      return NextResponse.json(
-        { ok: false, error: "No pending order found matching this invoice_id" },
-        { status: 404 }
-      );
-    }
+    let existingOrder = findOrder({ invoiceId });
 
     // 4. Idempotency check: If order is already fulfilled/PAID, return 200 OK immediately
-    if (existingOrder.status === "PAID") {
+    if (existingOrder && existingOrder.status === "PAID") {
       return NextResponse.json({
         ok: true,
         message: "Order already fulfilled (idempotent)",
@@ -103,6 +98,17 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // If order was created directly on ZiniPay hosted product checkout, synthesize order record
+    if (!existingOrder) {
+      existingOrder = createOrderRecord({
+        cusName: verification.cusName || "সম্মানিত পাঠক",
+        cusEmail: verification.cusEmail || "",
+        cusPhone: verification.cusPhone || "",
+        amount: verification.amount || getBookPriceBdt(),
+        invoiceId,
+      });
     }
 
     // 6. Validate exact amount against expected price (৳99)
@@ -136,13 +142,32 @@ export async function POST(req: NextRequest) {
       invoiceId,
       transactionId: cleanTrx,
       paymentMethod: verification.paymentMethod || "ZiniPay Webhook Verified",
+      cusName: verification.cusName,
+      cusEmail: verification.cusEmail,
+      cusPhone: verification.cusPhone,
     });
 
-    if (!markResult.ok) {
+    if (!markResult.ok || !markResult.order) {
       return NextResponse.json(
         { ok: false, error: markResult.error || "Failed to update order status" },
         { status: 500 }
       );
+    }
+
+    // Authoritative Go backend PostgreSQL sync
+    try {
+      fetch(`${GO_API_BASE_URL}/orders/${encodeURIComponent(existingOrder.orderId)}/paid`, {
+        method: "PATCH",
+        headers: getInternalAuthHeaders(),
+        body: JSON.stringify({
+          invoiceId,
+          transactionId: cleanTrx,
+          paymentMethod: verification.paymentMethod || "ZiniPay Webhook Verified",
+          downloadToken: markResult.order.downloadToken,
+        }),
+      }).catch(() => {});
+    } catch {
+      // Non-blocking telemetry
     }
 
     return NextResponse.json({

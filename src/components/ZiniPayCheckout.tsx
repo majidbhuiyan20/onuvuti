@@ -7,171 +7,139 @@ import {
   Download,
   CheckCircle2,
   Loader2,
-  User,
-  Smartphone,
-  Mail,
-  KeyRound,
   ArrowRight,
   AlertCircle,
+  Sparkles,
+  HelpCircle,
+  FileText,
 } from "lucide-react";
 import { BOOK_INFO } from "@/data/bookData";
 
 export default function ZiniPayCheckout() {
-  const [mode, setMode] = useState<"hosted" | "trx">("hosted");
-
-  const [cusName, setCusName] = useState("");
-  const [cusPhone, setCusPhone] = useState("");
-  const [cusEmail, setCusEmail] = useState("");
-
-  const [transactionId, setTransactionId] = useState("");
-  const [trxPhone, setTrxPhone] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryId, setRecoveryId] = useState("");
+  const [recovering, setRecovering] = useState(false);
+  const [recoveryError, setRecoveryError] = useState("");
   const [verifiedData, setVerifiedData] = useState<{
     downloadUrl: string;
     orderId: string;
     transactionId?: string;
   } | null>(null);
 
-  const merchantNumber =
-    process.env.NEXT_PUBLIC_MERCHANT_NUMBER || "01700-000000";
-
-  const handleHostedCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // 1-Click Buy Now: Creates order on server and redirects directly to ZiniPay Hosted Checkout
+  const handleBuyNow = async () => {
     setError("");
-
-    if (!cusName.trim() || !cusPhone.trim()) {
-      setError("অনুগ্রহ করে আপনার নাম এবং মোবাইল নম্বর লিখুন।");
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
       const res = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cusName, cusPhone, cusEmail }),
+        body: JSON.stringify({}),
       });
-      const data = await res.json();
+
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.ok || !data.paymentUrl) {
-        setError(data?.error || "ZiniPay গেটওয়ে চালু করা যায়নি।");
+        setError(
+          data?.error || "ZiniPay গেটওয়ে চালু করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।"
+        );
         setLoading(false);
         return;
       }
 
+      // Seamless redirect to ZiniPay Hosted Checkout
       window.location.href = data.paymentUrl;
     } catch {
-      setError("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি।");
+      setError("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি। অনুগ্রহ করে ইন্টারনেট সংযোগ চেক করুন।");
       setLoading(false);
     }
   };
 
-  const handleVerifyTrx = async (e: React.FormEvent) => {
+  // Order Recovery for customers who already paid and want to download their eBook
+  const handleRecoverOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setRecoveryError("");
 
-    if (!transactionId.trim()) {
-      setError("অনুগ্রহ করে আপনার Transaction ID (TrxID) লিখুন।");
+    const cleanId = recoveryId.trim();
+    if (!cleanId) {
+      setRecoveryError("অনুগ্রহ করে আপনার অর্ডার আইডি বা ZiniPay ইনভয়েস আইডি লিখুন।");
       return;
     }
 
     try {
-      setLoading(true);
-      const res = await fetch("/api/payment/verify-trx", {
+      setRecovering(true);
+      const isInvoice = cleanId.startsWith("ZP_") || cleanId.length > 20;
+
+      const res = await fetch("/api/payment/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          transactionId: transactionId.trim(),
-          cusName: cusName || "পাঠক",
-          cusPhone: trxPhone || cusPhone,
-          cusEmail,
+          orderId: !isInvoice ? cleanId : undefined,
+          invoiceId: isInvoice ? cleanId : undefined,
         }),
       });
-      const data = await res.json();
+
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.ok || !data.downloadUrl) {
-        setError(data?.error || "Transaction ID ভেরিফাই করা যায়নি।");
-        setLoading(false);
+        setRecoveryError(
+          data?.error || "এই আইডির জন্য কোনো পরিশোধিত অর্ডার পাওয়া যায়নি।"
+        );
+        setRecovering(false);
         return;
       }
 
       setVerifiedData({
         downloadUrl: data.downloadUrl,
-        orderId: data.order?.orderId || "ONV-VERIFIED",
-        transactionId: data.order?.transactionId || transactionId.toUpperCase(),
+        orderId: data.order?.orderId || cleanId,
+        transactionId: data.order?.transactionId,
       });
-      setLoading(false);
+      setRecovering(false);
     } catch {
-      setError("ভেরিফিকেশন সার্ভারে সংযোগ করা যায়নি।");
-      setLoading(false);
+      setRecoveryError("ভেরিফিকেশন সার্ভারের সাথে সংযোগ করা যায়নি।");
+      setRecovering(false);
     }
   };
 
   return (
     <div className="rounded-3xl bg-white border border-stone-200/90 shadow-xl overflow-hidden text-[#142230]">
       {/* Top Price Header */}
-      <div className="bg-[#FAF4E6] px-6 py-4 border-b border-[#C59B27]/30 flex items-center justify-between">
+      <div className="bg-[#FAF4E6] px-6 py-5 border-b border-[#C59B27]/30 flex items-center justify-between">
         <div>
-          <span className="text-xs font-bold text-[#6E1A2C] uppercase tracking-wider">
-            ই-বুক চেকআউট (PDF)
+          <span className="text-xs font-bold text-[#80131E] uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
+            <span>ই-বুক চেকআউট (অফিশিয়াল PDF)</span>
           </span>
-          <h3 className="text-lg font-extrabold text-[#142230]">
+          <h3 className="text-xl font-extrabold text-[#142230] mt-0.5">
             {BOOK_INFO.titleBn}
           </h3>
+          <p className="text-xs text-stone-500 font-medium mt-0.5">
+            অনভূতি পাবলিকেশন্স • ১৮টি অধ্যায় ও ৪টি পরিশিষ্ট
+          </p>
         </div>
-        <div className="text-right">
-          <span className="inline-block px-2 py-0.5 rounded-full bg-[#6E1A2C]/10 text-[#6E1A2C] text-[10px] font-extrabold mb-0.5">
+        <div className="text-right shrink-0">
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#80131E]/10 text-[#80131E] text-xs font-extrabold mb-1">
             {BOOK_INFO.discountPercentBn}
           </span>
-          <div>
-            <span className="text-xs text-stone-400 line-through mr-1.5">
+          <div className="flex items-baseline justify-end gap-1.5">
+            <span className="text-xs text-stone-400 line-through">
               ৳{BOOK_INFO.regularPriceBn}
             </span>
-            <span className="text-2xl font-extrabold text-[#6E1A2C]">
+            <span className="text-2xl sm:text-3xl font-extrabold text-[#80131E]">
               ৳{BOOK_INFO.offerPriceBn}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Mode Switch Tabs */}
-      <div className="grid grid-cols-2 border-b border-stone-200 bg-stone-50">
-        <button
-          type="button"
-          onClick={() => {
-            setMode("hosted");
-            setError("");
-          }}
-          className={`py-3 px-4 text-xs sm:text-sm font-bold transition cursor-pointer border-b-2 ${
-            mode === "hosted"
-              ? "border-[#6E1A2C] text-[#6E1A2C] bg-white"
-              : "border-transparent text-stone-500 hover:text-[#142230]"
-          }`}
-        >
-          ZiniPay পেমেন্ট
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setMode("trx");
-            setError("");
-          }}
-          className={`py-3 px-4 text-xs sm:text-sm font-bold transition cursor-pointer border-b-2 ${
-            mode === "trx"
-              ? "border-[#6E1A2C] text-[#6E1A2C] bg-white"
-              : "border-transparent text-stone-500 hover:text-[#142230]"
-          }`}
-        >
-          TrxID ভেরিফাই / ডাউনলোড
-        </button>
-      </div>
-
-      <div className="p-6">
+      <div className="p-6 sm:p-7 space-y-6">
         {verifiedData ? (
-          <div className="space-y-4 text-center py-4">
-            <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-300 flex items-center justify-center mx-auto">
+          /* Download Ready State */
+          <div className="space-y-4 text-center py-4 bg-emerald-50/50 rounded-2xl border border-emerald-200 p-6">
+            <div className="w-14 h-14 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-8 h-8 text-emerald-600" />
             </div>
             <div>
@@ -186,196 +154,135 @@ export default function ZiniPayCheckout() {
             <a
               href={verifiedData.downloadUrl}
               download="Sporsher-Byakoron-Onuvuti-Publications.pdf"
-              className="w-full py-3.5 px-6 rounded-xl bg-[#6E1A2C] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:bg-[#581322] transition"
+              className="w-full py-4 px-6 rounded-2xl bg-[#80131E] text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg shadow-[#80131E]/25 hover:bg-[#630d16] transition cursor-pointer"
             >
-              <Download className="w-4 h-4" />
-              <span>ই-বুক ডাউনলোড করুন (PDF)</span>
+              <Download className="w-5 h-5" />
+              <span>ই-বুক PDF ডাউনলোড করুন</span>
             </a>
 
             <button
               type="button"
               onClick={() => setVerifiedData(null)}
-              className="text-xs text-stone-400 hover:text-stone-700 underline cursor-pointer"
+              className="text-xs text-stone-500 hover:text-stone-800 underline cursor-pointer"
             >
-              নতুন অর্ডার করুন
+              আরেকটি কপি কিনুন
             </button>
           </div>
-        ) : mode === "hosted" ? (
-          <div className="space-y-4">
-            {/* Direct 1-Click ZiniPay Hosted Checkout Link */}
-            <a
-              href={BOOK_INFO.zinipayProductUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3.5 px-4 rounded-2xl bg-[#80131E] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md hover:bg-[#630d16] transition cursor-pointer"
-            >
-              <Lock className="w-4 h-4" />
-              <span>
-                ZiniPay সরাসরি গেটওয়েতে যান — ৳{BOOK_INFO.offerPriceBn}
-              </span>
-              <ArrowRight className="w-4 h-4" />
-            </a>
-
-            <div className="relative flex items-center justify-center my-2">
-              <div className="border-t border-stone-200 w-full" />
-              <span className="bg-white px-3 text-[11px] font-bold text-stone-400 tracking-wider absolute">
-                বা নাম ও নম্বর দিয়ে ইনভয়েস বানান
-              </span>
-            </div>
-
-            <form onSubmit={handleHostedCheckout} className="space-y-3.5">
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                আপনার নাম *
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  value={cusName}
-                  onChange={(e) => setCusName(e.target.value)}
-                  placeholder="আপনার নাম"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-[#142230] text-sm focus:outline-none focus:border-[#6E1A2C] focus:bg-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                মোবাইল নম্বর *
-              </label>
-              <div className="relative">
-                <Smartphone className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="tel"
-                  required
-                  value={cusPhone}
-                  onChange={(e) => setCusPhone(e.target.value)}
-                  placeholder="017XXXXXXXX"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-[#142230] text-sm focus:outline-none focus:border-[#6E1A2C] focus:bg-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                ইমেইল (ঐচ্ছিক)
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  value={cusEmail}
-                  onChange={(e) => setCusEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-[#142230] text-sm focus:outline-none focus:border-[#6E1A2C] focus:bg-white"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 px-6 rounded-xl bg-[#6E1A2C] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-lg shadow-[#6E1A2C]/20 hover:bg-[#581322] transition cursor-pointer disabled:opacity-60"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>প্রসেস হচ্ছে...</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="w-4 h-4" />
-                  <span>ZiniPay দিয়ে ৳{BOOK_INFO.offerPriceBn} পেমেন্ট করুন</span>
-                  <ArrowRight className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
         ) : (
-          <form onSubmit={handleVerifyTrx} className="space-y-3.5">
-            <div className="rounded-xl bg-[#FAF4E6] border border-[#C59B27]/40 p-3.5 text-xs text-stone-700 leading-relaxed">
-              আমাদের নম্বরে (<strong className="font-mono">{merchantNumber}</strong>){" "}
-              <strong>৳{BOOK_INFO.offerPriceBn}</strong> বিকাশ/নগদ করে আপনার{" "}
-              <strong>Transaction ID</strong> নিচে দিন:
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                Transaction ID (TrxID) / Order ID *
-              </label>
-              <div className="relative">
-                <KeyRound className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  required
-                  value={transactionId}
-                  onChange={(e) => setTransactionId(e.target.value)}
-                  placeholder="যেমন: DEMO123456"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-[#142230] font-mono text-sm uppercase placeholder:normal-case focus:outline-none focus:border-[#6E1A2C] focus:bg-white"
-                />
+          /* Frictionless Hosted Checkout Experience */
+          <div className="space-y-5">
+            {/* Key Value Propositions */}
+            <div className="space-y-2.5 text-xs sm:text-sm text-stone-700">
+              <div className="flex items-start gap-2.5 bg-stone-50 rounded-xl p-3 border border-stone-200/60">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>কোনো অতিরিক্ত ফরম নেই:</strong> নাম, ইমেইল ও বিকাশ/নগদ নম্বর সরাসরি ZiniPay-এর সিকিউর চেকআউট পেইজে দিন।
+                </span>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
-                মোবাইল নম্বর (ঐচ্ছিক)
-              </label>
-              <div className="relative">
-                <Smartphone className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                <input
-                  type="tel"
-                  value={trxPhone}
-                  onChange={(e) => setTrxPhone(e.target.value)}
-                  placeholder="017XXXXXXXX"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-[#142230] text-sm focus:outline-none focus:border-[#6E1A2C] focus:bg-white"
-                />
+              <div className="flex items-start gap-2.5 bg-stone-50 rounded-xl p-3 border border-stone-200/60">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>তাত্ক্ষণিক ডাউনলোড:</strong> পেমেন্ট সফল হওয়ামাত্রই স্বয়ংক্রিয়ভাবে সম্পূর্ণ বইটির হাই-কোয়ালিটি PDF ফাইল পেয়ে যাবেন।
+                </span>
+              </div>
+              <div className="flex items-start gap-2.5 bg-stone-50 rounded-xl p-3 border border-stone-200/60">
+                <ShieldCheck className="w-4 h-4 text-[#80131E] shrink-0 mt-0.5" />
+                <span>
+                  <strong>পেমেন্ট পার্টনার:</strong> ZiniPay গেটওয়ে (bKash, Nagad, Rocket ও Upay সাপোর্টেড)।
+                </span>
               </div>
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs text-red-700 flex items-center gap-2">
+              <div className="rounded-xl bg-red-50 border border-red-200 p-3.5 text-xs text-red-700 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
+            {/* Primary Buy Now Button */}
             <button
-              type="submit"
+              type="button"
               disabled={loading}
-              className="w-full py-3.5 px-6 rounded-xl bg-[#6E1A2C] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:bg-[#581322] transition cursor-pointer disabled:opacity-60"
+              onClick={handleBuyNow}
+              className="w-full py-4 px-6 rounded-2xl bg-[#80131E] text-white font-extrabold text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-xl shadow-[#80131E]/20 hover:bg-[#680e18] active:scale-[0.99] transition cursor-pointer disabled:opacity-60"
             >
               {loading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>যাচাই হচ্ছে...</span>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>ZiniPay চেকআউটে নিয়ে যাওয়া হচ্ছে...</span>
                 </>
               ) : (
                 <>
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>ভেরিফাই ও ডাউনলোড করুন</span>
+                  <Lock className="w-5 h-5" />
+                  <span>এখনই কিনুন — ৳{BOOK_INFO.offerPriceBn}</span>
+                  <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
-          </form>
-        )}
 
-        <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between text-[11px] text-stone-500">
-          <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            bKash • Nagad • Rocket • Upay
-          </span>
-          <span>ইনস্ট্যান্ট PDF ডাউনলোড</span>
-        </div>
+            {/* Trust Footer Badges */}
+            <div className="pt-2 flex items-center justify-between text-[11px] text-stone-500 border-t border-stone-100">
+              <span className="flex items-center gap-1">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                SSL এনক্রিপ্টেড ১০০% নিরাপদ
+              </span>
+              <span className="flex items-center gap-1 font-mono">
+                bKash • Nagad • Rocket
+              </span>
+            </div>
+
+            {/* Existing Buyer Order Recovery Accordion */}
+            <div className="pt-3 text-center">
+              <button
+                type="button"
+                onClick={() => setShowRecovery(!showRecovery)}
+                className="text-xs text-stone-500 hover:text-[#80131E] transition inline-flex items-center gap-1 cursor-pointer font-medium"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>ইতোমধ্যে পেমেন্ট করেছেন? এখান থেকে ডাউনলোড করুন</span>
+              </button>
+
+              {showRecovery && (
+                <form
+                  onSubmit={handleRecoverOrder}
+                  className="mt-3.5 p-4 rounded-2xl bg-[#FAF4E6]/70 border border-[#C59B27]/30 text-left space-y-3"
+                >
+                  <label className="block text-xs font-bold text-stone-700">
+                    আপনার অর্ডার আইডি বা ZiniPay ইনভয়েস আইডি দিন:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={recoveryId}
+                      onChange={(e) => setRecoveryId(e.target.value)}
+                      placeholder="যেমন: ONV-105045 বা ZP_..."
+                      className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs text-[#142230] font-mono focus:outline-none focus:border-[#80131E]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={recovering}
+                      className="px-4 py-2 rounded-xl bg-[#80131E] text-white text-xs font-bold hover:bg-[#630d16] transition cursor-pointer disabled:opacity-60 flex items-center gap-1"
+                    >
+                      {recovering ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <FileText className="w-3.5 h-3.5" />
+                      )}
+                      <span>খুঁজুন</span>
+                    </button>
+                  </div>
+
+                  {recoveryError && (
+                    <p className="text-xs text-red-600 font-medium">
+                      {recoveryError}
+                    </p>
+                  )}
+                </form>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

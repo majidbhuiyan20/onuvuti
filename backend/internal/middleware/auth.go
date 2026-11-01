@@ -21,6 +21,27 @@ func RequireAdmin(cfg *config.Config, next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func RequireInternalOrAdmin(cfg *config.Config, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		internalHeader := strings.TrimSpace(r.Header.Get("X-Internal-Secret"))
+		if internalHeader != "" && cfg.InternalSecret != "" {
+			h1 := sha256.Sum256([]byte(internalHeader))
+			h2 := sha256.Sum256([]byte(cfg.InternalSecret))
+			if subtle.ConstantTimeCompare(h1[:], h2[:]) == 1 {
+				next(w, r)
+				return
+			}
+		}
+
+		if isAuthorizedAdmin(r, cfg) {
+			next(w, r)
+			return
+		}
+
+		response.Error(w, http.StatusUnauthorized, "অভ্যন্তরীণ সার্ভিস অথেন্টিকেশন প্রয়োজন।")
+	}
+}
+
 func isAuthorizedAdmin(r *http.Request, cfg *config.Config) bool {
 	authHeader := strings.TrimSpace(r.Header.Get("Authorization"))
 	if strings.HasPrefix(authHeader, "Bearer ") {

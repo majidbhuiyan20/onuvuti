@@ -2,7 +2,7 @@ import crypto from "crypto";
 import fs from "fs";
 import path from "path";
 import { BOOK_INFO } from "@/data/bookData";
-import { GO_API_BASE_URL } from "@/lib/goApi";
+import { GO_API_BASE_URL, getInternalAuthHeaders } from "@/lib/goApi";
 
 export interface BookOrder {
   orderId: string;
@@ -25,6 +25,14 @@ const ORDERS_FILE = path.join(process.cwd(), "storage", "orders.json");
 
 // Download token lifetime: 24 hours (86,400,000 ms)
 export const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
+// Maximum allowed downloads per verified order (abuse & redistribution prevention)
+export const MAX_DOWNLOAD_LIMIT = 10;
+
+// ZiniPay static hosted product checkout fallback URL
+export const ZINIPAY_HOSTED_PRODUCT_URL =
+  process.env.ZINIPAY_PRODUCT_URL ||
+  "https://dash.zinipay.com/onuvuti/product/ca434ea6-acda-4e47-9f80-be86c33c10cf";
 
 /**
  * Returns the secret key for HMAC token generation.
@@ -121,7 +129,10 @@ async function syncOrderToPostgres(order: BookOrder): Promise<void> {
   try {
     await fetch(`${GO_API_BASE_URL}/orders`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...getInternalAuthHeaders(),
+      },
       body: JSON.stringify(order),
     });
   } catch {
@@ -228,23 +239,30 @@ export function verifyDownloadToken(token: string): {
 
 /**
  * Creates a unique pending book order in the database.
+ * Supports 1-click hosted checkout (customer details captured on ZiniPay).
  */
-export function createOrderRecord(params: {
-  cusName: string;
-  cusEmail: string;
-  cusPhone: string;
+export function createOrderRecord(params?: {
+  cusName?: string;
+  cusEmail?: string;
+  cusPhone?: string;
   amount?: number;
+  invoiceId?: string;
 }): BookOrder {
   const orders = readOrders();
   const randomSuffix = Math.floor(100000 + Math.random() * 900000);
   const orderId = `ONV-${randomSuffix}`;
 
+  const cleanName = (params?.cusName || "সম্মানিত পাঠক").trim();
+  const cleanEmail = (params?.cusEmail || "").trim();
+  const cleanPhone = (params?.cusPhone || "").trim();
+
   const newOrder: BookOrder = {
     orderId,
-    cusName: params.cusName.trim(),
-    cusEmail: params.cusEmail.trim(),
-    cusPhone: params.cusPhone.trim(),
-    amount: params.amount ?? getBookPriceBdt(),
+    invoiceId: params?.invoiceId,
+    cusName: cleanName,
+    cusEmail: cleanEmail,
+    cusPhone: cleanPhone,
+    amount: params?.amount ?? getBookPriceBdt(),
     currency: "BDT",
     status: "PENDING",
     downloadCount: 0,
@@ -344,6 +362,9 @@ export function markOrderAsPaid(
     invoiceId?: string;
     transactionId?: string;
     paymentMethod?: string;
+    cusName?: string;
+    cusEmail?: string;
+    cusPhone?: string;
   } = {}
 ): { ok: boolean; order?: BookOrder; error?: string } {
   const existing = findOrder({ orderId });
@@ -368,14 +389,21 @@ export function markOrderAsPaid(
     return { ok: true, order: existing };
   }
 
+  const finalEmail = (extra.cusEmail || existing.cusEmail || "").trim();
+  const finalPhone = (extra.cusPhone || existing.cusPhone || "").trim();
+  const finalName = (extra.cusName || existing.cusName || "সম্মানিত পাঠক").trim();
+
   const token = signDownloadToken({
     orderId: existing.orderId,
-    cusEmail: existing.cusEmail,
-    cusPhone: existing.cusPhone,
+    cusEmail: finalEmail,
+    cusPhone: finalPhone,
   });
 
   const updated = updateOrderRecord(existing.orderId, {
     status: "PAID",
+    cusName: finalName,
+    cusEmail: finalEmail,
+    cusPhone: finalPhone,
     invoiceId: extra.invoiceId || existing.invoiceId,
     transactionId: cleanTrx || existing.transactionId,
     paymentMethod:
@@ -405,10 +433,12 @@ export async function createZiniPayInvoice(
   error?: string;
 }> {
   if (!isZiniPayLiveConfigured()) {
+    // Development or Static Hosted Product fallback
     return {
-      ok: false,
-      error:
-        "ZiniPay API Key কনফিগার করা হয়নি। অনুগ্রহ করে পরিবেশ ভ্যারিয়েবলে ZINIPAY_API_KEY সেট করুন।",
+      ok: true,
+      paymentUrl: ZINIPAY_HOSTED_PRODUCT_URL,
+      invoiceId: `ZP_STATIC_${order.orderId}`,
+      isSandbox: true,
     };
   }
 
@@ -416,11 +446,8 @@ export async function createZiniPayInvoice(
   const baseUrl = getZiniPayBaseUrl();
   const endpoint = `${baseUrl}/v1/payment/create`;
 
-  const payload = {
+  const payload: Record<string, any> = {
     amount: order.amount,
-    cus_name: order.cusName,
-    cus_email: order.cusEmail,
-    cus_phone: order.cusPhone,
     redirect_url: `${originUrl}/payment/success?order_id=${encodeURIComponent(
       order.orderId
     )}`,
@@ -431,9 +458,21 @@ export async function createZiniPayInvoice(
     metadata: {
       order_id: order.orderId,
       book_title: BOOK_INFO.titleBn,
-      cus_phone: order.cusPhone,
     },
   };
+
+  // Only pass customer details if available and non-placeholder,
+  // allowing ZiniPay to collect full customer details on its hosted checkout page
+  if (order.cusName && order.cusName !== "সম্মানিত পাঠক") {
+    payload.cus_name = order.cusName;
+  }
+  if (order.cusEmail) {
+    payload.cus_email = order.cusEmail;
+  }
+  if (order.cusPhone) {
+    payload.cus_phone = order.cusPhone;
+    payload.metadata.cus_phone = order.cusPhone;
+  }
 
   try {
     const response = await fetch(endpoint, {
@@ -471,6 +510,16 @@ export async function createZiniPayInvoice(
       };
     }
 
+    // If dynamic session creation is not allowed on merchant tier, fallback to static hosted link
+    if (ZINIPAY_HOSTED_PRODUCT_URL) {
+      return {
+        ok: true,
+        paymentUrl: ZINIPAY_HOSTED_PRODUCT_URL,
+        invoiceId: invoiceId || `ZP_PROD_${order.orderId}`,
+        isSandbox: apiKey.startsWith("sandbox_"),
+      };
+    }
+
     return {
       ok: false,
       error:
@@ -480,6 +529,14 @@ export async function createZiniPayInvoice(
     };
   } catch (err) {
     console.error("ZiniPay create payment error:", err);
+    // Graceful fallback to static hosted product checkout
+    if (ZINIPAY_HOSTED_PRODUCT_URL) {
+      return {
+        ok: true,
+        paymentUrl: ZINIPAY_HOSTED_PRODUCT_URL,
+        invoiceId: `ZP_FALLBACK_${order.orderId}`,
+      };
+    }
     return {
       ok: false,
       error: "ZiniPay সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি।",
@@ -496,6 +553,10 @@ export async function verifyZiniPayInvoice(invoiceId: string): Promise<{
   transactionId?: string;
   paymentMethod?: string;
   amount?: number;
+  cusName?: string;
+  cusEmail?: string;
+  cusPhone?: string;
+  orderIdFromMeta?: string;
   message?: string;
 }> {
   if (!invoiceId || typeof invoiceId !== "string") {
@@ -552,6 +613,37 @@ export async function verifyZiniPayInvoice(invoiceId: string): Promise<{
         "ZiniPay Gateway"
     );
 
+    const cusName = String(
+      data?.cus_name ||
+        data?.customer_name ||
+        data?.customer?.name ||
+        data?.data?.cus_name ||
+        ""
+    ).trim();
+
+    const cusEmail = String(
+      data?.cus_email ||
+        data?.customer_email ||
+        data?.customer?.email ||
+        data?.data?.cus_email ||
+        ""
+    ).trim();
+
+    const cusPhone = String(
+      data?.cus_phone ||
+        data?.customer_phone ||
+        data?.customer?.phone ||
+        data?.data?.cus_phone ||
+        ""
+    ).trim();
+
+    const orderIdFromMeta = String(
+      data?.metadata?.order_id ||
+        data?.metadata?.orderId ||
+        data?.data?.metadata?.order_id ||
+        ""
+    ).trim();
+
     if (response.ok && statusStr === "COMPLETED") {
       return {
         verified: true,
@@ -559,6 +651,10 @@ export async function verifyZiniPayInvoice(invoiceId: string): Promise<{
         transactionId,
         paymentMethod,
         amount,
+        cusName,
+        cusEmail,
+        cusPhone,
+        orderIdFromMeta,
       };
     }
 
