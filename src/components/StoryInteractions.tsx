@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { sanitizeText } from "@/lib/security";
 import { GO_API_BASE_URL } from "@/lib/goApi";
+import StoryCardCustomizerModal from "@/components/StoryCardCustomizerModal";
 
 export interface CommentItem {
   id: string;
@@ -40,30 +41,6 @@ interface StoryInteractionsProps {
   initialComments?: CommentItem[];
 }
 
-function wrapCanvasText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  maxWidth: number
-): string[] {
-  const words = text.split(/\s+/);
-  const lines: string[] = [];
-  let currentLine = "";
-
-  for (const word of words) {
-    const testLine = currentLine ? `${currentLine} ${word}` : word;
-    if (ctx.measureText(testLine).width > maxWidth && currentLine) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else {
-      currentLine = testLine;
-    }
-  }
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-  return lines;
-}
-
 export default function StoryInteractions({
   storyId,
   storyTitle,
@@ -79,7 +56,7 @@ export default function StoryInteractions({
     "love" | "touched" | "relatable" | null
   >(null);
   const [copied, setCopied] = useState(false);
-  const [downloadingCard, setDownloadingCard] = useState(false);
+  const [isCustomizerOpen, setIsCustomizerOpen] = useState(false);
 
   const [reactions, setReactions] = useState<{
     love: number;
@@ -142,117 +119,6 @@ export default function StoryInteractions({
         "_blank",
         "noopener,noreferrer"
       );
-    }
-  };
-
-  // 1-Click Shareable Quote Card / Story Poster Generator (1080x1350 Portrait)
-  const handleDownloadStoryCard = async () => {
-    if (typeof window === "undefined") return;
-    setDownloadingCard(true);
-
-    try {
-      const canvas = document.createElement("canvas");
-      canvas.width = 1080;
-      canvas.height = 1350;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      // 1. Warm Cream Editorial Background
-      ctx.fillStyle = "#FDF8F2";
-      ctx.fillRect(0, 0, 1080, 1350);
-
-      // 2. Outer Crimson & Inner Gold Frame
-      ctx.strokeStyle = "#80131E";
-      ctx.lineWidth = 6;
-      ctx.strokeRect(48, 48, 984, 1254);
-
-      ctx.strokeStyle = "#C59B27";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(64, 64, 952, 1222);
-
-      // 3. Top Category Pill
-      const badgeText = confessionIdBn
-        ? `${storyCategory} • ${confessionIdBn}`
-        : storyCategory;
-      ctx.fillStyle = "#FAF4E6";
-      ctx.fillRect(110, 115, 420, 56);
-      ctx.strokeStyle = "#C59B27";
-      ctx.lineWidth = 1.5;
-      ctx.strokeRect(110, 115, 420, 56);
-
-      ctx.fillStyle = "#80131E";
-      ctx.font = "bold 26px sans-serif";
-      ctx.fillText(badgeText, 136, 152);
-
-      // 4. Story Title
-      ctx.fillStyle = "#142230";
-      ctx.font = "bold 46px sans-serif";
-      const titleLines = wrapCanvasText(ctx, storyTitle, 840).slice(0, 3);
-      let cursorY = 260;
-      for (const line of titleLines) {
-        ctx.fillText(line, 110, cursorY);
-        cursorY += 64;
-      }
-
-      // 5. Divider Line
-      cursorY += 20;
-      ctx.fillStyle = "#C59B27";
-      ctx.fillRect(110, cursorY, 140, 5);
-      cursorY += 75;
-
-      // 6. Quote / Excerpt Body
-      const quoteBody = `“${storyExcerpt || storyTitle}”`;
-      ctx.fillStyle = "#334155";
-      ctx.font = "36px sans-serif";
-      const quoteLines = wrapCanvasText(ctx, quoteBody, 840).slice(0, 7);
-      for (const line of quoteLines) {
-        ctx.fillText(line, 110, cursorY);
-        cursorY += 56;
-      }
-
-      // 7. Author Name
-      cursorY += 35;
-      ctx.fillStyle = "#80131E";
-      ctx.font = "bold 30px sans-serif";
-      ctx.fillText(`— ${storyAuthor}`, 110, cursorY);
-
-      // 8. Footer Bar with Logo & Website Domain
-      ctx.fillStyle = "#FAF4E6";
-      ctx.fillRect(66, 1140, 948, 144);
-
-      try {
-        const logoImg = new Image();
-        logoImg.crossOrigin = "anonymous";
-        await new Promise<void>((resolve) => {
-          logoImg.onload = () => resolve();
-          logoImg.onerror = () => resolve();
-          logoImg.src = "/images/Onuvuti-Publications-Logo.png";
-        });
-        if (logoImg.width > 0) {
-          const targetH = 84;
-          const targetW = (logoImg.width / logoImg.height) * targetH;
-          ctx.drawImage(logoImg, 110, 1170, targetW, targetH);
-        }
-      } catch {
-        // Ignore logo load error
-      }
-
-      ctx.fillStyle = "#80131E";
-      ctx.font = "bold 28px sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText("পড়ুন: www.onuvuti.site", 965, 1205);
-      ctx.fillStyle = "#57534E";
-      ctx.font = "22px sans-serif";
-      ctx.fillText("রোমান্টিক গল্প, ক্রাশ কনফেশন ও না বলা কথা", 965, 1242);
-      ctx.textAlign = "left";
-
-      const dataUrl = canvas.toDataURL("image/png");
-      const link = document.createElement("a");
-      link.download = `Onuvuti-Story-Card-${storyId}.png`;
-      link.href = dataUrl;
-      link.click();
-    } finally {
-      setDownloadingCard(false);
     }
   };
 
@@ -417,16 +283,11 @@ export default function StoryInteractions({
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              disabled={downloadingCard}
-              onClick={handleDownloadStoryCard}
-              className="px-3.5 py-2 rounded-xl bg-[#80131E] text-white font-bold text-xs inline-flex items-center gap-1.5 hover:bg-[#630d16] transition cursor-pointer shadow-xs disabled:opacity-60"
+              onClick={() => setIsCustomizerOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-[#80131E] text-white font-bold text-xs inline-flex items-center gap-1.5 hover:bg-[#630d16] transition cursor-pointer shadow-xs"
             >
-              <Download className="w-3.5 h-3.5" />
-              <span>
-                {downloadingCard
-                  ? "কার্ড তৈরি হচ্ছে..."
-                  : "স্টোরি কার্ড ডাউনলোড"}
-              </span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>স্টোরি কার্ড তৈরি (v2)</span>
             </button>
 
             <button
@@ -585,6 +446,18 @@ export default function StoryInteractions({
           )}
         </div>
       </div>
+
+      {/* Story Card Poster Generator v2 Modal */}
+      <StoryCardCustomizerModal
+        isOpen={isCustomizerOpen}
+        onClose={() => setIsCustomizerOpen(false)}
+        storyId={storyId}
+        storyTitle={storyTitle}
+        storyExcerpt={storyExcerpt}
+        storyCategory={storyCategory}
+        storyAuthor={storyAuthor}
+        confessionIdBn={confessionIdBn}
+      />
     </div>
   );
 }
