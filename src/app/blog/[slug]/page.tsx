@@ -137,12 +137,14 @@ export default async function BlogPostPage({
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/Onuvuti-Publications-Logo.png"
-                alt="Onuvuti Publications"
-                className="h-11 sm:h-12 w-auto object-contain mix-blend-multiply dark:mix-blend-normal dark:bg-white/10 dark:p-1 dark:rounded-xl"
-              />
+              <div className="bg-white px-2.5 py-1 rounded-xl shadow-xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/Onuvuti-Publications-Logo.png"
+                  alt="Onuvuti Publications"
+                  className="h-9 sm:h-10 w-auto object-contain"
+                />
+              </div>
             </Link>
             <Link
               href="/"

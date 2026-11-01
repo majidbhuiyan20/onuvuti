@@ -110,7 +110,7 @@ export default function AdminDashboardPage() {
 
   const [pendingStories, setPendingStories] =
     useState<PendingStory[]>(INITIAL_PENDING);
-  const [publishedList, setPublishedList] = useState<BlogPost[]>(BLOG_POSTS);
+  const [publishedList, setPublishedList] = useState<BlogPost[]>([]);
   const [commentsList, setCommentsList] = useState<AdminCommentItem[]>([]);
 
   // Admin Advice / Editorial Reply per Pending Story
@@ -254,13 +254,6 @@ export default function AdminDashboardPage() {
         }
       }
 
-      const savedPublished = localStorage.getItem("onuvuti_published_stories");
-      if (savedPublished) {
-        const parsedPub = JSON.parse(savedPublished) as BlogPost[];
-        if (Array.isArray(parsedPub) && parsedPub.length > 0) {
-          setPublishedList(parsedPub);
-        }
-      }
     } catch {
       // Ignore storage errors
     }
@@ -558,32 +551,37 @@ export default function AdminDashboardPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#FDF8F2] text-[#142230] flex items-center justify-center p-4">
-        <div className="max-w-md w-full rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm space-y-5">
+      <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] flex items-center justify-center p-4">
+        <div className="max-w-md w-full rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-6 sm:p-8 shadow-sm space-y-5">
           <div className="flex items-center justify-between">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/Onuvuti-Publications-Logo.png"
-              alt="Onuvuti Publications"
-              className="h-11 w-auto object-contain mix-blend-multiply"
-            />
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF4E6] text-[#80131E] text-xs font-extrabold">
-              <Lock className="w-3.5 h-3.5" />
-              সুরক্ষিত অ্যাডমিন
-            </span>
+            <div className="bg-white px-2.5 py-1 rounded-xl shadow-xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/Onuvuti-Publications-Logo.png"
+                alt="Onuvuti Publications"
+                className="h-9 sm:h-10 w-auto object-contain"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 text-xs font-extrabold border border-[#C59B27]/40 dark:border-[#C59B27]/30">
+                <Lock className="w-3.5 h-3.5" />
+                সুরক্ষিত অ্যাডমিন
+              </span>
+            </div>
           </div>
 
           <div className="space-y-1">
-            <h1 className="text-xl font-extrabold text-[#142230]">
+            <h1 className="text-xl font-extrabold text-[#142230] dark:text-white">
               অ্যাডমিন প্যানেলে প্রবেশ করুন
             </h1>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-stone-500 dark:text-stone-400">
               হ্যাকার ও ব্রুট-ফোর্স প্রতিরোধে ৫ বার ভুল পাসওয়ার্ড দিলে আইপি ৩০ মিনিটের জন্য ব্লক হয়ে যাবে।
             </p>
           </div>
 
           {authError && (
-            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{authError}</span>
             </div>
@@ -591,7 +589,7 @@ export default function AdminDashboardPage() {
 
           <form onSubmit={handleAdminLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                 অ্যাডমিন পাসওয়ার্ড
               </label>
               <input
@@ -600,11 +598,11 @@ export default function AdminDashboardPage() {
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="পাসওয়ার্ড লিখুন..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm focus:outline-none focus:border-[#80131E]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500"
               />
-              <p className="text-[11px] text-stone-400 mt-1.5">
+              <p className="text-[11px] text-stone-400 dark:text-stone-500 mt-1.5">
                 ডেমো পাসওয়ার্ড (`.env`-এ পরিবর্তনযোগ্য):{" "}
-                <code className="text-[#80131E] font-bold">
+                <code className="text-[#80131E] dark:text-rose-400 font-bold">
                   onuvuti-admin-2026
                 </code>
               </p>
@@ -619,12 +617,12 @@ export default function AdminDashboardPage() {
             </button>
           </form>
 
-          <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
-            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+          <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-xs text-stone-500 dark:text-stone-400">
+            <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
               Rate-Limit Active
             </span>
-            <Link href="/" className="font-bold hover:text-[#80131E]">
+            <Link href="/" className="font-bold hover:text-[#80131E] dark:hover:text-rose-400">
               ← মূল ওয়েবসাইটে ফিরে যান
             </Link>
           </div>
@@ -648,12 +646,14 @@ export default function AdminDashboardPage() {
       <header className="bg-white dark:bg-[#111827] border-b border-stone-200 dark:border-stone-800">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/Onuvuti-Publications-Logo.png"
-              alt="Onuvuti Publications"
-              className="h-11 w-auto object-contain mix-blend-multiply dark:mix-blend-normal dark:bg-white/10 dark:p-1 dark:rounded-xl"
-            />
+            <div className="bg-white px-2.5 py-1 rounded-xl shadow-xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/Onuvuti-Publications-Logo.png"
+                alt="Onuvuti Publications"
+                className="h-9 sm:h-10 w-auto object-contain"
+              />
+            </div>
             <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 text-xs font-extrabold">
               অ্যাডমিন ও অ্যানালিটিক্স ড্যাশবোর্ড
             </span>
@@ -759,15 +759,15 @@ export default function AdminDashboardPage() {
         {activeTab === "analytics" && (
           <div className="space-y-6">
             {/* Period Filter Bar */}
-            <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+            <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
               <div>
-                <h2 className="text-base sm:text-lg font-extrabold text-[#142230] flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-[#80131E]" />
+                <h2 className="text-base sm:text-lg font-extrabold text-[#142230] dark:text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
                   <span>ওয়েবসাইট ভিজিটর, ট্রাফিক ও বই বিক্রির রিপোর্ট</span>
                 </h2>
-                <p className="text-xs text-stone-500">
+                <p className="text-xs text-stone-500 dark:text-stone-400">
                   সময়কাল:{" "}
-                  <span className="font-bold text-stone-700">
+                  <span className="font-bold text-stone-700 dark:text-stone-300">
                     {analyticsData?.startDate} থেকে {analyticsData?.endDate}
                   </span>
                 </p>
@@ -796,8 +796,8 @@ export default function AdminDashboardPage() {
                     }
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
                       analyticsPeriod === btn.id
-                        ? "bg-[#80131E] text-white"
-                        : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                        ? "bg-[#80131E] text-white shadow-xs"
+                        : "bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700"
                     }`}
                   >
                     {btn.label}
@@ -808,27 +808,27 @@ export default function AdminDashboardPage() {
 
             {/* Custom Date Range Picker */}
             {analyticsPeriod === "custom" && (
-              <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/40 p-4 flex flex-wrap items-end gap-3">
+              <div className="rounded-2xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/40 dark:border-[#C59B27]/30 p-4 flex flex-wrap items-end gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                     শুরুর তারিখ (Start Date)
                   </label>
                   <input
                     type="date"
                     value={customStartDate}
                     onChange={(e) => setCustomStartDate(e.target.value)}
-                    className="px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"
+                    className="px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs font-bold text-[#142230] dark:text-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                     শেষ তারিখ (End Date)
                   </label>
                   <input
                     type="date"
                     value={customEndDate}
                     onChange={(e) => setCustomEndDate(e.target.value)}
-                    className="px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"
+                    className="px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs font-bold text-[#142230] dark:text-white"
                   />
                 </div>
                 <button
@@ -845,112 +845,112 @@ export default function AdminDashboardPage() {
 
             {/* 6 Core Analytics Summary Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
-                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 font-bold">
                   <span>মোট পেজ ভিউ (Page Views)</span>
-                  <Eye className="w-4 h-4 text-[#80131E]" />
+                  <Eye className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230] dark:text-white">
                   {isLoadingAnalytics
                     ? "..."
                     : (analyticsData?.totalViews ?? 0).toLocaleString()}
                 </div>
-                <p className="text-[11px] text-emerald-700 font-semibold">
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
                   সম্পূর্ণ ওয়েবসাইটের মোট ভিজিট
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
-                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 font-bold">
                   <span>ইউনিক ভিজিটর (Unique Visitors)</span>
-                  <Users className="w-4 h-4 text-blue-600" />
+                  <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230] dark:text-white">
                   {isLoadingAnalytics
                     ? "..."
                     : (analyticsData?.uniqueVisits ?? 0).toLocaleString()}
                 </div>
-                <p className="text-[11px] text-stone-500">
+                <p className="text-[11px] text-stone-500 dark:text-stone-400">
                   আলাদা পাঠক ও ব্রাউজার সংখ্যা
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
-                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 font-bold">
                   <span>গল্প ও কনফেশন পড়া হয়েছে</span>
-                  <FileText className="w-4 h-4 text-amber-600" />
+                  <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230] dark:text-white">
                   {isLoadingAnalytics
                     ? "..."
                     : (analyticsData?.storyReads ?? 0).toLocaleString()}
                 </div>
-                <p className="text-[11px] text-stone-500">
+                <p className="text-[11px] text-stone-500 dark:text-stone-400">
                   গল্প, চিঠি ও কনফেশন রিডস
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
-                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 font-bold">
                   <span>‘স্পর্শের ব্যাকরণ’ বই পেজ ভিজিট</span>
-                  <BookOpen className="w-4 h-4 text-[#80131E]" />
+                  <BookOpen className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230] dark:text-white">
                   {isLoadingAnalytics
                     ? "..."
                     : (analyticsData?.bookPageViews ?? 0).toLocaleString()}
                 </div>
-                <p className="text-[11px] text-stone-500">
+                <p className="text-[11px] text-stone-500 dark:text-stone-400">
                   বইয়ের ল্যান্ডিং পেজে আগ্রহী পাঠক
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
-                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 font-bold">
                   <span>মোট ই-বুক বিক্রি (Orders)</span>
-                  <ShoppingBag className="w-4 h-4 text-emerald-600" />
+                  <ShoppingBag className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230] dark:text-white">
                   {isLoadingAnalytics
                     ? "..."
                     : (analyticsData?.totalOrders ?? 0).toLocaleString()}{" "}
                   কপি
                 </div>
-                <p className="text-[11px] text-emerald-700 font-semibold">
+                <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
                   প্রতি কপি ৳৯৯ (৫৫% ছাড়)
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/50 p-4 sm:p-5 space-y-1 shadow-xs">
-                <div className="flex items-center justify-between text-xs text-[#80131E] font-bold">
+              <div className="rounded-2xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/50 dark:border-[#C59B27]/40 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-[#80131E] dark:text-rose-400 font-bold">
                   <span>মোট বই বিক্রির আয় (Revenue)</span>
-                  <Sparkles className="w-4 h-4 text-[#80131E]" />
+                  <Sparkles className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                 </div>
-                <div className="text-2xl sm:text-3xl font-extrabold text-[#80131E]">
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#80131E] dark:text-rose-400">
                   ৳
                   {isLoadingAnalytics
                     ? "..."
                     : (analyticsData?.totalRevenue ?? 0).toLocaleString()}
                 </div>
-                <p className="text-[11px] text-stone-600">
+                <p className="text-[11px] text-stone-600 dark:text-stone-300">
                   নির্বাচিত সময়ের সর্বমোট আয়
                 </p>
               </div>
             </div>
 
             {/* Visual Daily Traffic Bar Graph */}
-            <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs">
+            <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#80131E]" />
+                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] dark:text-white flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                   <span>দৈনিক ট্রাফিক গ্রাফ (সর্বশেষ দিনগুলোর তুলনা)</span>
                 </h3>
-                <span className="text-xs text-stone-500">
+                <span className="text-xs text-stone-500 dark:text-stone-400">
                   বার হোভার করলে বিস্তারিত দেখা যাবে
                 </span>
               </div>
 
-              <div className="h-48 pt-6 pb-2 px-2 flex items-end gap-2 sm:gap-3 border-b border-stone-200 overflow-x-auto">
+              <div className="h-48 pt-6 pb-2 px-2 flex items-end gap-2 sm:gap-3 border-b border-stone-200 dark:border-stone-800 overflow-x-auto">
                 {chartDays.map((day) => {
                   const heightPercent = Math.max(
                     12,
@@ -962,16 +962,16 @@ export default function AdminDashboardPage() {
                       className="flex-1 min-w-[38px] flex flex-col items-center gap-1.5 group"
                       title={`${day.date}: মোট ভিউ ${day.pageViews}, ইউনিক ${day.uniqueVisits}, বই বিক্রি ${day.bookOrders}টি`}
                     >
-                      <span className="text-[10px] font-bold text-[#80131E] opacity-85 group-hover:opacity-100">
+                      <span className="text-[10px] font-bold text-[#80131E] dark:text-rose-400 opacity-85 group-hover:opacity-100">
                         {day.pageViews}
                       </span>
                       <div className="w-full h-32 flex items-end justify-center">
                         <div
                           style={{ height: `${heightPercent}%` }}
-                          className="w-full max-w-[30px] rounded-t-lg bg-[#80131E]/85 group-hover:bg-[#80131E] transition-all"
+                          className="w-full max-w-[30px] rounded-t-lg bg-[#80131E]/85 dark:bg-rose-600/85 group-hover:bg-[#80131E] dark:group-hover:bg-rose-500 transition-all"
                         />
                       </div>
-                      <span className="text-[10px] font-semibold text-stone-500 truncate">
+                      <span className="text-[10px] font-semibold text-stone-500 dark:text-stone-400 truncate">
                         {day.labelBn}
                       </span>
                     </div>
@@ -983,31 +983,31 @@ export default function AdminDashboardPage() {
             {/* Top Performing Stories & Detailed Daily Breakdown */}
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Top Stories */}
-              <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs">
-                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-[#80131E]" />
+              <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs">
+                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] dark:text-white flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                   <span>সবচেয়ে বেশি পড়া গল্প ও কনফেশন</span>
                 </h3>
                 <div className="space-y-3">
                   {(analyticsData?.topStories ?? []).map((st, idx) => (
                     <div
                       key={st.id}
-                      className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#FDF8F2] border border-stone-200/70"
+                      className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#FDF8F2] dark:bg-stone-800/70 border border-stone-200/70 dark:border-stone-700"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="w-6 h-6 rounded-full bg-[#80131E] text-white text-xs font-extrabold flex items-center justify-center shrink-0">
                           {idx + 1}
                         </span>
                         <div className="min-w-0">
-                          <p className="text-xs sm:text-sm font-extrabold text-[#142230] truncate">
+                          <p className="text-xs sm:text-sm font-extrabold text-[#142230] dark:text-white truncate">
                             {st.title}
                           </p>
-                          <p className="text-[11px] text-stone-500">
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400">
                             {st.category} • পছন্দ: {st.likesCount}
                           </p>
                         </div>
                       </div>
-                      <span className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-xs font-extrabold text-[#80131E] shrink-0">
+                      <span className="px-2.5 py-1 rounded-lg bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs font-extrabold text-[#80131E] dark:text-rose-400 shrink-0">
                         {st.viewsCount.toLocaleString()} ভিউ
                       </span>
                     </div>
@@ -1016,15 +1016,15 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Date-by-Date Table */}
-              <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs">
-                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#80131E]" />
+              <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs">
+                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] dark:text-white flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                   <span>তারিখ অনুযায়ী বিস্তারিত ট্রাফিক লগ</span>
                 </h3>
                 <div className="max-h-72 overflow-y-auto pr-1">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
-                      <tr className="border-b border-stone-200 text-stone-500">
+                      <tr className="border-b border-stone-200 dark:border-stone-800 text-stone-500 dark:text-stone-400">
                         <th className="py-2 font-bold">তারিখ</th>
                         <th className="py-2 font-bold">মোট ভিউ</th>
                         <th className="py-2 font-bold">ইউনিক</th>
@@ -1032,26 +1032,26 @@ export default function AdminDashboardPage() {
                         <th className="py-2 font-bold">অর্ডার</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-stone-100">
+                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
                       {(analyticsData?.timeline ?? [])
                         .slice()
                         .reverse()
                         .slice(0, 30)
                         .map((row) => (
-                          <tr key={row.date} className="hover:bg-stone-50">
-                            <td className="py-2.5 font-bold text-[#142230]">
+                          <tr key={row.date} className="hover:bg-stone-50 dark:hover:bg-stone-800/50">
+                            <td className="py-2.5 font-bold text-[#142230] dark:text-white">
                               {row.date}
                             </td>
-                            <td className="py-2.5 font-extrabold text-[#80131E]">
+                            <td className="py-2.5 font-extrabold text-[#80131E] dark:text-rose-400">
                               {row.pageViews}
                             </td>
-                            <td className="py-2.5 text-stone-600">
+                            <td className="py-2.5 text-stone-600 dark:text-stone-300">
                               {row.uniqueVisits}
                             </td>
-                            <td className="py-2.5 text-stone-600">
+                            <td className="py-2.5 text-stone-600 dark:text-stone-300">
                               {row.bookPageViews}
                             </td>
-                            <td className="py-2.5 font-bold text-emerald-700">
+                            <td className="py-2.5 font-bold text-emerald-700 dark:text-emerald-400">
                               {row.bookOrders}টি (৳{row.revenueBdt})
                             </td>
                           </tr>
@@ -1068,7 +1068,7 @@ export default function AdminDashboardPage() {
         {activeTab === "pending" && (
           <div className="space-y-4">
             {pendingStories.length === 0 ? (
-              <div className="rounded-2xl bg-white border border-stone-200 p-10 text-center text-sm text-stone-500">
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-10 text-center text-sm text-stone-500 dark:text-stone-400">
                 এই মুহূর্তে অপেক্ষমাণ কোনো গল্প বা কনফেশন নেই।
               </div>
             ) : (
@@ -1077,25 +1077,25 @@ export default function AdminDashboardPage() {
                 return (
                   <div
                     key={item.id}
-                    className="rounded-2xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs"
+                    className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] text-[#80131E] text-xs font-bold">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-xs font-bold">
                         {item.category}
                       </span>
-                      <span className="text-xs text-stone-400">
+                      <span className="text-xs text-stone-400 dark:text-stone-500">
                         পাঠিয়েছেন: {item.author} • {item.submittedAt}
                       </span>
                     </div>
 
                     {isEditing ? (
-                      <div className="space-y-3 bg-stone-50 p-4 rounded-2xl border border-stone-200">
+                      <div className="space-y-3 bg-stone-50 dark:bg-stone-800/80 p-4 rounded-2xl border border-stone-200 dark:border-stone-700">
                         <div className="grid sm:grid-cols-2 gap-3">
                           <input
                             type="text"
                             value={editPendingTitle}
                             onChange={(e) => setEditPendingTitle(e.target.value)}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-sm font-bold"
+                            className="w-full px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-sm font-bold text-[#142230] dark:text-white"
                           />
                           <select
                             value={editPendingCategory}
@@ -1104,7 +1104,7 @@ export default function AdminDashboardPage() {
                                 e.target.value as StoryCategory
                               )
                             }
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-sm"
+                            className="w-full px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white"
                           >
                             <option value="ক্রাশ ও কনফেশন">ক্রাশ ও কনফেশন</option>
                             <option value="রোমান্টিক গল্প">রোমান্টিক গল্প</option>
@@ -1121,7 +1121,7 @@ export default function AdminDashboardPage() {
                           rows={4}
                           value={editPendingContent}
                           onChange={(e) => setEditPendingContent(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-sm"
+                          className="w-full px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white"
                         />
 
                         <div className="flex flex-wrap items-center gap-3">
@@ -1131,19 +1131,19 @@ export default function AdminDashboardPage() {
                               <img
                                 src={editPendingImage}
                                 alt="Attached"
-                                className="h-14 w-20 object-cover rounded-lg border border-stone-200"
+                                className="h-14 w-20 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
                               />
                               <button
                                 type="button"
                                 onClick={() => setEditPendingImage(undefined)}
-                                className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-bold cursor-pointer"
+                                className="px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs font-bold cursor-pointer"
                               >
                                 ছবি সরিয়ে ফেলুন
                               </button>
                             </div>
                           ) : (
-                            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-stone-700 cursor-pointer">
-                              <ImagePlus className="w-3.5 h-3.5 text-[#80131E]" />
+                            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-700 dark:text-stone-300 cursor-pointer">
+                              <ImagePlus className="w-3.5 h-3.5 text-[#80131E] dark:text-rose-400" />
                               <span>চাইলে ছবি যুক্ত করুন (ঐচ্ছিক)</span>
                               <input
                                 type="file"
@@ -1161,10 +1161,10 @@ export default function AdminDashboardPage() {
                       </div>
                     ) : (
                       <>
-                        <h3 className="text-lg font-extrabold text-[#142230]">
+                        <h3 className="text-lg font-extrabold text-[#142230] dark:text-white">
                           {item.title}
                         </h3>
-                        <p className="text-sm text-stone-700 leading-relaxed">
+                        <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
                           {item.content}
                         </p>
                         {item.imageUrl && (
@@ -1173,7 +1173,7 @@ export default function AdminDashboardPage() {
                             <img
                               src={item.imageUrl}
                               alt={item.title}
-                              className="h-36 w-auto rounded-xl border border-stone-200 object-cover"
+                              className="h-36 w-auto rounded-xl border border-stone-200 dark:border-stone-700 object-cover"
                             />
                           </div>
                         )}
@@ -1181,8 +1181,8 @@ export default function AdminDashboardPage() {
                     )}
 
                     {/* Admin Advice / Editorial Reply Input Box */}
-                    <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/40 p-3.5 space-y-2">
-                      <label className="block text-xs font-extrabold text-[#80131E]">
+                    <div className="rounded-2xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/40 dark:border-[#C59B27]/30 p-3.5 space-y-2">
+                      <label className="block text-xs font-extrabold text-[#80131E] dark:text-rose-400">
                         সম্পাদকের কথা / অনুভূতি টিমের পরামর্শ (ঐচ্ছিক — গল্পের নিচে আলাদা বক্সে দেখাবে)
                       </label>
                       <textarea
@@ -1196,7 +1196,7 @@ export default function AdminDashboardPage() {
                           }))
                         }
                         placeholder="পাঠকের এই গল্প বা সমস্যার নিচে ২–৩ লাইনের সহমর্মিতা বা পরামর্শ লিখুন..."
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-[#80131E]"
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500"
                       />
                     </div>
 
@@ -1214,7 +1214,7 @@ export default function AdminDashboardPage() {
                         <button
                           type="button"
                           onClick={() => startEditingPending(item)}
-                          className="px-4 py-2 rounded-xl bg-stone-100 text-stone-700 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-stone-200 cursor-pointer"
+                          className="px-4 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-stone-200 dark:hover:bg-stone-700 cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>এডিট / ছবি যোগ বা পরিবর্তন</span>
@@ -1224,7 +1224,7 @@ export default function AdminDashboardPage() {
                       <button
                         type="button"
                         onClick={() => handleReject(item.id)}
-                        className="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-rose-100 cursor-pointer"
+                        className="px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                         <span>মুছে ফেলুন</span>
@@ -1240,101 +1240,107 @@ export default function AdminDashboardPage() {
         {/* Tab 2: Published Stories */}
         {activeTab === "published" && (
           <div className="space-y-3">
-            {publishedList.map((post) => (
-              <div
-                key={post.id}
-                className={`rounded-2xl bg-white border p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
-                  post.featured
-                    ? "border-[#80131E]/50 ring-1 ring-[#80131E]/15"
-                    : "border-stone-200"
-                }`}
-              >
-                <div className="flex items-center gap-3.5">
-                  {post.imageUrl && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={post.imageUrl}
-                      alt={post.title}
-                      className="w-16 h-14 rounded-xl object-cover border border-stone-200 shrink-0"
-                    />
-                  )}
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      {post.featured && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#80131E] text-white text-[10px] font-extrabold">
-                          <Pin className="w-2.5 h-2.5" />
-                          পিন করা (Featured)
+            {publishedList.length === 0 ? (
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-10 text-center text-sm text-stone-500 dark:text-stone-400">
+                এই মুহূর্তে কোনো প্রকাশিত গল্প নেই। নতুন লেখা প্রকাশ করতে "নতুন লেখা লিখুন" ট্যাবে ক্লিক করুন।
+              </div>
+            ) : (
+              publishedList.map((post) => (
+                <div
+                  key={post.id}
+                  className={`rounded-2xl bg-white dark:bg-[#111827] border p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                    post.featured
+                      ? "border-[#80131E]/50 dark:border-rose-500/50 ring-1 ring-[#80131E]/15"
+                      : "border-stone-200 dark:border-stone-800"
+                  }`}
+                >
+                  <div className="flex items-center gap-3.5">
+                    {post.imageUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={post.imageUrl}
+                        alt={post.title}
+                        className="w-16 h-14 rounded-xl object-cover border border-stone-200 dark:border-stone-700 shrink-0"
+                      />
+                    )}
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        {post.featured && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#80131E] text-white text-[10px] font-extrabold">
+                            <Pin className="w-2.5 h-2.5" />
+                            পিন করা (Featured)
+                          </span>
+                        )}
+                        <span className="font-bold text-[#80131E] dark:text-rose-400">
+                          {post.category}
                         </span>
-                      )}
-                      <span className="font-bold text-[#80131E]">
-                        {post.category}
-                      </span>
-                      {post.confessionIdBn && (
-                        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-[#80131E] text-[10px] font-bold">
-                          {post.confessionIdBn}
-                        </span>
-                      )}
-                      {post.isAdminPost && (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
-                          সম্পাদকের কলমে
-                        </span>
-                      )}
-                      {post.adminNote && (
-                        <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[10px] font-bold">
-                          পরামর্শ যুক্ত
-                        </span>
-                      )}
-                      <span className="text-stone-400">• {post.author}</span>
+                        {post.confessionIdBn && (
+                          <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/60 text-[#80131E] dark:text-rose-300 text-[10px] font-bold">
+                            {post.confessionIdBn}
+                          </span>
+                        )}
+                        {post.isAdminPost && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 text-[10px] font-bold">
+                            সম্পাদকের কলমে
+                          </span>
+                        )}
+                        {post.adminNote && (
+                          <span className="px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 text-[10px] font-bold">
+                            পরামর্শ যুক্ত
+                          </span>
+                        )}
+                        <span className="text-stone-400 dark:text-stone-500">• {post.author}</span>
+                      </div>
+                      <h4 className="text-base font-extrabold text-[#142230] dark:text-white">
+                        {post.title}
+                      </h4>
                     </div>
-                    <h4 className="text-base font-extrabold text-[#142230]">
-                      {post.title}
-                    </h4>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePin(post)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition ${
+                        post.featured
+                          ? "bg-[#80131E] text-white"
+                          : "bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-[#FAF4E6] dark:hover:bg-stone-700 hover:text-[#80131E] dark:hover:text-rose-400"
+                      }`}
+                      title="হোমপেজের ওপরে পিন করে রাখুন"
+                    >
+                      <Pin className="w-3.5 h-3.5" />
+                      <span>{post.featured ? "পিন সরান" : "পিন করুন"}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await fetch(
+                            `${GO_API_BASE_URL}/admin/stories/${encodeURIComponent(
+                              post.id
+                            )}`,
+                            {
+                              method: "DELETE",
+                              headers: getAdminAuthHeaders(),
+                            }
+                          );
+                        } catch {
+                          // Ignore if offline
+                        }
+                        syncPublishedToStorage(
+                          publishedList.filter((p) => p.id !== post.id)
+                        );
+                      }}
+                      className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
+                      title="মুছে ফেলুন"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handleTogglePin(post)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition ${
-                      post.featured
-                        ? "bg-[#80131E] text-white"
-                        : "bg-stone-100 text-stone-700 hover:bg-[#FAF4E6] hover:text-[#80131E]"
-                    }`}
-                    title="হোমপেজের ওপরে পিন করে রাখুন"
-                  >
-                    <Pin className="w-3.5 h-3.5" />
-                    <span>{post.featured ? "পিন সরান" : "পিন করুন"}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        await fetch(
-                          `${GO_API_BASE_URL}/admin/stories/${encodeURIComponent(
-                            post.id
-                          )}`,
-                          {
-                            method: "DELETE",
-                            headers: getAdminAuthHeaders(),
-                          }
-                        );
-                      } catch {
-                        // Ignore if offline
-                      }
-                      syncPublishedToStorage(
-                        publishedList.filter((p) => p.id !== post.id)
-                      );
-                    }}
-                    className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
-                    title="মুছে ফেলুন"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
 
@@ -1342,28 +1348,28 @@ export default function AdminDashboardPage() {
         {activeTab === "comments" && (
           <div className="space-y-3">
             {commentsList.length === 0 ? (
-              <div className="rounded-2xl bg-white border border-stone-200 p-10 text-center text-sm text-stone-500">
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-10 text-center text-sm text-stone-500 dark:text-stone-400">
                 এই মুহূর্তে কোনো পাঠকের মতামত বা কমেন্ট নেই।
               </div>
             ) : (
               commentsList.map((comment) => (
                 <div
                   key={comment.id}
-                  className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs"
+                  className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs"
                 >
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="font-extrabold text-[#142230]">
+                      <span className="font-extrabold text-[#142230] dark:text-white">
                         {comment.author}
                       </span>
-                      <span className="text-stone-400">• {comment.timeBn}</span>
+                      <span className="text-stone-400 dark:text-stone-500">• {comment.timeBn}</span>
                       {comment.storyTitle && (
-                        <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] text-[#80131E] font-bold">
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 font-bold border border-[#C59B27]/40 dark:border-[#C59B27]/30">
                           গল্প: {comment.storyTitle}
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-stone-700 leading-relaxed">
+                    <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
                       {comment.text}
                     </p>
                   </div>
@@ -1371,7 +1377,7 @@ export default function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => handleDeleteComment(comment.id)}
-                    className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-rose-100 cursor-pointer shrink-0"
+                    className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer shrink-0"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     <span>কমেন্ট মুছুন</span>
@@ -1386,15 +1392,15 @@ export default function AdminDashboardPage() {
         {activeTab === "create" && (
           <form
             onSubmit={handleCreateStory}
-            className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 space-y-4 max-w-2xl"
+            className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-6 sm:p-8 space-y-4 max-w-2xl"
           >
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm font-bold text-[#80131E]">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#80131E] dark:text-rose-400">
                 <Sparkles className="w-4 h-4" />
                 <span>অ্যাডমিন থেকে নতুন গল্প, কনফেশন বা আর্টিকেল লিখুন</span>
               </div>
 
-              <label className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full cursor-pointer">
+              <label className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 px-3 py-1 rounded-full cursor-pointer">
                 <input
                   type="checkbox"
                   checked={isAdminBadge}
@@ -1407,7 +1413,7 @@ export default function AdminDashboardPage() {
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   লেখকের নাম / ছদ্মনাম
                 </label>
                 <input
@@ -1415,12 +1421,12 @@ export default function AdminDashboardPage() {
                   maxLength={80}
                   value={newAuthor}
                   onChange={(e) => setNewAuthor(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-700 mb-1">
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                   ক্যাটাগরি
                 </label>
                 <select
@@ -1428,7 +1434,7 @@ export default function AdminDashboardPage() {
                   onChange={(e) =>
                     setNewCategory(e.target.value as StoryCategory)
                   }
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white"
                 >
                   <option value="সম্পর্ক ও মনস্তত্ত্ব">
                     সম্পর্ক ও মনস্তত্ত্ব
@@ -1443,7 +1449,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                 লেখার শিরোনাম *
               </label>
               <input
@@ -1453,12 +1459,12 @@ export default function AdminDashboardPage() {
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="শিরোনাম লিখুন..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-stone-700 mb-1">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                 সম্পূর্ণ লেখা *
               </label>
               <textarea
@@ -1468,12 +1474,12 @@ export default function AdminDashboardPage() {
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
                 placeholder="এখানে সম্পূর্ণ গল্প বা আর্টিকেলটি লিখুন..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#80131E] mb-1">
+              <label className="block text-xs font-bold text-[#80131E] dark:text-rose-400 mb-1">
                 সম্পাদকের কথা / অনুভূতি টিমের পরামর্শ (ঐচ্ছিক)
               </label>
               <textarea
@@ -1482,18 +1488,18 @@ export default function AdminDashboardPage() {
                 value={newAdminNote}
                 onChange={(e) => setNewAdminNote(e.target.value)}
                 placeholder="চাইলে লেখার নিচে পাঠকদের উদ্দেশ্যে ২–৩ লাইনের পরামর্শ বা নোট যুক্ত করুন..."
-                className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/40 text-sm"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-sm text-[#142230] dark:text-white"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-stone-700">
+              <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
                 ছবি যুক্ত করুন (ঐচ্ছিক — আপনি ছবি দিলে তবেই দেখাবে, না দিলে দেখাবে না)
               </label>
 
               {!newImageDataUrl ? (
-                <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-stone-300 bg-stone-50 hover:bg-stone-100 text-xs font-bold text-stone-600 cursor-pointer transition">
-                  <ImagePlus className="w-4 h-4 text-[#80131E]" />
+                <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 hover:bg-stone-100 dark:hover:bg-stone-800 text-xs font-bold text-stone-600 dark:text-stone-300 cursor-pointer transition">
+                  <ImagePlus className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                   <span>চাইলে ছবি আপলোড করুন (JPG/PNG/WEBP, সর্বোচ্চ 2MB)</span>
                   <input
                     type="file"
@@ -1505,20 +1511,20 @@ export default function AdminDashboardPage() {
                   />
                 </label>
               ) : (
-                <div className="rounded-xl border border-stone-200 bg-stone-50 p-2.5 flex items-center justify-between gap-3">
+                <div className="rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 p-2.5 flex items-center justify-between gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={newImageDataUrl}
                     alt="Admin Upload Preview"
-                    className="h-16 w-24 object-cover rounded-lg border border-stone-200"
+                    className="h-16 w-24 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
                   />
-                  <span className="text-xs font-bold text-emerald-700 flex-1">
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex-1">
                     কভার ছবি যুক্ত হয়েছে
                   </span>
                   <button
                     type="button"
                     onClick={() => setNewImageDataUrl(undefined)}
-                    className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-bold cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs font-bold cursor-pointer"
                   >
                     ছবি বাদ দিন
                   </button>
@@ -1526,7 +1532,7 @@ export default function AdminDashboardPage() {
               )}
 
               {imageError && (
-                <p className="text-xs text-rose-600 font-semibold">
+                <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold">
                   {imageError}
                 </p>
               )}

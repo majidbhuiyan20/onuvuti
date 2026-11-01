@@ -55,7 +55,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 export default function OnuvutiBlogHomePage() {
   const router = useRouter();
-  const [posts, setPosts] = useState<BlogPost[]>(BLOG_POSTS);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [activeCategory, setActiveCategory] = useState("সকল গল্প");
   const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -210,25 +210,12 @@ export default function OnuvutiBlogHomePage() {
         const res = await fetch(`${GO_API_BASE_URL}/stories?page=1&limit=50`);
         if (res.ok) {
           const data = await res.json();
-          if (data.ok && Array.isArray(data.stories) && data.stories.length > 0) {
+          if (data.ok && Array.isArray(data.stories)) {
             setPosts(data.stories);
-            return;
           }
         }
       } catch {
-        // Fallback to localStorage if Go server is offline
-      }
-
-      try {
-        const savedPublished = localStorage.getItem("onuvuti_published_stories");
-        if (savedPublished) {
-          const parsed = JSON.parse(savedPublished) as BlogPost[];
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setPosts(parsed);
-          }
-        }
-      } catch {
-        // Ignore storage errors
+        // Offline / network failure
       }
     }
     loadStoriesFromGo();
@@ -689,12 +676,14 @@ export default function OnuvutiBlogHomePage() {
             }}
             className="flex items-center gap-3 shrink-0"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/Onuvuti-Publications-Logo.png"
-              alt="Onuvuti Publications"
-              className="h-12 sm:h-14 w-auto object-contain mix-blend-multiply dark:mix-blend-normal dark:bg-white/10 dark:p-1 dark:rounded-xl"
-            />
+            <div className="bg-white px-2.5 py-1 rounded-xl shadow-xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/Onuvuti-Publications-Logo.png"
+                alt="Onuvuti Publications"
+                className="h-9 sm:h-11 w-auto object-contain"
+              />
+            </div>
           </Link>
 
           {/* Desktop Navigation Menu */}
@@ -1099,19 +1088,40 @@ export default function OnuvutiBlogHomePage() {
           </div>
         </div>
 
-        {/* Empty State when Saved Stories filter has 0 items */}
+        {/* Empty State when Stories list has 0 items */}
         {paginatedPosts.length === 0 && (
-          <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-10 text-center space-y-2">
-            <p className="text-sm font-extrabold text-[#142230] dark:text-white">
-              {showSavedOnly
-                ? "আপনার প্রিয় তালিকায় এখনো কোনো গল্প সংরক্ষণ করা হয়নি।"
-                : "এই ক্যাটাগরিতে বা সার্চে কোনো লেখা পাওয়া যায়নি।"}
-            </p>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
-              {showSavedOnly
-                ? "যেকোনো গল্পের কার্ডের কোণায় থাকা বুকমার্ক আইকনে ক্লিক করে পরে পড়ার জন্য সংরক্ষণ করতে পারবেন।"
-                : "অন্য কোনো ক্যাটাগরি নির্বাচন করুন।"}
-            </p>
+          <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-10 sm:p-14 text-center space-y-4 shadow-xs">
+            <div className="w-14 h-14 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-400 mx-auto flex items-center justify-center">
+              <PenLine className="w-6 h-6" />
+            </div>
+            <div className="space-y-1.5 max-w-md mx-auto">
+              <h3 className="text-base sm:text-lg font-extrabold text-[#142230] dark:text-white">
+                {showSavedOnly
+                  ? "আপনার প্রিয় তালিকায় এখনো কোনো গল্প সংরক্ষণ করা হয়নি।"
+                  : searchQuery.trim()
+                  ? `"${searchQuery}" দিয়ে কোনো লেখা খুঁজে পাওয়া যায়নি।`
+                  : activeCategory !== "সকল গল্প"
+                  ? `"${activeCategory}" ক্যাটাগরিতে এখনো কোনো লেখা নেই।`
+                  : "অনুভূতিতে আপনাকে স্বাগতম। এখনো কোনো গল্প প্রকাশিত হয়নি।"}
+              </h3>
+              <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400">
+                {showSavedOnly
+                  ? "যেকোনো গল্পের কার্ডের কোণায় থাকা বুকমার্ক আইকনে ক্লিক করে পরে পড়ার জন্য সংরক্ষণ করতে পারবেন।"
+                  : searchQuery.trim() || activeCategory !== "সকল গল্প"
+                  ? "অন্য কোনো ক্যাটাগরি বা কি-ওয়ার্ড নির্বাচন করে চেষ্টা করুন।"
+                  : "আপনার মনের না বলা কোনো গল্প বা অনুভূতি আমাদের পাঠাতে পারেন। অনুমোদিত হলে তা হোমপেজে প্রকাশিত হবে।"}
+              </p>
+            </div>
+            {!showSavedOnly && !searchQuery.trim() && (
+              <button
+                type="button"
+                onClick={() => setIsSubmitModalOpen(true)}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#80131E] hover:bg-[#680f18] text-white text-xs sm:text-sm font-bold shadow-xs cursor-pointer transition"
+              >
+                <PenLine className="w-4 h-4" />
+                <span>আপনার গল্প বা অনুভূতি পাঠান</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -1278,9 +1288,9 @@ export default function OnuvutiBlogHomePage() {
 
         {/* Pagination Controls */}
         {filteredPosts.length > 0 && (
-          <div className="rounded-2xl bg-white border border-stone-200/90 px-4 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-            <span className="text-xs text-stone-500 font-semibold">
-              মোট <strong className="text-[#80131E]">{filteredPosts.length}টি</strong> লেখার মধ্যে পৃষ্ঠা{" "}
+          <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 px-4 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+            <span className="text-xs text-stone-500 dark:text-stone-400 font-semibold">
+              মোট <strong className="text-[#80131E] dark:text-rose-400">{filteredPosts.length}টি</strong> লেখার মধ্যে পৃষ্ঠা{" "}
               <strong>{safePage}</strong> / <strong>{totalPages}</strong> দেখানো হচ্ছে
             </span>
 
@@ -1289,7 +1299,7 @@ export default function OnuvutiBlogHomePage() {
                 type="button"
                 disabled={safePage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-700 hover:bg-stone-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
+                className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
               >
                 « আগের পৃষ্ঠা
               </button>
@@ -1303,7 +1313,7 @@ export default function OnuvutiBlogHomePage() {
                     className={`w-8 h-8 rounded-xl text-xs font-extrabold transition cursor-pointer ${
                       pageNum === safePage
                         ? "bg-[#80131E] text-white shadow-xs"
-                        : "bg-stone-50 text-stone-700 border border-stone-200 hover:border-[#80131E]/40"
+                        : "bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-[#80131E]/40 dark:hover:border-rose-400/40"
                     }`}
                   >
                     {pageNum}
@@ -1317,7 +1327,7 @@ export default function OnuvutiBlogHomePage() {
                 onClick={() =>
                   setCurrentPage((p) => Math.min(totalPages, p + 1))
                 }
-                className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-700 hover:bg-stone-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
+                className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs font-bold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
               >
                 পরের পৃষ্ঠা »
               </button>
@@ -1326,18 +1336,18 @@ export default function OnuvutiBlogHomePage() {
         )}
 
         {/* FEATURE 4: 1-Click Reader Poll ("পাঠক জরিপ / আজকের প্রশ্ন") */}
-        <div className="rounded-3xl bg-white border border-stone-200/90 p-5 sm:p-6 space-y-4 shadow-xs">
+        <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[#80131E]">
+            <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[#80131E] dark:text-rose-400">
               <BarChart2 className="w-4 h-4" />
               <span>পাঠক জরিপ • আজকের প্রশ্ন</span>
             </div>
-            <span className="text-xs text-stone-500 font-semibold">
+            <span className="text-xs text-stone-500 dark:text-stone-400 font-semibold">
               মোট মতামত দিয়েছেন: {totalPollVotes.toLocaleString()} জন পাঠক
             </span>
           </div>
 
-          <h3 className="text-base sm:text-lg font-extrabold text-[#142230]">
+          <h3 className="text-base sm:text-lg font-extrabold text-[#142230] dark:text-white">
             {HOME_POLL_QUESTION}
           </h3>
 
@@ -1356,22 +1366,22 @@ export default function OnuvutiBlogHomePage() {
                   onClick={() => handlePollVote(opt.id)}
                   className={`relative overflow-hidden text-left p-3.5 rounded-2xl border transition cursor-pointer ${
                     isChosen
-                      ? "border-[#80131E] bg-[#FAF4E6]"
-                      : "border-stone-200 bg-stone-50/70 hover:border-[#80131E]/50"
+                      ? "border-[#80131E] dark:border-rose-500 bg-[#FAF4E6] dark:bg-[#1E293B]"
+                      : "border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-800/50 hover:border-[#80131E]/50 dark:hover:border-rose-400/50"
                   }`}
                 >
                   {selectedPollId && (
                     <div
                       style={{ width: `${percent}%` }}
-                      className="absolute inset-y-0 left-0 bg-[#80131E]/10 transition-all duration-500"
+                      className="absolute inset-y-0 left-0 bg-[#80131E]/10 dark:bg-rose-500/20 transition-all duration-500"
                     />
                   )}
                   <div className="relative flex items-center justify-between gap-2">
-                    <span className="text-xs sm:text-sm font-bold text-[#142230]">
+                    <span className="text-xs sm:text-sm font-bold text-[#142230] dark:text-stone-200">
                       {opt.label}
                     </span>
                     {selectedPollId && (
-                      <span className="text-xs font-extrabold text-[#80131E] shrink-0">
+                      <span className="text-xs font-extrabold text-[#80131E] dark:text-rose-400 shrink-0">
                         {percent}%
                       </span>
                     )}
@@ -1382,25 +1392,25 @@ export default function OnuvutiBlogHomePage() {
           </div>
 
           {selectedPollId && (
-            <p className="text-xs text-emerald-700 font-semibold">
+            <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
               আপনার মতামতের জন্য ধন্যবাদ! পাঠকদের সম্মিলিত ফলাফল ওপরে দেখানো হচ্ছে।
             </p>
           )}
         </div>
 
         {/* Minimal Book Banner */}
-        <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/45 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="rounded-2xl bg-[#FAF4E6] dark:bg-[#161E2E] border border-[#C59B27]/45 dark:border-[#C59B27]/30 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1 text-xs font-bold text-[#80131E]">
+            <div className="inline-flex items-center gap-1 text-xs font-bold text-[#80131E] dark:text-rose-400">
               <Sparkles className="w-3.5 h-3.5" />
               <span>আমাদের প্রকাশিত ই-বুক</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-[#142230]">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-[#142230] dark:text-white">
               {BOOK_INFO.titleBn}: {BOOK_INFO.subtitleBn}
             </h2>
-            <p className="text-xs sm:text-sm text-stone-600">
+            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300">
               ১০০+ পৃষ্ঠার প্রিমিয়াম গাইড • রেগুলার মূল্য{" "}
-              <span className="line-through text-stone-400">
+              <span className="line-through text-stone-400 dark:text-stone-500">
                 ৳{BOOK_INFO.regularPriceBn}
               </span>{" "}
               •{" "}
@@ -1423,20 +1433,20 @@ export default function OnuvutiBlogHomePage() {
       {/* STORY / CONFESSION SUBMISSION MODAL */}
       {isSubmitModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-lg w-full rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden my-8">
-            <div className="bg-[#FAF4E6] px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+          <div className="max-w-lg w-full rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden my-8">
+            <div className="bg-[#FAF4E6] dark:bg-[#161E2E] px-6 py-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-[#80131E]">
+                <span className="text-xs font-bold text-[#80131E] dark:text-rose-400">
                   অনুভূতির চিঠির বাক্স
                 </span>
-                <h3 className="text-lg font-extrabold text-[#142230]">
+                <h3 className="text-lg font-extrabold text-[#142230] dark:text-white">
                   আপনার গল্প, ক্রাশ কনফেশন বা না বলা কথা পাঠান
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={resetModal}
-                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 cursor-pointer"
+                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 dark:hover:bg-stone-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1445,25 +1455,25 @@ export default function OnuvutiBlogHomePage() {
             <div className="p-6">
               {submittedSuccess ? (
                 <div className="py-6 text-center space-y-4">
-                  <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                  <div className="w-14 h-14 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mx-auto">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <h4 className="text-xl font-extrabold text-[#142230]">
+                  <h4 className="text-xl font-extrabold text-[#142230] dark:text-white">
                     ধন্যবাদ! আপনার লেখাটি নিরাপদে জমা হয়েছে
                   </h4>
-                  <p className="text-xs sm:text-sm text-stone-600 max-w-sm mx-auto">
+                  <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 max-w-sm mx-auto">
                     অ্যাডমিন আপনার লেখাটি রিভিউ করে অনুমোদন দিলেই ওয়েবসাইটে প্রকাশিত হবে। আপনার ব্রাউজারে এটি স্বয়ংক্রিয়ভাবে সেভ হয়ে আছে।
                   </p>
 
                   {lastSubmittedTrackingId && (
-                    <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/50 p-3.5 max-w-xs mx-auto space-y-1">
-                      <span className="text-[11px] font-bold text-stone-500 block">
+                    <div className="rounded-2xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/50 dark:border-[#C59B27]/40 p-3.5 max-w-xs mx-auto space-y-1">
+                      <span className="text-[11px] font-bold text-stone-500 dark:text-stone-400 block">
                         আপনার লেখার গোপন ট্র্যাকিং কোড:
                       </span>
-                      <code className="text-base font-extrabold text-[#80131E] block">
+                      <code className="text-base font-extrabold text-[#80131E] dark:text-rose-400 block">
                         #{lastSubmittedTrackingId}
                       </code>
-                      <span className="text-[11px] text-stone-500 block">
+                      <span className="text-[11px] text-stone-500 dark:text-stone-400 block">
                         অন্য যেকোনো ডিভাইস থেকেও এই কোড দিয়ে লেখার অবস্থা ও টিমের উত্তর দেখতে পারবেন।
                       </span>
                     </div>
@@ -1476,14 +1486,14 @@ export default function OnuvutiBlogHomePage() {
                         resetModal();
                         openTrackerModal();
                       }}
-                      className="px-4 py-2.5 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/50 text-[#80131E] font-bold text-xs sm:text-sm cursor-pointer"
+                      className="px-4 py-2.5 rounded-xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/50 dark:border-[#C59B27]/40 text-[#80131E] dark:text-rose-300 font-bold text-xs sm:text-sm cursor-pointer hover:bg-[#f3e8ce] dark:hover:bg-[#253348]"
                     >
                       আমার লেখা ট্র্যাক করুন
                     </button>
                     <button
                       type="button"
                       onClick={resetModal}
-                      className="px-6 py-2.5 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm cursor-pointer"
+                      className="px-6 py-2.5 rounded-xl bg-[#80131E] hover:bg-[#680f18] text-white font-bold text-xs sm:text-sm cursor-pointer"
                     >
                       ঠিক আছে
                     </button>
@@ -1503,7 +1513,7 @@ export default function OnuvutiBlogHomePage() {
                   />
 
                   {submitError && (
-                    <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                    <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 shrink-0" />
                       <span>{submitError}</span>
                     </div>
@@ -1511,7 +1521,7 @@ export default function OnuvutiBlogHomePage() {
 
                   {/* Optional User Account Banner */}
                   {currentUser ? (
-                    <div className="p-3 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/45 flex items-center justify-between gap-3">
+                    <div className="p-3 rounded-xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/45 dark:border-[#C59B27]/30 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-full bg-[#80131E] text-white flex items-center justify-center text-xs font-bold shrink-0">
                           {currentUser.name
@@ -1519,13 +1529,13 @@ export default function OnuvutiBlogHomePage() {
                             : "ইউ"}
                         </div>
                         <div className="text-xs">
-                          <p className="font-bold text-[#142230]">
+                          <p className="font-bold text-[#142230] dark:text-white">
                             লগইন আছেন:{" "}
-                            <span className="text-[#80131E]">
+                            <span className="text-[#80131E] dark:text-rose-400">
                               {currentUser.name}
                             </span>
                           </p>
-                          <p className="text-[11px] text-stone-500">
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400">
                             গল্পটি আপনার অ্যাকাউন্টে স্বয়ংক্রিয়ভাবে সেভ থাকবে।
                           </p>
                         </div>
@@ -1536,18 +1546,18 @@ export default function OnuvutiBlogHomePage() {
                           setIsSubmitModalOpen(false);
                           setIsProfileModalOpen(true);
                         }}
-                        className="text-xs font-extrabold text-[#80131E] hover:underline cursor-pointer shrink-0"
+                        className="text-xs font-extrabold text-[#80131E] dark:text-rose-400 hover:underline cursor-pointer shrink-0"
                       >
                         প্রোফাইল
                       </button>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between gap-3">
-                      <div className="text-xs text-stone-600">
-                        <span className="font-bold text-stone-800">
+                    <div className="p-3 rounded-xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3">
+                      <div className="text-xs text-stone-600 dark:text-stone-300">
+                        <span className="font-bold text-stone-800 dark:text-white">
                           💡 অ্যাকাউন্ট ছাড়াও সরাসরি গল্প পাঠানো যাবে
                         </span>
-                        <p className="text-[11px] text-stone-500">
+                        <p className="text-[11px] text-stone-500 dark:text-stone-400">
                           সব লেখা এক অ্যাকাউন্টে সেভ রাখতে চাইলে লগইন করুন।
                         </p>
                       </div>
@@ -1559,7 +1569,7 @@ export default function OnuvutiBlogHomePage() {
                           setAuthError(null);
                           setIsAuthModalOpen(true);
                         }}
-                        className="px-3 py-1.5 rounded-lg bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-bold hover:bg-[#f3e8ce] cursor-pointer shrink-0"
+                        className="px-3 py-1.5 rounded-lg bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 text-xs font-bold hover:bg-[#f3e8ce] dark:hover:bg-[#253348] cursor-pointer shrink-0"
                       >
                         লগইন
                       </button>
@@ -1567,12 +1577,12 @@ export default function OnuvutiBlogHomePage() {
                   )}
 
                   {/* Anonymous Toggle */}
-                  <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200">
-                    <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#142230]">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#142230] dark:text-white">
                       {isAnonymous ? (
-                        <EyeOff className="w-4 h-4 text-[#80131E]" />
+                        <EyeOff className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                       ) : (
-                        <UserCheck className="w-4 h-4 text-emerald-600" />
+                        <UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                       )}
                       <span>
                         {isAnonymous
@@ -1583,7 +1593,7 @@ export default function OnuvutiBlogHomePage() {
                     <button
                       type="button"
                       onClick={() => setIsAnonymous((prev) => !prev)}
-                      className="text-xs font-bold text-[#80131E] underline cursor-pointer"
+                      className="text-xs font-bold text-[#80131E] dark:text-rose-400 underline cursor-pointer"
                     >
                       {isAnonymous ? "নাম দিতে চাই" : "নাম গোপন রাখুন"}
                     </button>
@@ -1591,7 +1601,7 @@ export default function OnuvutiBlogHomePage() {
 
                   {!isAnonymous && (
                     <div>
-                      <label className="block text-xs font-bold text-stone-700 mb-1">
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                         আপনার নাম ও শহর
                       </label>
                       <input
@@ -1601,13 +1611,13 @@ export default function OnuvutiBlogHomePage() {
                         value={senderName}
                         onChange={(e) => setSenderName(e.target.value)}
                         placeholder="যেমন: নীলাঞ্জনা, ঢাকা"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500 focus:bg-white dark:focus:bg-stone-800"
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                       লেখার ধরন নির্বাচন করুন
                     </label>
                     <select
@@ -1615,7 +1625,7 @@ export default function OnuvutiBlogHomePage() {
                       onChange={(e) =>
                         setStoryCategory(e.target.value as StoryCategory)
                       }
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500 focus:bg-white dark:focus:bg-stone-800"
                     >
                       <option value="ক্রাশ ও কনফেশন">ক্রাশ ও কনফেশন</option>
                       <option value="না বলা কথা">না বলা কথা</option>
@@ -1626,7 +1636,7 @@ export default function OnuvutiBlogHomePage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                       শিরোনাম *
                     </label>
                     <input
@@ -1636,12 +1646,12 @@ export default function OnuvutiBlogHomePage() {
                       value={storyTitle}
                       onChange={(e) => setStoryTitle(e.target.value)}
                       placeholder="আপনার গল্প বা কনফেশনের একটি সুন্দর শিরোনাম দিন"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500 focus:bg-white dark:focus:bg-stone-800"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                       আপনার মূল গল্প / কনফেশন *
                     </label>
                     <textarea
@@ -1651,19 +1661,19 @@ export default function OnuvutiBlogHomePage() {
                       value={storyBody}
                       onChange={(e) => setStoryBody(e.target.value)}
                       placeholder="এখানে আপনার মনের কথা, ক্রাশ কনফেশন বা গল্পটি বিস্তারিত লিখুন..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500 focus:bg-white dark:focus:bg-stone-800"
                     />
                   </div>
 
                   {/* Optional Image Upload: Only added if writer chooses to! */}
                   <div className="space-y-2">
-                    <label className="block text-xs font-bold text-stone-700">
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
                       ছবি যুক্ত করুন (ঐচ্ছিক — না দিলেও কোনো সমস্যা নেই)
                     </label>
 
                     {!storyImageDataUrl ? (
-                      <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-stone-300 bg-stone-50 hover:bg-stone-100 text-xs font-bold text-stone-600 cursor-pointer transition">
-                        <ImagePlus className="w-4 h-4 text-[#80131E]" />
+                      <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 hover:bg-stone-100 dark:hover:bg-stone-800 text-xs font-bold text-stone-600 dark:text-stone-300 cursor-pointer transition">
+                        <ImagePlus className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
                         <span>চাইলে একটি ছবি যোগ করুন (JPG/PNG/WEBP, সর্বোচ্চ 2MB)</span>
                         <input
                           type="file"
@@ -1673,20 +1683,20 @@ export default function OnuvutiBlogHomePage() {
                         />
                       </label>
                     ) : (
-                      <div className="relative rounded-xl overflow-hidden border border-stone-200 bg-stone-50 p-2 flex items-center justify-between gap-3">
+                      <div className="relative rounded-xl overflow-hidden border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 p-2 flex items-center justify-between gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={storyImageDataUrl}
                           alt="Preview"
-                          className="h-16 w-24 object-cover rounded-lg border border-stone-200"
+                          className="h-16 w-24 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
                         />
-                        <span className="text-xs font-bold text-emerald-700 flex-1">
+                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex-1">
                           ছবি যুক্ত হয়েছে
                         </span>
                         <button
                           type="button"
                           onClick={() => setStoryImageDataUrl(undefined)}
-                          className="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-bold inline-flex items-center gap-1 hover:bg-rose-100 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 text-xs font-bold inline-flex items-center gap-1 hover:bg-rose-100 dark:hover:bg-rose-900/60 cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           <span>ছবি বাদ দিন</span>
@@ -1695,14 +1705,14 @@ export default function OnuvutiBlogHomePage() {
                     )}
 
                     {imageError && (
-                      <p className="text-xs text-rose-600 font-semibold">
+                      <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold">
                         {imageError}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-[11px] text-stone-400">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <div className="flex items-center gap-1.5 text-[11px] text-stone-400 dark:text-stone-500">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <span>
                       স্প্যাম ও হ্যাকার প্রতিরোধে স্বয়ংক্রিয় Rate-Limit ও সিকিউরিটি ফিল্টার সক্রিয়।
                     </span>
@@ -1727,20 +1737,20 @@ export default function OnuvutiBlogHomePage() {
       {/* MY SUBMISSIONS & LIVE STATUS TRACKER MODAL (NO LOGIN REQUIRED) */}
       {isTrackerModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-lg w-full rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden my-8">
-            <div className="bg-[#FAF4E6] px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+          <div className="max-w-lg w-full rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden my-8">
+            <div className="bg-[#FAF4E6] dark:bg-[#161E2E] px-6 py-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-[#80131E]">
+                <span className="text-xs font-bold text-[#80131E] dark:text-rose-400">
                   অ্যাকাউন্ট ছাড়াই লাইভ ট্র্যাকার
                 </span>
-                <h3 className="text-lg font-extrabold text-[#142230]">
+                <h3 className="text-lg font-extrabold text-[#142230] dark:text-white">
                   আমার পাঠানো লেখা ও অনুভূতি টিমের উত্তর
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsTrackerModalOpen(false)}
-                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 cursor-pointer"
+                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 dark:hover:bg-stone-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1750,9 +1760,9 @@ export default function OnuvutiBlogHomePage() {
               {/* Manual Tracking Code Lookup (For Any Device) */}
               <form
                 onSubmit={handleManualTrackSearch}
-                className="rounded-2xl bg-stone-50 border border-stone-200 p-3.5 space-y-2"
+                className="rounded-2xl bg-stone-50 dark:bg-stone-800/70 border border-stone-200 dark:border-stone-700 p-3.5 space-y-2"
               >
-                <label className="block text-xs font-bold text-stone-700">
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
                   ট্র্যাকিং কোড দিয়ে লেখার অবস্থা জানুন (অন্য ফোন বা ব্রাউজার থেকেও)
                 </label>
                 <div className="flex items-center gap-2">
@@ -1761,7 +1771,7 @@ export default function OnuvutiBlogHomePage() {
                     value={manualTrackCode}
                     onChange={(e) => setManualTrackCode(e.target.value)}
                     placeholder="যেমন: #p-101 বা 3"
-                    className="flex-1 px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-[#80131E]"
+                    className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500"
                   />
                   <button
                     type="submit"
@@ -1772,23 +1782,23 @@ export default function OnuvutiBlogHomePage() {
                 </div>
 
                 {manualTrackError && (
-                  <p className="text-xs text-rose-600 font-semibold">
+                  <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold">
                     {manualTrackError}
                   </p>
                 )}
 
                 {manualTrackedResult && (
-                  <div className="mt-2 rounded-xl bg-white border border-[#C59B27]/50 p-3 space-y-2">
+                  <div className="mt-2 rounded-xl bg-white dark:bg-stone-800 border border-[#C59B27]/50 dark:border-[#C59B27]/30 p-3 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-[#80131E]">
+                      <span className="font-bold text-[#80131E] dark:text-rose-400">
                         কোড: #{manualTrackedResult.id} •{" "}
                         {manualTrackedResult.category}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[11px] font-extrabold ${
                           manualTrackedResult.status === "pending"
-                            ? "bg-amber-100 text-amber-800"
-                            : "bg-emerald-100 text-emerald-800"
+                            ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
+                            : "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
                         }`}
                       >
                         {manualTrackedResult.status === "pending"
@@ -1796,12 +1806,12 @@ export default function OnuvutiBlogHomePage() {
                           : "প্রকাশিত হয়েছে"}
                       </span>
                     </div>
-                    <h4 className="text-sm font-extrabold text-[#142230]">
+                    <h4 className="text-sm font-extrabold text-[#142230] dark:text-white">
                       {manualTrackedResult.title}
                     </h4>
                     {manualTrackedResult.adminNote && (
-                      <div className="rounded-lg bg-[#FAF4E6] border border-[#C59B27]/40 p-2.5 text-xs text-stone-700">
-                        <strong className="text-[#80131E] block mb-0.5">
+                      <div className="rounded-lg bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/40 dark:border-[#C59B27]/30 p-2.5 text-xs text-stone-700 dark:text-stone-300">
+                        <strong className="text-[#80131E] dark:text-rose-400 block mb-0.5">
                           অনুভূতি টিমের পরামর্শ:
                         </strong>
                         {manualTrackedResult.adminNote}
@@ -1812,7 +1822,7 @@ export default function OnuvutiBlogHomePage() {
                         <Link
                           href={`/blog/${manualTrackedResult.slug}`}
                           onClick={() => setIsTrackerModalOpen(false)}
-                          className="inline-flex items-center gap-1 text-xs font-extrabold text-[#80131E] hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-extrabold text-[#80131E] dark:text-rose-400 hover:underline"
                         >
                           <span>প্রকাশিত লেখাটি পড়ুন</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -1824,16 +1834,16 @@ export default function OnuvutiBlogHomePage() {
 
               {/* Automatically Saved Submissions in This Browser */}
               <div className="space-y-3">
-                <h4 className="text-xs font-extrabold text-stone-500 uppercase tracking-wider">
+                <h4 className="text-xs font-extrabold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
                   এই ব্রাউজার থেকে আপনার পাঠানো লেখা ({mySubmittedIds.length})
                 </h4>
 
                 {mySubmittedIds.length === 0 ? (
-                  <div className="rounded-2xl bg-[#FDF8F2] border border-stone-200 p-6 text-center space-y-2">
-                    <p className="text-xs sm:text-sm font-bold text-stone-700">
+                  <div className="rounded-2xl bg-[#FDF8F2] dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 p-6 text-center space-y-2">
+                    <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300">
                       আপনি এখনো এই ব্রাউজার থেকে কোনো গল্প বা কনফেশন পাঠাননি।
                     </p>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
                       গল্প পাঠালে কোনো লগইন ছাড়াই এখানে স্বয়ংক্রিয়ভাবে ট্র্যাক করতে পারবেন।
                     </p>
                   </div>
@@ -1849,17 +1859,17 @@ export default function OnuvutiBlogHomePage() {
                     return (
                       <div
                         key={sub.id}
-                        className="rounded-2xl bg-[#FDF8F2] border border-stone-200 p-4 space-y-2"
+                        className="rounded-2xl bg-[#FDF8F2] dark:bg-stone-800/70 border border-stone-200 dark:border-stone-700 p-4 space-y-2"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                          <span className="font-bold text-[#80131E]">
+                          <span className="font-bold text-[#80131E] dark:text-rose-400">
                             কোড: #{sub.id} • {sub.category}
                           </span>
                           <span
                             className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
                               isPublished
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-amber-100 text-amber-800"
+                                ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
+                                : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
                             }`}
                           >
                             {isPublished
@@ -1868,13 +1878,13 @@ export default function OnuvutiBlogHomePage() {
                           </span>
                         </div>
 
-                        <h5 className="text-sm font-extrabold text-[#142230]">
+                        <h5 className="text-sm font-extrabold text-[#142230] dark:text-white">
                           {liveItem?.title || sub.title}
                         </h5>
 
                         {liveItem?.adminNote && (
-                          <div className="rounded-xl bg-[#FAF4E6] border border-[#C59B27]/45 p-3 text-xs text-stone-700">
-                            <strong className="text-[#80131E] block mb-0.5">
+                          <div className="rounded-xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/45 dark:border-[#C59B27]/30 p-3 text-xs text-stone-700 dark:text-stone-300">
+                            <strong className="text-[#80131E] dark:text-rose-400 block mb-0.5">
                               অনুভূতি টিমের পরামর্শ:
                             </strong>
                             {liveItem.adminNote}
@@ -1883,14 +1893,14 @@ export default function OnuvutiBlogHomePage() {
 
                         {isPublished && liveItem?.slug && (
                           <div className="pt-1 flex items-center justify-between text-xs">
-                            <span className="text-stone-500 font-semibold">
+                            <span className="text-stone-500 dark:text-stone-400 font-semibold">
                               পছন্দ: {liveItem.likesCount || 1} • পাঠক:{" "}
                               {(liveItem.viewsCount || 12).toLocaleString()}
                             </span>
                             <Link
                               href={`/blog/${liveItem.slug}`}
                               onClick={() => setIsTrackerModalOpen(false)}
-                              className="inline-flex items-center gap-1 font-extrabold text-[#80131E] hover:underline"
+                              className="inline-flex items-center gap-1 font-extrabold text-[#80131E] dark:text-rose-400 hover:underline"
                             >
                               <span>লেখাটি দেখুন</span>
                               <ArrowRight className="w-3.5 h-3.5" />
@@ -1910,13 +1920,13 @@ export default function OnuvutiBlogHomePage() {
       {/* USER AUTH MODAL (GOOGLE + MANUAL REGISTER / LOGIN) */}
       {isAuthModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-md w-full rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden my-8">
-            <div className="bg-[#FAF4E6] px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+          <div className="max-w-md w-full rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden my-8">
+            <div className="bg-[#FAF4E6] dark:bg-[#161E2E] px-6 py-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-[#80131E]">
+                <span className="text-xs font-bold text-[#80131E] dark:text-rose-400">
                   অনুভূতি কমিউনিটি
                 </span>
-                <h3 className="text-lg font-extrabold text-[#142230]">
+                <h3 className="text-lg font-extrabold text-[#142230] dark:text-white">
                   {authMode === "login"
                     ? "আপনার অ্যাকাউন্টে লগইন করুন"
                     : "নতুন অ্যাকাউন্ট তৈরি করুন"}
@@ -1929,7 +1939,7 @@ export default function OnuvutiBlogHomePage() {
                   setAuthError(null);
                   setShowGoogleQuickInput(false);
                 }}
-                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 cursor-pointer"
+                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 dark:hover:bg-stone-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1937,7 +1947,7 @@ export default function OnuvutiBlogHomePage() {
 
             <div className="p-6 space-y-4">
               {authError && (
-                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{authError}</span>
                 </div>
@@ -1950,7 +1960,7 @@ export default function OnuvutiBlogHomePage() {
                     type="button"
                     onClick={() => setShowGoogleQuickInput(true)}
                     disabled={isAuthLoading}
-                    className="w-full py-2.5 px-4 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition cursor-pointer shadow-2xs"
+                    className="w-full py-2.5 px-4 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-50 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition cursor-pointer shadow-2xs"
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24">
                       <path
@@ -1973,15 +1983,15 @@ export default function OnuvutiBlogHomePage() {
                     <span>Google দিয়ে চালিয়ে যান</span>
                   </button>
                 ) : (
-                  <div className="rounded-2xl bg-stone-50 border border-stone-200 p-3 space-y-2.5">
+                  <div className="rounded-2xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 p-3 space-y-2.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-bold text-stone-700">
+                      <span className="font-bold text-stone-700 dark:text-stone-300">
                         গুগল অ্যাকাউন্ট দিয়ে সাইন-ইন
                       </span>
                       <button
                         type="button"
                         onClick={() => setShowGoogleQuickInput(false)}
-                        className="text-stone-400 hover:text-stone-600 text-xs"
+                        className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-xs"
                       >
                         বাতিল
                       </button>
@@ -1991,14 +2001,14 @@ export default function OnuvutiBlogHomePage() {
                       value={googleEmailInput}
                       onChange={(e) => setGoogleEmailInput(e.target.value)}
                       placeholder="আপনার Gmail ঠিকানা (যেমন: name@gmail.com)"
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs text-[#142230] focus:outline-none focus:border-[#80131E]"
+                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500"
                     />
                     <input
                       type="text"
                       value={googleNameInput}
                       onChange={(e) => setGoogleNameInput(e.target.value)}
                       placeholder="আপনার নাম (ঐচ্ছিক)"
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs text-[#142230] focus:outline-none focus:border-[#80131E]"
+                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-xs text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500"
                     />
                     <button
                       type="button"
@@ -2014,14 +2024,14 @@ export default function OnuvutiBlogHomePage() {
 
               {/* Divider */}
               <div className="relative flex items-center justify-center my-3">
-                <div className="border-t border-stone-200 w-full" />
-                <span className="bg-white px-3 text-[11px] font-bold text-stone-400 uppercase tracking-wider absolute">
+                <div className="border-t border-stone-200 dark:border-stone-800 w-full" />
+                <span className="bg-white dark:bg-[#111827] px-3 text-[11px] font-bold text-stone-400 uppercase tracking-wider absolute">
                   বা ইমেইল দিয়ে
                 </span>
               </div>
 
               {/* Mode Switcher Tabs */}
-              <div className="flex rounded-xl bg-stone-100 p-1 text-xs font-bold">
+              <div className="flex rounded-xl bg-stone-100 dark:bg-stone-800 p-1 text-xs font-bold">
                 <button
                   type="button"
                   onClick={() => {
@@ -2030,8 +2040,8 @@ export default function OnuvutiBlogHomePage() {
                   }}
                   className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${
                     authMode === "login"
-                      ? "bg-white text-[#80131E] shadow-2xs"
-                      : "text-stone-600 hover:text-stone-900"
+                      ? "bg-white dark:bg-[#111827] text-[#80131E] dark:text-rose-400 shadow-2xs"
+                      : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
                   }`}
                 >
                   লগইন
@@ -2044,8 +2054,8 @@ export default function OnuvutiBlogHomePage() {
                   }}
                   className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${
                     authMode === "register"
-                      ? "bg-white text-[#80131E] shadow-2xs"
-                      : "text-stone-600 hover:text-stone-900"
+                      ? "bg-white dark:bg-[#111827] text-[#80131E] dark:text-rose-400 shadow-2xs"
+                      : "text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white"
                   }`}
                 >
                   নতুন অ্যাকাউন্ট (রেজিস্টার)
@@ -2056,7 +2066,7 @@ export default function OnuvutiBlogHomePage() {
               <form onSubmit={handleManualAuth} className="space-y-3 pt-1">
                 {authMode === "register" && (
                   <div>
-                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                       আপনার পুরো নাম *
                     </label>
                     <div className="relative">
@@ -2067,14 +2077,14 @@ export default function OnuvutiBlogHomePage() {
                         value={authName}
                         onChange={(e) => setAuthName(e.target.value)}
                         placeholder="আপনার নাম লিখুন"
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500 focus:bg-white dark:focus:bg-stone-800"
                       />
                     </div>
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                     ইমেইল ঠিকানা *
                   </label>
                   <div className="relative">
@@ -2085,13 +2095,13 @@ export default function OnuvutiBlogHomePage() {
                       value={authEmail}
                       onChange={(e) => setAuthEmail(e.target.value)}
                       placeholder="আপনার ইমেইল (যেমন: you@example.com)"
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500 focus:bg-white dark:focus:bg-stone-800"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                     পাসওয়ার্ড *
                   </label>
                   <div className="relative">
@@ -2107,7 +2117,7 @@ export default function OnuvutiBlogHomePage() {
                           ? "কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড"
                           : "আপনার পাসওয়ার্ড দিন"
                       }
-                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500 focus:bg-white dark:focus:bg-stone-800"
                     />
                   </div>
                 </div>
@@ -2125,8 +2135,8 @@ export default function OnuvutiBlogHomePage() {
                 </button>
               </form>
 
-              <div className="p-3 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/40 text-center">
-                <p className="text-[11px] text-stone-600">
+              <div className="p-3 rounded-xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-center">
+                <p className="text-[11px] text-stone-600 dark:text-stone-300">
                   💡 কোনো অ্যাকাউন্ট ছাড়াও আপনি সরাসরি গল্প পড়তে ও পাঠাতে পারেন।
                 </p>
               </div>
@@ -2138,20 +2148,20 @@ export default function OnuvutiBlogHomePage() {
       {/* USER PROFILE & MY DASHBOARD MODAL */}
       {isProfileModalOpen && currentUser && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-xl w-full rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden my-8">
-            <div className="bg-[#FAF4E6] px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+          <div className="max-w-xl w-full rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden my-8">
+            <div className="bg-[#FAF4E6] dark:bg-[#161E2E] px-6 py-4 border-b border-stone-200 dark:border-stone-800 flex items-center justify-between">
               <div>
-                <span className="text-xs font-bold text-[#80131E]">
+                <span className="text-xs font-bold text-[#80131E] dark:text-rose-400">
                   ব্যবহারকারী প্রোফাইল
                 </span>
-                <h3 className="text-lg font-extrabold text-[#142230]">
+                <h3 className="text-lg font-extrabold text-[#142230] dark:text-white">
                   আমার অনুভূতি অ্যাকাউন্ট
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setIsProfileModalOpen(false)}
-                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 cursor-pointer"
+                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 dark:hover:bg-stone-800 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -2159,17 +2169,17 @@ export default function OnuvutiBlogHomePage() {
 
             <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
               {/* User Header Info Card */}
-              <div className="rounded-2xl bg-[#FDF8F2] border border-stone-200 p-4 flex items-center justify-between gap-4">
+              <div className="rounded-2xl bg-[#FDF8F2] dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 p-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-[#80131E] text-white flex items-center justify-center text-lg font-extrabold uppercase shrink-0 shadow-xs">
                     {currentUser.name ? currentUser.name.slice(0, 1) : "ইউ"}
                   </div>
                   <div>
-                    <h4 className="text-sm font-extrabold text-[#142230]">
+                    <h4 className="text-sm font-extrabold text-[#142230] dark:text-white">
                       {currentUser.name}
                     </h4>
-                    <p className="text-xs text-stone-500">{currentUser.email}</p>
-                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                    <p className="text-xs text-stone-500 dark:text-stone-400">{currentUser.email}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold">
                       {currentUser.provider === "google"
                         ? "Google ভেরিফাইড"
                         : "নিবন্ধিত সদস্য"}
@@ -2180,7 +2190,7 @@ export default function OnuvutiBlogHomePage() {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="px-3 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-rose-50 hover:border-rose-300 text-stone-600 hover:text-rose-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition shrink-0"
+                  className="px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:border-rose-300 dark:hover:border-rose-900 text-stone-600 dark:text-stone-300 hover:text-rose-700 dark:hover:text-rose-400 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition shrink-0"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   <span>লগআউট</span>
@@ -2190,7 +2200,7 @@ export default function OnuvutiBlogHomePage() {
               {/* My Submitted Stories Section */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h5 className="text-xs font-extrabold text-stone-600 uppercase tracking-wider">
+                  <h5 className="text-xs font-extrabold text-stone-600 dark:text-stone-400 uppercase tracking-wider">
                     আমার পাঠানো লেখা ও কনফেশন ({userStories.length})
                   </h5>
                   <button
@@ -2199,7 +2209,7 @@ export default function OnuvutiBlogHomePage() {
                       setIsProfileModalOpen(false);
                       setIsSubmitModalOpen(true);
                     }}
-                    className="text-xs font-extrabold text-[#80131E] hover:underline cursor-pointer inline-flex items-center gap-1"
+                    className="text-xs font-extrabold text-[#80131E] dark:text-rose-400 hover:underline cursor-pointer inline-flex items-center gap-1"
                   >
                     <PenLine className="w-3.5 h-3.5" />
                     <span>নতুন লেখা পাঠান</span>
@@ -2207,11 +2217,11 @@ export default function OnuvutiBlogHomePage() {
                 </div>
 
                 {userStories.length === 0 ? (
-                  <div className="rounded-2xl bg-stone-50 border border-dashed border-stone-300 p-6 text-center space-y-2">
-                    <p className="text-xs sm:text-sm font-bold text-stone-700">
+                  <div className="rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-dashed border-stone-300 dark:border-stone-700 p-6 text-center space-y-2">
+                    <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300">
                       আপনার অ্যাকাউন্ট থেকে এখনো কোনো গল্প বা কনফেশন পাঠানো হয়নি।
                     </p>
-                    <p className="text-xs text-stone-500">
+                    <p className="text-xs text-stone-500 dark:text-stone-400">
                       আপনার মনের না বলা কথা, ক্রাশ কনফেশন বা ভালোবাসার গল্প লিখে পাঠিয়ে দিন।
                     </p>
                     <button
@@ -2232,17 +2242,17 @@ export default function OnuvutiBlogHomePage() {
                       return (
                         <div
                           key={story.id}
-                          className="rounded-2xl bg-[#FDF8F2] border border-stone-200 p-4 space-y-2"
+                          className="rounded-2xl bg-[#FDF8F2] dark:bg-stone-800/70 border border-stone-200 dark:border-stone-700 p-4 space-y-2"
                         >
                           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                            <span className="font-bold text-[#80131E]">
+                            <span className="font-bold text-[#80131E] dark:text-rose-400">
                               #{story.id} • {story.category}
                             </span>
                             <span
                               className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
                                 isPublished
-                                  ? "bg-emerald-100 text-emerald-800"
-                                  : "bg-amber-100 text-amber-800"
+                                  ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
+                                  : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
                               }`}
                             >
                               {isPublished
@@ -2251,13 +2261,13 @@ export default function OnuvutiBlogHomePage() {
                             </span>
                           </div>
 
-                          <h6 className="text-sm font-extrabold text-[#142230]">
+                          <h6 className="text-sm font-extrabold text-[#142230] dark:text-white">
                             {story.title}
                           </h6>
 
                           {story.adminNote && (
-                            <div className="rounded-xl bg-[#FAF4E6] border border-[#C59B27]/45 p-3 text-xs text-stone-700">
-                              <strong className="text-[#80131E] block mb-0.5">
+                            <div className="rounded-xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/45 dark:border-[#C59B27]/30 p-3 text-xs text-stone-700 dark:text-stone-300">
+                              <strong className="text-[#80131E] dark:text-rose-400 block mb-0.5">
                                 অনুভূতি টিমের পরামর্শ:
                               </strong>
                               {story.adminNote}
@@ -2266,14 +2276,14 @@ export default function OnuvutiBlogHomePage() {
 
                           {isPublished && story.slug && (
                             <div className="pt-1 flex items-center justify-between text-xs">
-                              <span className="text-stone-500 font-semibold">
+                              <span className="text-stone-500 dark:text-stone-400 font-semibold">
                                 পছন্দ: {story.likesCount || 1} • পাঠক:{" "}
                                 {(story.viewsCount || 10).toLocaleString()}
                               </span>
                               <Link
                                 href={`/blog/${story.slug}`}
                                 onClick={() => setIsProfileModalOpen(false)}
-                                className="inline-flex items-center gap-1 font-extrabold text-[#80131E] hover:underline"
+                                className="inline-flex items-center gap-1 font-extrabold text-[#80131E] dark:text-rose-400 hover:underline"
                               >
                                 <span>লেখাটি দেখুন</span>
                                 <ArrowRight className="w-3.5 h-3.5" />
@@ -2295,12 +2305,14 @@ export default function OnuvutiBlogHomePage() {
       <footer className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-[#111827] py-6 text-xs text-stone-500 dark:text-stone-400">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/Onuvuti-Publications-Logo.png"
-              alt="Onuvuti Publications"
-              className="h-9 w-auto object-contain mix-blend-multiply dark:mix-blend-normal dark:bg-white/10 dark:p-1 dark:rounded-xl"
-            />
+            <div className="bg-white px-2 py-0.5 rounded-lg shadow-2xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/Onuvuti-Publications-Logo.png"
+                alt="Onuvuti Publications"
+                className="h-7 sm:h-8 w-auto object-contain"
+              />
+            </div>
             <span>© ২০২৬ অনুভূতি (Onuvuti.site)</span>
           </div>
           <div className="flex items-center gap-4">

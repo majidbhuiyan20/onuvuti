@@ -185,8 +185,8 @@ export default function ZiniPayCheckout() {
                   <strong>তাত্ক্ষণিক ডাউনলোড:</strong> পেমেন্ট সফল হওয়ামাত্রই স্বয়ংক্রিয়ভাবে সম্পূর্ণ বইটির হাই-কোয়ালিটি PDF ফাইল পেয়ে যাবেন।
                 </span>
               </div>
-              <div className="flex items-start gap-2.5 bg-stone-50 rounded-xl p-3 border border-stone-200/60">
-                <ShieldCheck className="w-4 h-4 text-[#80131E] shrink-0 mt-0.5" />
+              <div className="flex items-start gap-2.5 bg-stone-50 dark:bg-stone-800/60 rounded-xl p-3 border border-stone-200/60 dark:border-stone-700/60 text-stone-700 dark:text-stone-300">
+                <ShieldCheck className="w-4 h-4 text-[#80131E] dark:text-rose-400 shrink-0 mt-0.5" />
                 <span>
                   <strong>পেমেন্ট পার্টনার:</strong> ZiniPay গেটওয়ে (bKash, Nagad, Rocket ও Upay সাপোর্টেড)।
                 </span>
@@ -194,7 +194,7 @@ export default function ZiniPayCheckout() {
             </div>
 
             {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 p-3.5 text-xs text-red-700 flex items-center gap-2">
+              <div className="rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 p-3.5 text-xs text-red-700 dark:text-red-300 flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -222,9 +222,9 @@ export default function ZiniPayCheckout() {
             </button>
 
             {/* Trust Footer Badges */}
-            <div className="pt-2 flex items-center justify-between text-[11px] text-stone-500 border-t border-stone-100">
+            <div className="pt-2 flex items-center justify-between text-[11px] text-stone-500 dark:text-stone-400 border-t border-stone-100 dark:border-stone-800">
               <span className="flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 SSL এনক্রিপ্টেড ১০০% নিরাপদ
               </span>
               <span className="flex items-center gap-1 font-mono">
@@ -237,7 +237,7 @@ export default function ZiniPayCheckout() {
               <button
                 type="button"
                 onClick={() => setShowRecovery(!showRecovery)}
-                className="text-xs text-stone-500 hover:text-[#80131E] transition inline-flex items-center gap-1 cursor-pointer font-medium"
+                className="text-xs text-stone-500 dark:text-stone-400 hover:text-[#80131E] dark:hover:text-rose-400 transition inline-flex items-center gap-1 cursor-pointer font-medium"
               >
                 <HelpCircle className="w-3.5 h-3.5" />
                 <span>ইতোমধ্যে পেমেন্ট করেছেন? এখান থেকে ডাউনলোড করুন</span>
@@ -246,9 +246,9 @@ export default function ZiniPayCheckout() {
               {showRecovery && (
                 <form
                   onSubmit={handleRecoverOrder}
-                  className="mt-3.5 p-4 rounded-2xl bg-[#FAF4E6]/70 border border-[#C59B27]/30 text-left space-y-3"
+                  className="mt-3.5 p-4 rounded-2xl bg-[#FAF4E6]/70 dark:bg-[#1A2234] border border-[#C59B27]/30 dark:border-stone-700 text-left space-y-3"
                 >
-                  <label className="block text-xs font-bold text-stone-700">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
                     আপনার অর্ডার আইডি বা ZiniPay ইনভয়েস আইডি দিন:
                   </label>
                   <div className="flex gap-2">
@@ -257,7 +257,7 @@ export default function ZiniPayCheckout() {
                       value={recoveryId}
                       onChange={(e) => setRecoveryId(e.target.value)}
                       placeholder="যেমন: ONV-105045 বা ZP_..."
-                      className="flex-1 px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs text-[#142230] font-mono focus:outline-none focus:border-[#80131E]"
+                      className="flex-1 px-3.5 py-2 rounded-xl bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 text-xs text-[#142230] dark:text-white font-mono focus:outline-none focus:border-[#80131E] dark:focus:border-rose-500"
                     />
                     <button
                       type="submit"
