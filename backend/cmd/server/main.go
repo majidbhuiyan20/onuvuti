@@ -34,6 +34,7 @@ func main() {
 	adminSvc := service.NewAdminService(cfg, repo, memCache)
 	orderSvc := service.NewOrderService(repo)
 	analyticsSvc := service.NewAnalyticsService(repo)
+	userSvc := service.NewUserService(repo, cfg)
 
 	// 4. Initialize Middleware & HTTP Handlers
 	rl := middleware.NewRateLimiter()
@@ -46,6 +47,7 @@ func main() {
 		AdminHandler:     handlers.NewAdminHandler(adminSvc, analyticsSvc, rl),
 		OrderHandler:     handlers.NewOrderHandler(orderSvc),
 		AnalyticsHandler: handlers.NewAnalyticsHandler(analyticsSvc),
+		UserHandler:      handlers.NewUserHandler(userSvc, rl),
 	})
 
 	// 5. Start Hardened HTTP Server

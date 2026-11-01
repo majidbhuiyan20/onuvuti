@@ -35,9 +35,9 @@ export default async function BlogPostPage({
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] text-[#142230]">
-      {/* Minimal Light Header */}
+      {/* Minimal Light Header with Navigation Menu */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/95 border-b border-stone-200/80">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -52,13 +52,34 @@ export default async function BlogPostPage({
               className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-stone-500 hover:text-[#80131E] transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>সকল গল্প</span>
+              <span>হোমপেজ</span>
             </Link>
           </div>
 
+          <nav className="hidden md:flex items-center gap-2 text-xs font-extrabold text-stone-600">
+            <Link
+              href="/?category=ক্রাশ ও কনফেশন"
+              className="px-3 py-1.5 rounded-xl hover:bg-[#FAF4E6] hover:text-[#80131E] transition"
+            >
+              ক্রাশ ও কনফেশন
+            </Link>
+            <Link
+              href="/?category=রোমান্টিক গল্প"
+              className="px-3 py-1.5 rounded-xl hover:bg-[#FAF4E6] hover:text-[#80131E] transition"
+            >
+              রোমান্টিক গল্প
+            </Link>
+            <Link
+              href="/?category=না বলা কথা"
+              className="px-3 py-1.5 rounded-xl hover:bg-[#FAF4E6] hover:text-[#80131E] transition"
+            >
+              না বলা কথা
+            </Link>
+          </nav>
+
           <Link
             href="/sporsher-byakoron"
-            className="px-3.5 py-1.5 rounded-xl bg-[#80131E] text-white font-bold text-xs inline-flex items-center gap-1.5 hover:bg-[#630d16] transition"
+            className="px-3.5 py-2 rounded-xl bg-[#80131E] text-white font-bold text-xs inline-flex items-center gap-1.5 hover:bg-[#630d16] transition"
           >
             <BookOpen className="w-3.5 h-3.5" />
             <span>‘স্পর্শের ব্যাকরণ’ • ৳{BOOK_INFO.offerPriceBn}</span>

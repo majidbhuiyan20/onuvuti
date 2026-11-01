@@ -31,6 +31,7 @@ type Story struct {
 	Content     []string  `json:"content"`
 	RawContent  string    `json:"rawContent,omitempty"`
 	Status      string    `json:"status"` // "published" | "pending"
+	UserID      string    `json:"userId,omitempty"`
 	SubmittedAt string    `json:"submittedAt,omitempty"`
 	CreatedAt   time.Time `json:"createdAt"`
 }
@@ -42,6 +43,7 @@ type SubmitStoryRequest struct {
 	Author      string `json:"author"`
 	IsAnonymous bool   `json:"isAnonymous"`
 	ImageURL    string `json:"imageUrl,omitempty"`
+	UserID      string `json:"userId,omitempty"`
 	WebsiteURL  string `json:"websiteUrl,omitempty"` // Honeypot anti-bot field
 }
 

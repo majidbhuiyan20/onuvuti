@@ -13,6 +13,7 @@ import (
 
 type persistedState struct {
 	Stories           []models.Story                     `json:"stories"`
+	Users             []models.User                      `json:"users"`
 	Comments          map[string][]models.Comment        `json:"comments"`
 	Orders            []models.BookOrder                 `json:"orders"`
 	TrafficByDate     map[string]models.DailyTrafficStat `json:"trafficByDate"`

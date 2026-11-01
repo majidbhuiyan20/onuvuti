@@ -26,9 +26,25 @@ CREATE TABLE IF NOT EXISTS stories (
     content_json JSONB NOT NULL DEFAULT '[]'::jsonb,
     raw_content TEXT DEFAULT '',
     status VARCHAR(24) NOT NULL DEFAULT 'pending',
+    user_id VARCHAR(64) DEFAULT '',
     submitted_at VARCHAR(60) DEFAULT '',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE stories ADD COLUMN IF NOT EXISTS user_id VARCHAR(64) DEFAULT '';
+ALTER TABLE stories ADD COLUMN IF NOT EXISTS admin_note TEXT DEFAULT '';
+
+CREATE TABLE IF NOT EXISTS users (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    email VARCHAR(160) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL DEFAULT '',
+    provider VARCHAR(32) NOT NULL DEFAULT 'manual',
+    avatar_url TEXT DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 
 CREATE INDEX IF NOT EXISTS idx_stories_status ON stories(status);
 CREATE INDEX IF NOT EXISTS idx_stories_category ON stories(category);

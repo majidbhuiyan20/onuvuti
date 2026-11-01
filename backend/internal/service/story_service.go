@@ -166,6 +166,7 @@ func (s *StoryService) SubmitPending(req models.SubmitStoryRequest) (*models.Sto
 		Content:     SplitParagraphs(content),
 		RawContent:  content,
 		Status:      "pending",
+		UserID:      sanitizer.Text(req.UserID, 64),
 		SubmittedAt: "এইমাত্র",
 		CreatedAt:   now,
 	}

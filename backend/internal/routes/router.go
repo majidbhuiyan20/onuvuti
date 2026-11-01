@@ -17,6 +17,7 @@ type RouterDeps struct {
 	AdminHandler     *handlers.AdminHandler
 	OrderHandler     *handlers.OrderHandler
 	AnalyticsHandler *handlers.AnalyticsHandler
+	UserHandler      *handlers.UserHandler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -25,6 +26,14 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	// 1. Health & Security Status
 	mux.HandleFunc("GET /api/v1/health", deps.HealthHandler.Check)
+
+	// 1b. User Authentication & Profile Routes (Manual Register/Login + Sign in with Google)
+	if deps.UserHandler != nil {
+		mux.HandleFunc("POST /api/v1/auth/register", deps.UserHandler.Register)
+		mux.HandleFunc("POST /api/v1/auth/login", deps.UserHandler.Login)
+		mux.HandleFunc("POST /api/v1/auth/google", deps.UserHandler.GoogleAuth)
+		mux.HandleFunc("GET /api/v1/auth/me", deps.UserHandler.Me)
+	}
 
 	// 2. Public Story & Confession Routes
 	mux.HandleFunc("GET /api/v1/stories", deps.StoryHandler.ListPublished)

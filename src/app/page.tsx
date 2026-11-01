@@ -31,6 +31,7 @@ import {
   Check,
   Quote,
   BarChart2,
+  Menu,
 } from "lucide-react";
 import {
   BLOG_CATEGORIES,
@@ -91,6 +92,7 @@ export default function OnuvutiBlogHomePage() {
 
   // Story Submission Modal State
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [senderName, setSenderName] = useState("");
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [storyCategory, setStoryCategory] =
@@ -113,6 +115,17 @@ export default function OnuvutiBlogHomePage() {
     // Select daily quote based on day of month
     const dayIdx = new Date().getDate() % DAILY_QUOTES_BN.length;
     setQuoteIdx(dayIdx);
+
+    // Check if URL has ?category=... query param
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const catParam = urlParams.get("category");
+      if (catParam && BLOG_CATEGORIES.includes(catParam)) {
+        setActiveCategory(catParam);
+      }
+    } catch {
+      // Ignore URL parsing errors
+    }
 
     // Load saved bookmarks & poll vote from localStorage
     try {
@@ -472,10 +485,18 @@ export default function OnuvutiBlogHomePage() {
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] text-[#142230] flex flex-col">
-      {/* Clean Light Mode Header */}
+      {/* Clean Light Mode Header with Full Desktop & Mobile Navigation Menu */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/95 border-b border-stone-200/80">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
-          <Link href="/" className="flex items-center gap-3">
+          <Link
+            href="/"
+            onClick={() => {
+              setShowSavedOnly(false);
+              setActiveCategory("সকল গল্প");
+              setCurrentPage(1);
+            }}
+            className="flex items-center gap-3 shrink-0"
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/Onuvuti-Publications-Logo.png"
@@ -484,26 +505,141 @@ export default function OnuvutiBlogHomePage() {
             />
           </Link>
 
-          <div className="flex items-center gap-2.5">
+          {/* Desktop Navigation Menu */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {[
+              "সকল গল্প",
+              "ক্রাশ ও কনফেশন",
+              "রোমান্টিক গল্প",
+              "না বলা কথা",
+              "সম্পর্ক ও মনস্তত্ত্ব",
+            ].map((navCat) => {
+              const isNavActive = !showSavedOnly && activeCategory === navCat;
+              return (
+                <button
+                  key={navCat}
+                  type="button"
+                  onClick={() => {
+                    setShowSavedOnly(false);
+                    setActiveCategory(navCat);
+                    setCurrentPage(1);
+                  }}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                    isNavActive
+                      ? "bg-[#FAF4E6] text-[#80131E]"
+                      : "text-stone-600 hover:text-[#80131E] hover:bg-stone-50"
+                  }`}
+                >
+                  {navCat === "সকল গল্প" ? "হোমপেজ" : navCat}
+                </button>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={openTrackerModal}
+              className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-stone-600 hover:text-[#80131E] hover:bg-stone-50 transition cursor-pointer inline-flex items-center gap-1"
+            >
+              <span>আমার লেখা</span>
+              {mySubmittedIds.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-[#80131E] text-white text-[10px]">
+                  {mySubmittedIds.length}
+                </span>
+              )}
+            </button>
+          </nav>
+
+          {/* Right Action Buttons & Mobile Menu Toggle */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setIsSubmitModalOpen(true)}
               className="px-3.5 py-2 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/50 text-[#80131E] font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 hover:bg-[#f3e8ce] transition cursor-pointer"
             >
               <PenLine className="w-3.5 h-3.5" />
-              <span>গল্প / কনফেশন পাঠান</span>
+              <span className="hidden sm:inline">গল্প / কনফেশন পাঠান</span>
+              <span className="sm:hidden">লেখা পাঠান</span>
             </button>
 
             <Link
               href="/sporsher-byakoron"
-              className="px-4 py-2 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-sm hover:bg-[#630d16] transition"
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-sm hover:bg-[#630d16] transition"
             >
               <BookOpen className="w-3.5 h-3.5" />
-              <span>‘স্পর্শের ব্যাকরণ’ ই-বুক</span>
+              <span>ই-বুক</span>
               <ArrowRight className="w-3.5 h-3.5 hidden sm:inline" />
             </Link>
+
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+              aria-label="মেনু খুলুন"
+              className="lg:hidden p-2 rounded-xl border border-stone-200 bg-white text-[#142230] hover:text-[#80131E] cursor-pointer"
+            >
+              {isMobileMenuOpen ? (
+                <X className="w-5 h-5" />
+              ) : (
+                <Menu className="w-5 h-5" />
+              )}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Navigation Menu */}
+        {isMobileMenuOpen && (
+          <div className="lg:hidden border-t border-stone-200 bg-white px-4 py-4 space-y-3 shadow-md">
+            <div className="grid grid-cols-2 gap-2">
+              {BLOG_CATEGORIES.map((cat) => {
+                const isCatActive = !showSavedOnly && activeCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => {
+                      setShowSavedOnly(false);
+                      setActiveCategory(cat);
+                      setCurrentPage(1);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`px-3 py-2 rounded-xl text-left text-xs font-bold transition cursor-pointer ${
+                      isCatActive
+                        ? "bg-[#80131E] text-white"
+                        : "bg-stone-50 text-stone-700 border border-stone-200"
+                    }`}
+                  >
+                    {cat === "সকল গল্প" ? "হোমপেজ (সকল গল্প)" : cat}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="pt-2 border-t border-stone-100 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowSavedOnly(true);
+                  setIsMobileMenuOpen(false);
+                }}
+                className="flex-1 px-3 py-2 rounded-xl bg-[#FAF4E6] text-[#80131E] border border-[#C59B27]/40 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>সংরক্ষিত লেখা ({bookmarkedCount})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  openTrackerModal();
+                }}
+                className="flex-1 px-3 py-2 rounded-xl bg-stone-100 text-[#142230] text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Clock className="w-3.5 h-3.5 text-[#80131E]" />
+                <span>আমার পাঠানো লেখা ({mySubmittedIds.length})</span>
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">

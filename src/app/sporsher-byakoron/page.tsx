@@ -23,9 +23,9 @@ export default function SporsherByakoronLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] text-[#142230] pb-20 sm:pb-0">
-      {/* Minimal Header */}
+      {/* Minimal Header with Navigation Menu */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/95 border-b border-stone-200/80">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -40,6 +40,27 @@ export default function SporsherByakoronLandingPage() {
               {BOOK_INFO.titleBn}
             </span>
           </div>
+
+          <nav className="hidden md:flex items-center gap-2 text-xs font-extrabold text-stone-600">
+            <Link
+              href="/"
+              className="px-3 py-1.5 rounded-xl hover:bg-[#FAF4E6] hover:text-[#80131E] transition"
+            >
+              হোমপেজ (গল্প ও কনফেশন)
+            </Link>
+            <a
+              href="#toc"
+              className="px-3 py-1.5 rounded-xl hover:bg-[#FAF4E6] hover:text-[#80131E] transition"
+            >
+              সূচিপত্র
+            </a>
+            <a
+              href="#checkout"
+              className="px-3 py-1.5 rounded-xl hover:bg-[#FAF4E6] hover:text-[#80131E] transition"
+            >
+              পেমেন্ট ও ডাউনলোড
+            </a>
+          </nav>
 
           <button
             type="button"
@@ -126,7 +147,7 @@ export default function SporsherByakoronLandingPage() {
       </section>
 
       {/* COMPACT TABLE OF CONTENTS (ACCORDION) */}
-      <section className="py-12 sm:py-16 bg-white border-b border-stone-200/70">
+      <section id="toc" className="py-12 sm:py-16 bg-white border-b border-stone-200/70">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-6">
           <div className="text-center space-y-1">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#80131E]">
