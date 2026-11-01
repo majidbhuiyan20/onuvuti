@@ -10,18 +10,20 @@ import (
 
 	"github.com/onuvuti/backend/internal/config"
 	"github.com/onuvuti/backend/internal/models"
+	"github.com/onuvuti/backend/internal/pkg/cache"
 	"github.com/onuvuti/backend/internal/pkg/sanitizer"
 	"github.com/onuvuti/backend/internal/pkg/token"
 	"github.com/onuvuti/backend/internal/repository"
 )
 
 type AdminService struct {
-	cfg  *config.Config
-	repo *repository.Repository
+	cfg   *config.Config
+	repo  *repository.Repository
+	cache *cache.TTLCache
 }
 
-func NewAdminService(cfg *config.Config, repo *repository.Repository) *AdminService {
-	return &AdminService{cfg: cfg, repo: repo}
+func NewAdminService(cfg *config.Config, repo *repository.Repository, c *cache.TTLCache) *AdminService {
+	return &AdminService{cfg: cfg, repo: repo, cache: c}
 }
 
 func (s *AdminService) AuthenticatePassword(password string) (string, bool) {
@@ -90,6 +92,11 @@ func (s *AdminService) ApproveAndUpdateStory(id string, req models.ApproveOrUpda
 	if !ok {
 		return nil, errors.New("লেখাটি খুঁজে পাওয়া যায়নি।")
 	}
+
+	if s.cache != nil {
+		s.cache.InvalidatePrefix("stories:")
+	}
+
 	return updated, nil
 }
 
@@ -133,10 +140,16 @@ func (s *AdminService) CreateAdminStory(req models.AdminCreateStoryRequest) (*mo
 	}
 
 	created := s.repo.CreateStory(st)
+	if s.cache != nil {
+		s.cache.InvalidatePrefix("stories:")
+	}
 	return &created, nil
 }
 
 func (s *AdminService) DeleteStory(id string) bool {
-	return s.repo.DeleteStory(id)
+	ok := s.repo.DeleteStory(id)
+	if ok && s.cache != nil {
+		s.cache.InvalidatePrefix("stories:")
+	}
+	return ok
 }
-

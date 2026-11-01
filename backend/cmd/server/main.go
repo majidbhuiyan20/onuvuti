@@ -10,6 +10,7 @@ import (
 	"github.com/onuvuti/backend/internal/database"
 	"github.com/onuvuti/backend/internal/handlers"
 	"github.com/onuvuti/backend/internal/middleware"
+	"github.com/onuvuti/backend/internal/pkg/cache"
 	"github.com/onuvuti/backend/internal/repository"
 	"github.com/onuvuti/backend/internal/routes"
 	"github.com/onuvuti/backend/internal/service"
@@ -26,10 +27,11 @@ func main() {
 		log.Fatalf("Failed to initialize repository: %v", err)
 	}
 
-	// 3. Initialize Services
-	storySvc := service.NewStoryService(repo)
-	commentSvc := service.NewCommentService(repo)
-	adminSvc := service.NewAdminService(cfg, repo)
+	// 3. Initialize High-Speed RAM TTL Cache & Services
+	memCache := cache.NewTTLCache()
+	storySvc := service.NewStoryService(repo, memCache)
+	commentSvc := service.NewCommentService(repo, memCache)
+	adminSvc := service.NewAdminService(cfg, repo, memCache)
 	orderSvc := service.NewOrderService(repo)
 	analyticsSvc := service.NewAnalyticsService(repo)
 
@@ -57,7 +59,7 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
-	fmt.Printf("🚀 Onuvuti Go Backend (Modular Clean Architecture) running on http://localhost%s\n", addr)
+	fmt.Printf("🚀 Onuvuti Go Backend (Modular + RAM Cache + Pagination) running on http://localhost%s\n", addr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
 	}

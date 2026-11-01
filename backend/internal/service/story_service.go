@@ -7,33 +7,110 @@ import (
 	"time"
 
 	"github.com/onuvuti/backend/internal/models"
+	"github.com/onuvuti/backend/internal/pkg/cache"
 	"github.com/onuvuti/backend/internal/pkg/sanitizer"
 	"github.com/onuvuti/backend/internal/repository"
 )
 
 type StoryService struct {
-	repo *repository.Repository
+	repo  *repository.Repository
+	cache *cache.TTLCache
 }
 
-func NewStoryService(repo *repository.Repository) *StoryService {
-	return &StoryService{repo: repo}
-}
-
-func (s *StoryService) ListPublished(category, search string) []models.Story {
-	list := s.repo.ListPublishedStories(category, search)
-	if list == nil {
-		return []models.Story{}
+func NewStoryService(repo *repository.Repository, c *cache.TTLCache) *StoryService {
+	return &StoryService{
+		repo:  repo,
+		cache: c,
 	}
-	return list
 }
 
-func (s *StoryService) GetBySlugOrID(slugOrID string) (*models.Story, []models.Comment) {
+type cachedSingleStory struct {
+	Story    *models.Story
+	Comments []models.Comment
+}
+
+// ListPublishedPaginated returns paginated stories + pagination metadata, plus a boolean indicating if served from RAM cache.
+func (s *StoryService) ListPublishedPaginated(category, search string, page, limit int) (models.PaginatedStoriesResult, bool) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 50 {
+		limit = 6
+	}
+
+	cacheKey := fmt.Sprintf("stories:list:cat=%s:q=%s:p=%d:l=%d", strings.TrimSpace(category), strings.ToLower(strings.TrimSpace(search)), page, limit)
+	if s.cache != nil {
+		if val, hit := s.cache.Get(cacheKey); hit {
+			if cachedRes, ok := val.(models.PaginatedStoriesResult); ok {
+				return cachedRes, true
+			}
+		}
+	}
+
+	allFiltered := s.repo.ListPublishedStories(category, search)
+	totalItems := len(allFiltered)
+	totalPages := (totalItems + limit - 1) / limit
+	if totalPages < 1 {
+		totalPages = 1
+	}
+	if page > totalPages {
+		page = totalPages
+	}
+
+	start := (page - 1) * limit
+	end := start + limit
+	if start > totalItems {
+		start = totalItems
+	}
+	if end > totalItems {
+		end = totalItems
+	}
+
+	slice := allFiltered[start:end]
+	if slice == nil {
+		slice = []models.Story{}
+	}
+
+	result := models.PaginatedStoriesResult{
+		Stories: slice,
+		Pagination: models.PaginationMeta{
+			Page:       page,
+			Limit:      limit,
+			TotalItems: totalItems,
+			TotalPages: totalPages,
+			HasNext:    page < totalPages,
+			HasPrev:    page > 1,
+		},
+	}
+
+	if s.cache != nil {
+		s.cache.Set(cacheKey, result, 60*time.Second)
+	}
+
+	return result, false
+}
+
+func (s *StoryService) GetBySlugOrID(slugOrID string) (*models.Story, []models.Comment, bool) {
+	cacheKey := "stories:single:" + slugOrID
+	if s.cache != nil {
+		if val, hit := s.cache.Get(cacheKey); hit {
+			if cached, ok := val.(cachedSingleStory); ok {
+				return cached.Story, cached.Comments, true
+			}
+		}
+	}
+
 	st := s.repo.FindStoryBySlugOrID(slugOrID)
 	if st == nil {
-		return nil, nil
+		return nil, nil, false
 	}
 	comments := s.repo.ListCommentsByStoryID(st.ID)
-	return st, comments
+
+	if s.cache != nil {
+		s.cache.Set(cacheKey, cachedSingleStory{Story: st, Comments: comments}, 90*time.Second)
+	}
+
+	return st, comments, false
 }
 
 func (s *StoryService) SubmitPending(req models.SubmitStoryRequest) (*models.Story, error) {
@@ -98,7 +175,11 @@ func (s *StoryService) AddReaction(idOrSlug, reactionType string) (*models.Story
 	if rType != "love" && rType != "touched" && rType != "relatable" {
 		rType = "love"
 	}
-	return s.repo.AddReaction(idOrSlug, rType)
+	updated, ok := s.repo.AddReaction(idOrSlug, rType)
+	if ok && s.cache != nil {
+		s.cache.InvalidatePrefix("stories:")
+	}
+	return updated, ok
 }
 
 func SplitParagraphs(text string) []string {
@@ -123,4 +204,3 @@ func MakeExcerpt(text string, maxRunes int) string {
 	}
 	return string(runes[:maxRunes]) + "..."
 }
-

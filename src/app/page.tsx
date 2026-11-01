@@ -30,6 +30,8 @@ export default function OnuvutiBlogHomePage() {
   const [posts, setPosts] = useState<BlogPost[]>(BLOG_POSTS);
   const [activeCategory, setActiveCategory] = useState("সকল গল্প");
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 6;
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
 
   // Story Submission Modal State
@@ -62,7 +64,7 @@ export default function OnuvutiBlogHomePage() {
 
     async function loadStoriesFromGo() {
       try {
-        const res = await fetch(`${GO_API_BASE_URL}/stories`);
+        const res = await fetch(`${GO_API_BASE_URL}/stories?page=1&limit=50`);
         if (res.ok) {
           const data = await res.json();
           if (data.ok && Array.isArray(data.stories) && data.stories.length > 0) {
@@ -98,6 +100,16 @@ export default function OnuvutiBlogHomePage() {
       post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
     return matchCat && matchSearch;
   });
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredPosts.length / ITEMS_PER_PAGE)
+  );
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedPosts = filteredPosts.slice(
+    (safePage - 1) * ITEMS_PER_PAGE,
+    safePage * ITEMS_PER_PAGE
+  );
 
   const toggleLike = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
@@ -280,7 +292,10 @@ export default function OnuvutiBlogHomePage() {
                 <button
                   key={cat}
                   type="button"
-                  onClick={() => setActiveCategory(cat)}
+                  onClick={() => {
+                    setActiveCategory(cat);
+                    setCurrentPage(1);
+                  }}
                   className={`px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-bold transition cursor-pointer ${
                     active
                       ? "bg-[#80131E] text-white shadow-xs"
@@ -298,16 +313,19 @@ export default function OnuvutiBlogHomePage() {
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
               placeholder="গল্প বা কনফেশন খুঁজুন..."
               className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-stone-200 text-xs sm:text-sm text-[#142230] placeholder:text-stone-400 focus:outline-none focus:border-[#80131E]"
             />
           </div>
         </div>
 
-        {/* Stories, Confessions & Unspoken Letters Grid */}
+        {/* Stories, Confessions & Unspoken Letters Grid (Paginated) */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredPosts.map((post) => {
+          {paginatedPosts.map((post) => {
             const isLiked = Boolean(likedIds[post.id]);
             const isUnspoken = post.category === "না বলা কথা";
             const isConfession = post.category === "ক্রাশ ও কনফেশন";
@@ -419,6 +437,55 @@ export default function OnuvutiBlogHomePage() {
             );
           })}
         </div>
+
+        {/* Pagination Controls */}
+        {filteredPosts.length > 0 && (
+          <div className="rounded-2xl bg-white border border-stone-200/90 px-4 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+            <span className="text-xs text-stone-500 font-semibold">
+              মোট <strong className="text-[#80131E]">{filteredPosts.length}টি</strong> লেখার মধ্যে পৃষ্ঠা{" "}
+              <strong>{safePage}</strong> / <strong>{totalPages}</strong> দেখানো হচ্ছে
+            </span>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-700 hover:bg-stone-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
+              >
+                « আগের পৃষ্ঠা
+              </button>
+
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map(
+                (pageNum) => (
+                  <button
+                    key={pageNum}
+                    type="button"
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-8 h-8 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                      pageNum === safePage
+                        ? "bg-[#80131E] text-white shadow-xs"
+                        : "bg-stone-50 text-stone-700 border border-stone-200 hover:border-[#80131E]/40"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              )}
+
+              <button
+                type="button"
+                disabled={safePage >= totalPages}
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                className="px-3 py-1.5 rounded-xl border border-stone-200 text-xs font-bold text-stone-700 hover:bg-stone-100 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed transition"
+              >
+                পরের পৃষ্ঠা »
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Minimal Book Banner */}
         <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/45 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/onuvuti/backend/internal/middleware"
@@ -33,21 +34,45 @@ func NewStoryHandler(
 func (h *StoryHandler) ListPublished(w http.ResponseWriter, r *http.Request) {
 	category := r.URL.Query().Get("category")
 	search := r.URL.Query().Get("search")
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 50 {
+		limit = 6
+	}
 
-	stories := h.storySvc.ListPublished(category, search)
+	result, cacheHit := h.storySvc.ListPublishedPaginated(category, search, page, limit)
+	if cacheHit {
+		w.Header().Set("X-Cache", "HIT")
+	} else {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	w.Header().Set("Cache-Control", "public, max-age=30, stale-while-revalidate=60")
+
 	response.JSON(w, http.StatusOK, map[string]any{
-		"ok":      true,
-		"stories": stories,
+		"ok":         true,
+		"cached":     cacheHit,
+		"stories":    result.Stories,
+		"pagination": result.Pagination,
 	})
 }
 
 func (h *StoryHandler) GetSingle(w http.ResponseWriter, r *http.Request) {
 	slug := r.PathValue("slug")
-	story, comments := h.storySvc.GetBySlugOrID(slug)
+	story, comments, cacheHit := h.storySvc.GetBySlugOrID(slug)
 	if story == nil {
 		response.Error(w, http.StatusNotFound, "গল্পটি খুঁজে পাওয়া যায়নি।")
 		return
 	}
+
+	if cacheHit {
+		w.Header().Set("X-Cache", "HIT")
+	} else {
+		w.Header().Set("X-Cache", "MISS")
+	}
+	w.Header().Set("Cache-Control", "public, max-age=60, stale-while-revalidate=120")
 
 	// Track story view in analytics
 	clientIP := middleware.GetClientIP(r)
@@ -55,6 +80,7 @@ func (h *StoryHandler) GetSingle(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, http.StatusOK, map[string]any{
 		"ok":       true,
+		"cached":   cacheHit,
 		"story":    story,
 		"comments": comments,
 	})
@@ -116,4 +142,3 @@ func (h *StoryHandler) React(w http.ResponseWriter, r *http.Request) {
 		"likes":     updated.LikesCount,
 	})
 }
-

@@ -7,16 +7,18 @@ import (
 	"time"
 
 	"github.com/onuvuti/backend/internal/models"
+	"github.com/onuvuti/backend/internal/pkg/cache"
 	"github.com/onuvuti/backend/internal/pkg/sanitizer"
 	"github.com/onuvuti/backend/internal/repository"
 )
 
 type CommentService struct {
-	repo *repository.Repository
+	repo  *repository.Repository
+	cache *cache.TTLCache
 }
 
-func NewCommentService(repo *repository.Repository) *CommentService {
-	return &CommentService{repo: repo}
+func NewCommentService(repo *repository.Repository, c *cache.TTLCache) *CommentService {
+	return &CommentService{repo: repo, cache: c}
 }
 
 func (s *CommentService) AddComment(storyIDOrSlug string, req models.AddCommentRequest) (*models.Comment, error) {
@@ -52,6 +54,10 @@ func (s *CommentService) AddComment(storyIDOrSlug string, req models.AddCommentR
 	if !ok {
 		return nil, errors.New("গল্পটি খুঁজে পাওয়া যায়নি।")
 	}
+
+	if s.cache != nil {
+		s.cache.InvalidatePrefix("stories:single:")
+	}
+
 	return saved, nil
 }
-

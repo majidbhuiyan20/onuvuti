@@ -47,3 +47,18 @@ type ReactionRequest struct {
 	Type string `json:"type"` // "love" | "touched" | "relatable"
 }
 
+type PaginationMeta struct {
+	Page       int  `json:"page"`
+	Limit      int  `json:"limit"`
+	TotalItems int  `json:"totalItems"`
+	TotalPages int  `json:"totalPages"`
+	HasNext    bool `json:"hasNext"`
+	HasPrev    bool `json:"hasPrev"`
+}
+
+type PaginatedStoriesResult struct {
+	Stories    []Story        `json:"stories"`
+	Pagination PaginationMeta `json:"pagination"`
+}
+
+
