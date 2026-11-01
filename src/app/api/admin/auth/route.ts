@@ -30,8 +30,14 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const password = String(body?.password || "");
 
-    const expectedPassword =
-      process.env.ADMIN_SECRET_PASSWORD || "onuvuti-admin-2026";
+    const expectedPassword = (process.env.ADMIN_SECRET_PASSWORD || "").trim();
+
+    if (expectedPassword.length < 16) {
+      return NextResponse.json(
+        { ok: false, error: "Admin authentication is not configured." },
+        { status: 503 }
+      );
+    }
 
     // Constant-time comparison to prevent timing attacks
     const inputHash = crypto.createHash("sha256").update(password).digest();

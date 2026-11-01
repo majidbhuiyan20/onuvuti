@@ -24,10 +24,24 @@ func main() {
 	// 1. Load Configuration (from .env or AWS environment variables)
 	cfg := config.Load()
 
+	if cfg.Environment == "production" {
+		if cfg.DatabaseURL == "" ||
+			len(cfg.AdminPassword) < 16 ||
+			len(cfg.AdminTokenSecret) < 32 ||
+			len(cfg.InternalSecret) < 32 {
+			log.Fatal("Production configuration invalid: DATABASE_URL and strong admin/internal secrets are required")
+		}
+	}
+
 	// 2. Connect Database (Pure PostgreSQL — AWS RDS / Cloud Postgres)
 	pgDB := database.ConnectPostgres(cfg.DatabaseURL)
+	if pgDB == nil {
+		log.Fatal("PostgreSQL connection or migration failed; refusing to start production backend")
+	}
+
 	repo, err := repository.NewRepository(pgDB)
 	if err != nil {
+		_ = pgDB.Close()
 		log.Fatalf("Failed to initialize repository: %v", err)
 	}
 

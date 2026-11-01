@@ -2,7 +2,7 @@ package repository
 
 import (
 	"database/sql"
-	"log"
+	"fmt"
 	"sync"
 
 	"github.com/onuvuti/backend/internal/database"
@@ -25,20 +25,26 @@ type Repository struct {
 }
 
 func NewRepository(db *sql.DB) (*Repository, error) {
+	if db == nil {
+		return nil, fmt.Errorf("PostgreSQL connection is required in production")
+	}
+
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("PostgreSQL is not available: %w", err)
+	}
+
+	if err := database.SeedPostgresIfEmpty(db); err != nil {
+		return nil, fmt.Errorf("PostgreSQL seed initialization failed: %w", err)
+	}
+
 	r := &Repository{
 		db: db,
 		mem: memoryFallbackState{
 			Stories:           database.InitialStories(),
 			Comments:          make(map[string][]models.Comment),
-			TrafficByDate:     database.InitialDailyTraffic(),
+			TrafficByDate:     make(map[string]models.DailyTrafficStat),
 			ConfessionCounter: 104,
 		},
-	}
-
-	if r.db != nil {
-		if err := database.SeedPostgresIfEmpty(r.db); err != nil {
-			log.Printf("⚠️ Postgres auto-seed error: %v", err)
-		}
 	}
 
 	return r, nil

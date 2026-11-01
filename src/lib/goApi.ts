@@ -19,9 +19,10 @@ export function getGoApiBaseUrl(): string {
 export const GO_API_BASE_URL = getGoApiBaseUrl();
 
 export function getInternalAuthHeaders(): Record<string, string> {
-  const secret =
-    process.env.INTERNAL_SERVICE_SECRET ||
-    "onuvuti-internal-rpc-secret-key-2026";
+  const secret = (process.env.INTERNAL_SERVICE_SECRET || "").trim();
+  if (secret.length < 32) {
+    throw new Error("INTERNAL_SERVICE_SECRET is missing or invalid.");
+  }
   return {
     "Content-Type": "application/json",
     "X-Internal-Secret": secret,

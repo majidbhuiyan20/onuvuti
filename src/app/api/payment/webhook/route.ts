@@ -14,6 +14,17 @@ export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
     const webhookSecret = (process.env.ZINIPAY_WEBHOOK_SECRET || "").trim();
+    const isProduction =
+      process.env.APP_ENV === "production" ||
+      process.env.NODE_ENV === "production";
+
+    if (isProduction && webhookSecret.length < 32) {
+      return NextResponse.json(
+        { ok: false, error: "Webhook security is not configured." },
+        { status: 503 }
+      );
+    }
+
     const incomingSig =
       req.headers.get("x-zinipay-signature") ||
       req.headers.get("x-webhook-signature") ||
