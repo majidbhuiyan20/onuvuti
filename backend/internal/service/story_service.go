@@ -113,6 +113,10 @@ func (s *StoryService) GetBySlugOrID(slugOrID string) (*models.Story, []models.C
 	return st, comments, false
 }
 
+func (s *StoryService) TrackByID(id string) *models.Story {
+	return s.repo.FindAnyStoryByID(id)
+}
+
 func (s *StoryService) SubmitPending(req models.SubmitStoryRequest) (*models.Story, error) {
 	if strings.TrimSpace(req.WebsiteURL) != "" {
 		return nil, errors.New("বট বা স্প্যাম রিকোয়েস্ট শনাক্ত হয়েছে।")

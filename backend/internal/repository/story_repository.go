@@ -60,6 +60,20 @@ func (r *Repository) FindStoryBySlugOrID(slugOrID string) *models.Story {
 	return nil
 }
 
+func (r *Repository) FindAnyStoryByID(id string) *models.Story {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	cleanID := strings.TrimPrefix(strings.TrimSpace(id), "#")
+	for _, st := range r.state.Stories {
+		if strings.EqualFold(st.ID, cleanID) || strings.EqualFold(st.Slug, cleanID) {
+			copySt := st
+			return &copySt
+		}
+	}
+	return nil
+}
+
 func (r *Repository) NextConfessionBadgeLocked() string {
 	r.state.ConfessionCounter++
 	bnDigits := []rune{'০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'}

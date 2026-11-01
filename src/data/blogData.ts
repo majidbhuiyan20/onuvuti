@@ -60,6 +60,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readTimeBn: "৪ মিনিট পাঠ",
     dateBn: "১ নভেম্বর ২০২৬",
     author: "মালিহা তাবাসসুম, ঢাকা",
+    viewsCount: 1840,
     likesCount: 248,
     reactions: { love: 248, touched: 94, relatable: 67 },
     featured: true,
@@ -81,6 +82,7 @@ export const BLOG_POSTS: BlogPost[] = [
     dateBn: "১ নভেম্বর ২০২৬",
     author: "নাম প্রকাশে অনিচ্ছুক",
     isAnonymous: true,
+    viewsCount: 2190,
     likesCount: 385,
     reactions: { love: 385, touched: 142, relatable: 210 },
     content: [
@@ -101,6 +103,7 @@ export const BLOG_POSTS: BlogPost[] = [
     isAnonymous: true,
     adminNote:
       "অভিমান মনের ভেতর জমিয়ে না রেখে একদিন আলতো করে তাঁর হাতটা ধরে মনের কথাটা বলেই দেখুন। সম্পর্কে নীরবতা ভাঙার প্রথম পদক্ষেপটাই সবচেয়ে সুন্দর পরিবর্তন আনে। — অনুভূতি সম্পাদনা পর্ষদ",
+    viewsCount: 1620,
     likesCount: 312,
     reactions: { love: 312, touched: 175, relatable: 129 },
     content: [
@@ -118,6 +121,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readTimeBn: "৫ মিনিট পাঠ",
     dateBn: "২৮ অক্টোবর ২০২৬",
     author: "তানভীর আহমেদ, সিলেট",
+    viewsCount: 1410,
     likesCount: 274,
     reactions: { love: 274, touched: 198, relatable: 115 },
     content: [
@@ -135,6 +139,7 @@ export const BLOG_POSTS: BlogPost[] = [
     readTimeBn: "৪ মিনিট পাঠ",
     dateBn: "২৫ অক্টোবর ২০২৬",
     author: "সাদিয়া আফরিন, রাজশাহী",
+    viewsCount: 2430,
     likesCount: 420,
     reactions: { love: 420, touched: 230, relatable: 95 },
     content: [
@@ -153,6 +158,7 @@ export const BLOG_POSTS: BlogPost[] = [
     dateBn: "২১ অক্টোবর ২০২৬",
     author: "নাম প্রকাশে অনিচ্ছুক",
     isAnonymous: true,
+    viewsCount: 2890,
     likesCount: 510,
     reactions: { love: 510, touched: 340, relatable: 289 },
     content: [
@@ -171,6 +177,7 @@ export const BLOG_POSTS: BlogPost[] = [
     dateBn: "১৮ অক্টোবর ২০২৬",
     author: "অনুভূতি সম্পাদনা পর্ষদ",
     isAdminPost: true,
+    viewsCount: 1975,
     likesCount: 365,
     reactions: { love: 365, touched: 150, relatable: 180 },
     content: [
@@ -178,4 +185,26 @@ export const BLOG_POSTS: BlogPost[] = [
       "মনোবিজ্ঞানের ভাষায় একে বলা হয় ‘ইমোশনাল ইন্টিমেসি’। যখন দুটি মানুষের মনের দূরত্ব ঘুচে যায়, তখনই প্রতিটি স্পর্শ হয়ে ওঠে অর্থপূর্ণ ও প্রশান্তিময়। এই বিষয়গুলো নিয়েই বিস্তারিত আলোচনা করা হয়েছে আমাদের ‘স্পর্শের ব্যাকরণ’ বইটিতে।",
     ],
   },
+];
+
+export const DAILY_QUOTES_BN: string[] = [
+  "কিছু মানুষ মুখে ভালোবাসি বলে না, কিন্তু সারাদিনের ক্লান্তি শেষে চুপচাপ পাশে এসে বসে—সেটাই সবচেয়ে গভীর ভালোবাসা।",
+  "সম্পর্কে জিতে যাওয়ার চেয়ে প্রিয় মানুষটাকে ধরে রাখা অনেক বেশি জরুরি; ইগো জিতলে ভালোবাসা হেরে যায়।",
+  "মানুষের সবচেয়ে বড় একাকীত্ব হলো মনের কথাগুলো প্রিয় মানুষটির সামনে বসেও বলতে না পারা।",
+  "যাকে সত্যিকারের ভালোবাসা যায়, তার হাজারটা অভিমানও বুকের ভেতর যত্ন করে আগলে রাখা যায়।",
+];
+
+export interface PollOptionItem {
+  id: string;
+  label: string;
+  votes: number;
+}
+
+export const HOME_POLL_QUESTION =
+  "সম্পর্কে দূরত্ব বাড়ার প্রধান কারণ কোনটি বলে আপনি মনে করেন?";
+
+export const INITIAL_POLL_OPTIONS: PollOptionItem[] = [
+  { id: "opt-1", label: "কথা গোপন করা ও অস্পষ্টতা", votes: 142 },
+  { id: "opt-2", label: "সময় ও মানসিক মনোযোগ না দেওয়া", votes: 238 },
+  { id: "opt-3", label: "ইগো বা না বলা অভিমান জমিয়ে রাখা", votes: 195 },
 ];

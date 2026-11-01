@@ -28,6 +28,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	// 2. Public Story & Confession Routes
 	mux.HandleFunc("GET /api/v1/stories", deps.StoryHandler.ListPublished)
+	mux.HandleFunc("GET /api/v1/stories/track/{id}", deps.StoryHandler.TrackStory)
 	mux.HandleFunc("GET /api/v1/stories/{slug}", deps.StoryHandler.GetSingle)
 	mux.HandleFunc("POST /api/v1/stories", deps.StoryHandler.Submit)
 	mux.HandleFunc("POST /api/v1/stories/{id}/react", deps.StoryHandler.React)

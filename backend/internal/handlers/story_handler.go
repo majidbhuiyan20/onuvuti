@@ -86,6 +86,19 @@ func (h *StoryHandler) GetSingle(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *StoryHandler) TrackStory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	st := h.storySvc.TrackByID(id)
+	if st == nil {
+		response.Error(w, http.StatusNotFound, "এই ট্র্যাকিং আইডিতে কোনো লেখা পাওয়া যায়নি।")
+		return
+	}
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":    true,
+		"story": st,
+	})
+}
+
 func (h *StoryHandler) Submit(w http.ResponseWriter, r *http.Request) {
 	clientIP := middleware.GetClientIP(r)
 
