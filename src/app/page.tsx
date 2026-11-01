@@ -32,6 +32,11 @@ import {
   Quote,
   BarChart2,
   Menu,
+  User,
+  LogIn,
+  LogOut,
+  Lock,
+  Mail,
 } from "lucide-react";
 import {
   BLOG_CATEGORIES,
@@ -45,7 +50,7 @@ import {
 } from "@/data/blogData";
 import { BOOK_INFO } from "@/data/bookData";
 import { validateImageUpload } from "@/lib/security";
-import { GO_API_BASE_URL } from "@/lib/goApi";
+import { GO_API_BASE_URL, AppUser } from "@/lib/goApi";
 
 export default function OnuvutiBlogHomePage() {
   const router = useRouter();
@@ -89,6 +94,23 @@ export default function OnuvutiBlogHomePage() {
   const [lastSubmittedTrackingId, setLastSubmittedTrackingId] = useState<
     string | null
   >(null);
+
+  // User Authentication & Profile State (PostgreSQL User Accounts)
+  const [currentUser, setCurrentUser] = useState<AppUser | null>(null);
+  const [userStories, setUserStories] = useState<
+    Array<BlogPost & { status?: string; adminNote?: string; submittedAt?: string }>
+  >([]);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [authName, setAuthName] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(false);
+  const [showGoogleQuickInput, setShowGoogleQuickInput] = useState(false);
+  const [googleEmailInput, setGoogleEmailInput] = useState("");
+  const [googleNameInput, setGoogleNameInput] = useState("");
 
   // Story Submission Modal State
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -153,6 +175,24 @@ export default function OnuvutiBlogHomePage() {
           setPollOptions(parsedCounts);
         }
       }
+
+      // Restore user login session from PostgreSQL token
+      const savedUserToken = localStorage.getItem("onuvuti_user_token");
+      const savedUserData = localStorage.getItem("onuvuti_user_data");
+      if (savedUserData) {
+        try {
+          const parsedUser = JSON.parse(savedUserData);
+          setCurrentUser(parsedUser);
+          if (parsedUser.name) {
+            setSenderName(parsedUser.name);
+          }
+        } catch {
+          // Ignore parse errors
+        }
+      }
+      if (savedUserToken) {
+        refreshUserStories(savedUserToken);
+      }
     } catch {
       // Ignore storage errors
     }
@@ -192,6 +232,147 @@ export default function OnuvutiBlogHomePage() {
     }
     loadStoriesFromGo();
   }, []);
+
+  const refreshUserStories = async (token?: string) => {
+    const t =
+      token ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("onuvuti_user_token")
+        : null);
+    if (!t) return;
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/auth/me`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${t}`,
+        },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) {
+          if (data.user) {
+            setCurrentUser(data.user);
+            localStorage.setItem(
+              "onuvuti_user_data",
+              JSON.stringify(data.user)
+            );
+          }
+          if (Array.isArray(data.stories)) {
+            setUserStories(data.stories);
+          }
+        }
+      }
+    } catch {
+      // Ignore network errors
+    }
+  };
+
+  const handleManualAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setIsAuthLoading(true);
+
+    try {
+      const endpoint = authMode === "login" ? "/auth/login" : "/auth/register";
+      const payload =
+        authMode === "login"
+          ? { email: authEmail.trim(), password: authPassword }
+          : {
+              name: authName.trim(),
+              email: authEmail.trim(),
+              password: authPassword,
+            };
+
+      const res = await fetch(`${GO_API_BASE_URL}${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setAuthError(
+          data.error || "লগইন করা যায়নি। সঠিক তথ্য দিয়ে আবার চেষ্টা করুন।"
+        );
+        setIsAuthLoading(false);
+        return;
+      }
+
+      localStorage.setItem("onuvuti_user_token", data.token);
+      localStorage.setItem("onuvuti_user_data", JSON.stringify(data.user));
+      setCurrentUser(data.user);
+      if (!senderName) {
+        setSenderName(data.user.name);
+      }
+      setIsAuthModalOpen(false);
+      setAuthPassword("");
+      await refreshUserStories(data.token);
+    } catch {
+      setAuthError("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি। একটু পর আবার চেষ্টা করুন।");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async (
+    emailParam?: string,
+    nameParam?: string
+  ) => {
+    setAuthError(null);
+    setIsAuthLoading(true);
+
+    const email = (emailParam || googleEmailInput).trim();
+    const name = (nameParam || googleNameInput || email.split("@")[0]).trim();
+
+    if (!email) {
+      setAuthError("অনুগ্রহ করে আপনার গুগল ইমেইল দিন।");
+      setIsAuthLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name,
+          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+            name
+          )}&background=80131E&color=fff`,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setAuthError(data.error || "গুগল সাইন-ইন সম্পন্ন করা যায়নি।");
+        setIsAuthLoading(false);
+        return;
+      }
+
+      localStorage.setItem("onuvuti_user_token", data.token);
+      localStorage.setItem("onuvuti_user_data", JSON.stringify(data.user));
+      setCurrentUser(data.user);
+      if (!senderName) {
+        setSenderName(data.user.name);
+      }
+      setShowGoogleQuickInput(false);
+      setIsAuthModalOpen(false);
+      await refreshUserStories(data.token);
+    } catch {
+      setAuthError("গুগল সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("onuvuti_user_token");
+    localStorage.removeItem("onuvuti_user_data");
+    setCurrentUser(null);
+    setUserStories([]);
+    setIsProfileModalOpen(false);
+  };
 
   const bookmarkedCount = Object.values(bookmarkedIds).filter(Boolean).length;
 
@@ -316,14 +497,19 @@ export default function OnuvutiBlogHomePage() {
     setSubmitError(null);
     setIsSubmitting(true);
 
+    const effectiveAuthor = isAnonymous
+      ? "নাম প্রকাশে অনিচ্ছুক"
+      : senderName.trim() || currentUser?.name || "লেখক";
+
     const payload = {
       title: storyTitle,
       content: storyBody,
       category: storyCategory,
-      author: senderName,
+      author: effectiveAuthor,
       isAnonymous,
       imageUrl: storyImageDataUrl, // undefined if writer didn't upload an image
       websiteUrl, // Honeypot
+      userId: currentUser?.id || "",
     };
 
     try {
@@ -351,6 +537,11 @@ export default function OnuvutiBlogHomePage() {
         );
         setIsSubmitting(false);
         return;
+      }
+
+      // If user is logged in, attach new story to their profile list
+      if (currentUser && data.story) {
+        setUserStories((prev) => [data.story, ...prev]);
       }
 
       // Also sync to localStorage fallback & My Submissions Tracker
@@ -570,6 +761,36 @@ export default function OnuvutiBlogHomePage() {
               <ArrowRight className="w-3.5 h-3.5 hidden sm:inline" />
             </Link>
 
+            {/* User Account / Profile Button */}
+            {currentUser ? (
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+                title={`${currentUser.name} (প্রোফাইল দেখুন)`}
+              >
+                <div className="w-6 h-6 rounded-full bg-[#80131E] text-white flex items-center justify-center text-[11px] font-extrabold uppercase shrink-0">
+                  {currentUser.name ? currentUser.name.slice(0, 1) : "ইউ"}
+                </div>
+                <span className="hidden md:inline max-w-[85px] truncate">
+                  {currentUser.name}
+                </span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("login");
+                  setAuthError(null);
+                  setIsAuthModalOpen(true);
+                }}
+                className="px-3 py-2 rounded-xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+              >
+                <User className="w-3.5 h-3.5 text-[#80131E]" />
+                <span className="hidden sm:inline">লগইন</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
@@ -637,6 +858,44 @@ export default function OnuvutiBlogHomePage() {
                 <Clock className="w-3.5 h-3.5 text-[#80131E]" />
                 <span>আমার পাঠানো লেখা ({mySubmittedIds.length})</span>
               </button>
+            </div>
+
+            {/* Mobile User Session Action */}
+            <div className="pt-2 border-t border-stone-100">
+              {currentUser ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setIsProfileModalOpen(true);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-stone-800 text-xs font-bold inline-flex items-center justify-between cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-[#80131E] text-white flex items-center justify-center text-[11px] font-bold">
+                      {currentUser.name.slice(0, 1)}
+                    </div>
+                    <span>{currentUser.name} (প্রোফাইল)</span>
+                  </div>
+                  <span className="text-[#80131E] text-[11px] font-extrabold">
+                    লেখা: {userStories.length}টি
+                  </span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setAuthMode("login");
+                    setAuthError(null);
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer hover:bg-[#f3e8ce]"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>অ্যাকাউন্টে লগইন / সাইন-আপ করুন</span>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -1248,6 +1507,63 @@ export default function OnuvutiBlogHomePage() {
                     </div>
                   )}
 
+                  {/* Optional User Account Banner */}
+                  {currentUser ? (
+                    <div className="p-3 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/45 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-[#80131E] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                          {currentUser.name
+                            ? currentUser.name.slice(0, 1)
+                            : "ইউ"}
+                        </div>
+                        <div className="text-xs">
+                          <p className="font-bold text-[#142230]">
+                            লগইন আছেন:{" "}
+                            <span className="text-[#80131E]">
+                              {currentUser.name}
+                            </span>
+                          </p>
+                          <p className="text-[11px] text-stone-500">
+                            গল্পটি আপনার অ্যাকাউন্টে স্বয়ংক্রিয়ভাবে সেভ থাকবে।
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSubmitModalOpen(false);
+                          setIsProfileModalOpen(true);
+                        }}
+                        className="text-xs font-extrabold text-[#80131E] hover:underline cursor-pointer shrink-0"
+                      >
+                        প্রোফাইল
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-stone-50 border border-stone-200 flex items-center justify-between gap-3">
+                      <div className="text-xs text-stone-600">
+                        <span className="font-bold text-stone-800">
+                          💡 অ্যাকাউন্ট ছাড়াও সরাসরি গল্প পাঠানো যাবে
+                        </span>
+                        <p className="text-[11px] text-stone-500">
+                          সব লেখা এক অ্যাকাউন্টে সেভ রাখতে চাইলে লগইন করুন।
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsSubmitModalOpen(false);
+                          setAuthMode("login");
+                          setAuthError(null);
+                          setIsAuthModalOpen(true);
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-bold hover:bg-[#f3e8ce] cursor-pointer shrink-0"
+                      >
+                        লগইন
+                      </button>
+                    </div>
+                  )}
+
                   {/* Anonymous Toggle */}
                   <div className="flex items-center justify-between p-3 rounded-xl bg-stone-50 border border-stone-200">
                     <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-[#142230]">
@@ -1406,7 +1722,6 @@ export default function OnuvutiBlogHomePage() {
           </div>
         </div>
       )}
-
       {/* MY SUBMISSIONS & LIVE STATUS TRACKER MODAL (NO LOGIN REQUIRED) */}
       {isTrackerModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
@@ -1583,6 +1898,390 @@ export default function OnuvutiBlogHomePage() {
                       </div>
                     );
                   })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* USER AUTH MODAL (GOOGLE + MANUAL REGISTER / LOGIN) */}
+      {isAuthModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="max-w-md w-full rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden my-8">
+            <div className="bg-[#FAF4E6] px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-[#80131E]">
+                  অনুভূতি কমিউনিটি
+                </span>
+                <h3 className="text-lg font-extrabold text-[#142230]">
+                  {authMode === "login"
+                    ? "আপনার অ্যাকাউন্টে লগইন করুন"
+                    : "নতুন অ্যাকাউন্ট তৈরি করুন"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAuthModalOpen(false);
+                  setAuthError(null);
+                  setShowGoogleQuickInput(false);
+                }}
+                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {authError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{authError}</span>
+                </div>
+              )}
+
+              {/* 1-Click Sign in with Google */}
+              <div className="space-y-2">
+                {!showGoogleQuickInput ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowGoogleQuickInput(true)}
+                    disabled={isAuthLoading}
+                    className="w-full py-2.5 px-4 rounded-xl border border-stone-300 bg-white hover:bg-stone-50 text-stone-700 font-bold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition cursor-pointer shadow-2xs"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24">
+                      <path
+                        fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                      />
+                      <path
+                        fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                      />
+                      <path
+                        fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                      />
+                      <path
+                        fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                      />
+                    </svg>
+                    <span>Google দিয়ে চালিয়ে যান</span>
+                  </button>
+                ) : (
+                  <div className="rounded-2xl bg-stone-50 border border-stone-200 p-3 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-stone-700">
+                        গুগল অ্যাকাউন্ট দিয়ে সাইন-ইন
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowGoogleQuickInput(false)}
+                        className="text-stone-400 hover:text-stone-600 text-xs"
+                      >
+                        বাতিল
+                      </button>
+                    </div>
+                    <input
+                      type="email"
+                      value={googleEmailInput}
+                      onChange={(e) => setGoogleEmailInput(e.target.value)}
+                      placeholder="আপনার Gmail ঠিকানা (যেমন: name@gmail.com)"
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs text-[#142230] focus:outline-none focus:border-[#80131E]"
+                    />
+                    <input
+                      type="text"
+                      value={googleNameInput}
+                      onChange={(e) => setGoogleNameInput(e.target.value)}
+                      placeholder="আপনার নাম (ঐচ্ছিক)"
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs text-[#142230] focus:outline-none focus:border-[#80131E]"
+                    />
+                    <button
+                      type="button"
+                      disabled={isAuthLoading || !googleEmailInput.trim()}
+                      onClick={() => handleGoogleAuth()}
+                      className="w-full py-2 rounded-xl bg-[#80131E] text-white font-bold text-xs hover:bg-[#630d16] disabled:opacity-50 cursor-pointer"
+                    >
+                      {isAuthLoading ? "সংযোগ হচ্ছে..." : "Google দিয়ে নিশ্চিত করুন"}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="relative flex items-center justify-center my-3">
+                <div className="border-t border-stone-200 w-full" />
+                <span className="bg-white px-3 text-[11px] font-bold text-stone-400 uppercase tracking-wider absolute">
+                  বা ইমেইল দিয়ে
+                </span>
+              </div>
+
+              {/* Mode Switcher Tabs */}
+              <div className="flex rounded-xl bg-stone-100 p-1 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("login");
+                    setAuthError(null);
+                  }}
+                  className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${
+                    authMode === "login"
+                      ? "bg-white text-[#80131E] shadow-2xs"
+                      : "text-stone-600 hover:text-stone-900"
+                  }`}
+                >
+                  লগইন
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("register");
+                    setAuthError(null);
+                  }}
+                  className={`flex-1 py-1.5 rounded-lg transition cursor-pointer ${
+                    authMode === "register"
+                      ? "bg-white text-[#80131E] shadow-2xs"
+                      : "text-stone-600 hover:text-stone-900"
+                  }`}
+                >
+                  নতুন অ্যাকাউন্ট (রেজিস্টার)
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleManualAuth} className="space-y-3 pt-1">
+                {authMode === "register" && (
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      আপনার পুরো নাম *
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+                      <input
+                        type="text"
+                        required
+                        value={authName}
+                        onChange={(e) => setAuthName(e.target.value)}
+                        placeholder="আপনার নাম লিখুন"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    ইমেইল ঠিকানা *
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+                    <input
+                      type="email"
+                      required
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      placeholder="আপনার ইমেইল (যেমন: you@example.com)"
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    পাসওয়ার্ড *
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      placeholder={
+                        authMode === "register"
+                          ? "কমপক্ষে ৬ অক্ষরের পাসওয়ার্ড"
+                          : "আপনার পাসওয়ার্ড দিন"
+                      }
+                      className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isAuthLoading}
+                  className="w-full py-3 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm hover:bg-[#630d16] disabled:opacity-50 transition cursor-pointer shadow-sm"
+                >
+                  {isAuthLoading
+                    ? "যাচাই করা হচ্ছে..."
+                    : authMode === "login"
+                    ? "লগইন করুন"
+                    : "অ্যাকাউন্ট তৈরি করুন"}
+                </button>
+              </form>
+
+              <div className="p-3 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/40 text-center">
+                <p className="text-[11px] text-stone-600">
+                  💡 কোনো অ্যাকাউন্ট ছাড়াও আপনি সরাসরি গল্প পড়তে ও পাঠাতে পারেন।
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* USER PROFILE & MY DASHBOARD MODAL */}
+      {isProfileModalOpen && currentUser && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="max-w-xl w-full rounded-3xl bg-white border border-stone-200 shadow-2xl overflow-hidden my-8">
+            <div className="bg-[#FAF4E6] px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-[#80131E]">
+                  ব্যবহারকারী প্রোফাইল
+                </span>
+                <h3 className="text-lg font-extrabold text-[#142230]">
+                  আমার অনুভূতি অ্যাকাউন্ট
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(false)}
+                className="p-1.5 rounded-lg text-stone-500 hover:bg-stone-200/60 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+              {/* User Header Info Card */}
+              <div className="rounded-2xl bg-[#FDF8F2] border border-stone-200 p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-[#80131E] text-white flex items-center justify-center text-lg font-extrabold uppercase shrink-0 shadow-xs">
+                    {currentUser.name ? currentUser.name.slice(0, 1) : "ইউ"}
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-extrabold text-[#142230]">
+                      {currentUser.name}
+                    </h4>
+                    <p className="text-xs text-stone-500">{currentUser.email}</p>
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                      {currentUser.provider === "google"
+                        ? "Google ভেরিফাইড"
+                        : "নিবন্ধিত সদস্য"}
+                    </span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="px-3 py-1.5 rounded-xl border border-stone-200 bg-white hover:bg-rose-50 hover:border-rose-300 text-stone-600 hover:text-rose-700 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition shrink-0"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>লগআউট</span>
+                </button>
+              </div>
+
+              {/* My Submitted Stories Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h5 className="text-xs font-extrabold text-stone-600 uppercase tracking-wider">
+                    আমার পাঠানো লেখা ও কনফেশন ({userStories.length})
+                  </h5>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsProfileModalOpen(false);
+                      setIsSubmitModalOpen(true);
+                    }}
+                    className="text-xs font-extrabold text-[#80131E] hover:underline cursor-pointer inline-flex items-center gap-1"
+                  >
+                    <PenLine className="w-3.5 h-3.5" />
+                    <span>নতুন লেখা পাঠান</span>
+                  </button>
+                </div>
+
+                {userStories.length === 0 ? (
+                  <div className="rounded-2xl bg-stone-50 border border-dashed border-stone-300 p-6 text-center space-y-2">
+                    <p className="text-xs sm:text-sm font-bold text-stone-700">
+                      আপনার অ্যাকাউন্ট থেকে এখনো কোনো গল্প বা কনফেশন পাঠানো হয়নি।
+                    </p>
+                    <p className="text-xs text-stone-500">
+                      আপনার মনের না বলা কথা, ক্রাশ কনফেশন বা ভালোবাসার গল্প লিখে পাঠিয়ে দিন।
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsProfileModalOpen(false);
+                        setIsSubmitModalOpen(true);
+                      }}
+                      className="mt-2 px-4 py-2 rounded-xl bg-[#80131E] text-white text-xs font-bold cursor-pointer hover:bg-[#630d16]"
+                    >
+                      লেখা শুরু করুন
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {userStories.map((story) => {
+                      const isPublished = story.status === "published";
+                      return (
+                        <div
+                          key={story.id}
+                          className="rounded-2xl bg-[#FDF8F2] border border-stone-200 p-4 space-y-2"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                            <span className="font-bold text-[#80131E]">
+                              #{story.id} • {story.category}
+                            </span>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                                isPublished
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {isPublished
+                                ? "প্রকাশিত হয়েছে"
+                                : "অপেক্ষমাণ (রিভিউ চলছে)"}
+                            </span>
+                          </div>
+
+                          <h6 className="text-sm font-extrabold text-[#142230]">
+                            {story.title}
+                          </h6>
+
+                          {story.adminNote && (
+                            <div className="rounded-xl bg-[#FAF4E6] border border-[#C59B27]/45 p-3 text-xs text-stone-700">
+                              <strong className="text-[#80131E] block mb-0.5">
+                                অনুভূতি টিমের পরামর্শ:
+                              </strong>
+                              {story.adminNote}
+                            </div>
+                          )}
+
+                          {isPublished && story.slug && (
+                            <div className="pt-1 flex items-center justify-between text-xs">
+                              <span className="text-stone-500 font-semibold">
+                                পছন্দ: {story.likesCount || 1} • পাঠক:{" "}
+                                {(story.viewsCount || 10).toLocaleString()}
+                              </span>
+                              <Link
+                                href={`/blog/${story.slug}`}
+                                onClick={() => setIsProfileModalOpen(false)}
+                                className="inline-flex items-center gap-1 font-extrabold text-[#80131E] hover:underline"
+                              >
+                                <span>লেখাটি দেখুন</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </Link>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </div>

@@ -10,22 +10,37 @@ import (
 )
 
 func ConnectPostgres(databaseURL string) *sql.DB {
-	if strings.TrimSpace(databaseURL) == "" {
+	cleanURL := strings.TrimSpace(databaseURL)
+	if cleanURL == "" {
+		log.Printf("⚠️ No DATABASE_URL provided — running without PostgreSQL")
 		return nil
 	}
 
-	db, err := sql.Open("postgres", databaseURL)
+	db, err := sql.Open("postgres", cleanURL)
 	if err != nil {
 		log.Printf("⚠️ PostgreSQL open error: %v", err)
 		return nil
 	}
 
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(10)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	// Production connection pool tuning for AWS RDS / Cloud PostgreSQL
+	db.SetMaxOpenConns(30)
+	db.SetMaxIdleConns(15)
+	db.SetConnMaxLifetime(15 * time.Minute)
+	db.SetConnMaxIdleTime(5 * time.Minute)
 
-	if err := db.Ping(); err != nil {
-		log.Printf("⚠️ PostgreSQL unreachable (%v) — using local persistent fallback", err)
+	// Connection retry logic on container startup (e.g. AWS ECS / App Runner)
+	var pingErr error
+	for attempts := 1; attempts <= 5; attempts++ {
+		pingErr = db.Ping()
+		if pingErr == nil {
+			break
+		}
+		log.Printf("⏳ Waiting for PostgreSQL connection (attempt %d/5): %v", attempts, pingErr)
+		time.Sleep(time.Duration(attempts) * time.Second)
+	}
+
+	if pingErr != nil {
+		log.Printf("⚠️ PostgreSQL unreachable (%v)", pingErr)
 		_ = db.Close()
 		return nil
 	}
@@ -36,7 +51,6 @@ func ConnectPostgres(databaseURL string) *sql.DB {
 		return nil
 	}
 
-	log.Printf("✅ Connected to PostgreSQL database with auto-migrated schema")
+	log.Printf("✅ Connected to PostgreSQL database with auto-migrated schema (Production Pool Active)")
 	return db
 }
-

@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/onuvuti/backend/internal/config"
@@ -17,12 +21,12 @@ import (
 )
 
 func main() {
-	// 1. Load Configuration
+	// 1. Load Configuration (from .env or AWS environment variables)
 	cfg := config.Load()
 
-	// 2. Connect Database (PostgreSQL when DATABASE_URL is set, with local persistence)
+	// 2. Connect Database (Pure PostgreSQL — AWS RDS / Cloud Postgres)
 	pgDB := database.ConnectPostgres(cfg.DatabaseURL)
-	repo, err := repository.NewRepository(cfg.DataFilePath, pgDB)
+	repo, err := repository.NewRepository(pgDB)
 	if err != nil {
 		log.Fatalf("Failed to initialize repository: %v", err)
 	}
@@ -50,19 +54,47 @@ func main() {
 		UserHandler:      handlers.NewUserHandler(userSvc, rl),
 	})
 
-	// 5. Start Hardened HTTP Server
+	// 5. Hardened HTTP Server for Production
 	addr := ":" + cfg.Port
 	srv := &http.Server{
 		Addr:              addr,
 		Handler:           router,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout:       10 * time.Second,
-		WriteTimeout:      15 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      20 * time.Second,
 		IdleTimeout:       60 * time.Second,
 	}
 
-	fmt.Printf("🚀 Onuvuti Go Backend (Modular + RAM Cache + Pagination) running on http://localhost%s\n", addr)
-	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		log.Fatalf("Server error: %v", err)
+	// Graceful shutdown channel (handling AWS container stopping / SIGTERM)
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		dbStatus := "Standalone / Local"
+		if repo.IsPostgresConnected() {
+			dbStatus = "PostgreSQL (Production Active)"
+		}
+		fmt.Printf("🚀 Onuvuti Go Backend running on port %s [%s]\n", cfg.Port, dbStatus)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	// Wait for shutdown signal
+	sig := <-stop
+	log.Printf("🛑 Received shutdown signal: %v. Draining active connections...", sig)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("⚠️ Server shutdown error: %v", err)
 	}
+
+	if pgDB != nil {
+		_ = pgDB.Close()
+		log.Printf("✅ PostgreSQL connection pool closed cleanly.")
+	}
+
+	log.Printf("👋 Backend server gracefully stopped.")
 }

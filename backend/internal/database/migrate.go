@@ -33,22 +33,14 @@ CREATE TABLE IF NOT EXISTS stories (
 
 ALTER TABLE stories ADD COLUMN IF NOT EXISTS user_id VARCHAR(64) DEFAULT '';
 ALTER TABLE stories ADD COLUMN IF NOT EXISTS admin_note TEXT DEFAULT '';
-
-CREATE TABLE IF NOT EXISTS users (
-    id VARCHAR(64) PRIMARY KEY,
-    name VARCHAR(120) NOT NULL,
-    email VARCHAR(160) UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL DEFAULT '',
-    provider VARCHAR(32) NOT NULL DEFAULT 'manual',
-    avatar_url TEXT DEFAULT '',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+ALTER TABLE stories ADD COLUMN IF NOT EXISTS featured BOOLEAN NOT NULL DEFAULT FALSE;
 
 CREATE INDEX IF NOT EXISTS idx_stories_status ON stories(status);
 CREATE INDEX IF NOT EXISTS idx_stories_category ON stories(category);
 CREATE INDEX IF NOT EXISTS idx_stories_slug ON stories(slug);
+CREATE INDEX IF NOT EXISTS idx_stories_user_id ON stories(user_id);
+CREATE INDEX IF NOT EXISTS idx_stories_featured ON stories(featured);
+CREATE INDEX IF NOT EXISTS idx_stories_created_at ON stories(created_at DESC);
 
 CREATE TABLE IF NOT EXISTS comments (
     id VARCHAR(64) PRIMARY KEY,
@@ -83,10 +75,29 @@ CREATE TABLE IF NOT EXISTS daily_traffic (
     book_orders INTEGER NOT NULL DEFAULT 0,
     revenue_bdt INTEGER NOT NULL DEFAULT 0
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    id VARCHAR(64) PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    email VARCHAR(160) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL DEFAULT '',
+    provider VARCHAR(32) NOT NULL DEFAULT 'manual',
+    avatar_url TEXT DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+CREATE TABLE IF NOT EXISTS system_settings (
+    key VARCHAR(64) PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+INSERT INTO system_settings (key, value) VALUES ('confession_counter', '104')
+ON CONFLICT (key) DO NOTHING;
 `
 
 func RunMigrations(db *sql.DB) error {
 	_, err := db.Exec(schemaSQL)
 	return err
 }
-

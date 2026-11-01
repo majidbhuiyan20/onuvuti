@@ -1,0 +1,9 @@
+.git
+.github
+.env
+.env.local
+onuvuti-server
+data
+*.log
+*.tmp
+

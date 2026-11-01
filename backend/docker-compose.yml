@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: onuvuti-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: onuvuti_user
+      POSTGRES_PASSWORD: onuvuti_secure_password_2026
+      POSTGRES_DB: onuvuti
+    ports:
+      - "5432:5432"
+    volumes:
+      - onuvuti_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onuvuti_user -d onuvuti"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: onuvuti-backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 8081
+      APP_ENV: production
+      DATABASE_URL: postgres://onuvuti_user:onuvuti_secure_password_2026@db:5432/onuvuti?sslmode=disable
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-onuvuti-admin-2026}
+      ADMIN_TOKEN_SECRET: ${ADMIN_TOKEN_SECRET:-onuvuti-jwt-secret-replace-in-aws-2026}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,https://onuvuti.site,https://www.onuvuti.site
+    ports:
+      - "8081:8081"
+
+volumes:
+  onuvuti_pgdata:
+

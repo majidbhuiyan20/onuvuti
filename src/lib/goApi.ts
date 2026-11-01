@@ -15,3 +15,20 @@ export function getAdminAuthHeaders(): Record<string, string> {
   };
 }
 
+export function getUserAuthHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return { "Content-Type": "application/json" };
+  const token = localStorage.getItem("onuvuti_user_token") || "";
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+export interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  provider: "google" | "manual";
+  createdAt?: string;
+}

@@ -1,6 +1,9 @@
 package config
 
-import "strings"
+import (
+	"os"
+	"strings"
+)
 
 type Config struct {
 	Port               string
@@ -8,7 +11,7 @@ type Config struct {
 	AdminPassword      string
 	AdminTokenSecret   string
 	CorsAllowedOrigins []string
-	DataFilePath       string
+	Environment        string // "production" or "development"
 }
 
 func Load() *Config {
@@ -26,12 +29,19 @@ func Load() *Config {
 		}
 	}
 
+	envMode := strings.ToLower(getEnv("APP_ENV", getEnv("NODE_ENV", "production")))
+
+	defaultDB := os.Getenv("DATABASE_URL")
+	if defaultDB == "" {
+		defaultDB = "postgres://postgres:postgres@localhost:5432/onuvuti?sslmode=disable"
+	}
+
 	return &Config{
 		Port:               getEnv("PORT", "8081"),
-		DatabaseURL:        getEnv("DATABASE_URL", ""),
+		DatabaseURL:        defaultDB,
 		AdminPassword:      getEnv("ADMIN_PASSWORD", "onuvuti-admin-2026"),
 		AdminTokenSecret:   getEnv("ADMIN_TOKEN_SECRET", "onuvuti-go-jwt-hmac-secret-2026"),
 		CorsAllowedOrigins: origins,
-		DataFilePath:       getEnv("DATA_FILE_PATH", "./data/onuvuti_store.json"),
+		Environment:        envMode,
 	}
 }

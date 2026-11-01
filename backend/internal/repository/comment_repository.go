@@ -7,11 +7,60 @@ import (
 	"github.com/onuvuti/backend/internal/models"
 )
 
+func defaultComments(storyID string) []models.Comment {
+	return []models.Comment{
+		{
+			ID:          "c-1",
+			StoryID:     storyID,
+			Author:      "তাসনিম জাহান",
+			IsAnonymous: false,
+			Text:        "গল্পটা পড়ে নিজের জীবনের একটি অধ্যায়ের কথা মনে পড়ে গেল। সত্যিই অসাধারণ অনুভূতি!",
+			TimeBn:      "২ ঘণ্টা আগে",
+			CreatedAt:   time.Now().Add(-2 * time.Hour),
+		},
+		{
+			ID:          "c-2",
+			StoryID:     storyID,
+			Author:      "নাম প্রকাশে অনিচ্ছুক",
+			IsAnonymous: true,
+			Text:        "কিছু না বলা কথা আসলেই চিরকাল বুকের ভেতরেই থেকে যায়। খুব স্পর্শ করল লেখাটি।",
+			TimeBn:      "৪ ঘণ্টা আগে",
+			CreatedAt:   time.Now().Add(-4 * time.Hour),
+		},
+	}
+}
+
 func (r *Repository) ListCommentsByStoryID(storyID string) []models.Comment {
+	if r.db != nil {
+		rows, err := r.db.Query(`
+			SELECT id, story_id, author, is_anonymous, text, time_bn, created_at
+			FROM comments
+			WHERE story_id = $1
+			ORDER BY created_at DESC
+		`, storyID)
+		if err != nil {
+			log.Printf("⚠️ PostgreSQL ListCommentsByStoryID error: %v", err)
+			return defaultComments(storyID)
+		}
+		defer rows.Close()
+
+		var out []models.Comment
+		for rows.Next() {
+			var c models.Comment
+			if err := rows.Scan(&c.ID, &c.StoryID, &c.Author, &c.IsAnonymous, &c.Text, &c.TimeBn, &c.CreatedAt); err == nil {
+				out = append(out, c)
+			}
+		}
+		if len(out) == 0 {
+			return defaultComments(storyID)
+		}
+		return out
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	comments := r.state.Comments[storyID]
+	comments := r.mem.Comments[storyID]
 	if len(comments) == 0 {
 		return defaultComments(storyID)
 	}
@@ -19,52 +68,71 @@ func (r *Repository) ListCommentsByStoryID(storyID string) []models.Comment {
 }
 
 func (r *Repository) CreateComment(storyIDOrSlug string, c models.Comment) (*models.Comment, bool) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	var targetID string
-	for _, st := range r.state.Stories {
-		if st.ID == storyIDOrSlug || st.Slug == storyIDOrSlug {
-			targetID = st.ID
-			break
-		}
-	}
-	if targetID == "" {
+	st := r.FindAnyStoryByID(storyIDOrSlug)
+	if st == nil {
 		return nil, false
 	}
-
-	c.StoryID = targetID
-	existing := r.state.Comments[targetID]
-	if len(existing) == 0 {
-		existing = defaultComments(targetID)
+	c.StoryID = st.ID
+	if c.CreatedAt.IsZero() {
+		c.CreatedAt = time.Now()
 	}
-	r.state.Comments[targetID] = append([]models.Comment{c}, existing...)
-	_ = r.saveLocked()
 
-	if r.pg != nil {
-		_, err := r.pg.Exec(`
+	if r.db != nil {
+		_, err := r.db.Exec(`
 			INSERT INTO comments (id, story_id, author, is_anonymous, text, time_bn, created_at)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (id) DO NOTHING
 		`, c.ID, c.StoryID, c.Author, c.IsAnonymous, c.Text, c.TimeBn, c.CreatedAt)
 		if err != nil {
-			log.Printf("[PostgreSQL] insert comment error: %v", err)
+			log.Printf("⚠️ PostgreSQL CreateComment error: %v", err)
+			return nil, false
 		}
+		return &c, true
 	}
 
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.mem.Comments[st.ID] = append([]models.Comment{c}, r.mem.Comments[st.ID]...)
 	return &c, true
 }
 
 func (r *Repository) ListAllCommentsForAdmin() []models.Comment {
+	if r.db != nil {
+		rows, err := r.db.Query(`
+			SELECT c.id, c.story_id, c.author, c.is_anonymous, c.text, c.time_bn, c.created_at, COALESCE(s.title, '')
+			FROM comments c
+			LEFT JOIN stories s ON c.story_id = s.id
+			ORDER BY c.created_at DESC
+			LIMIT 150
+		`)
+		if err != nil {
+			log.Printf("⚠️ PostgreSQL ListAllCommentsForAdmin error: %v", err)
+			return []models.Comment{}
+		}
+		defer rows.Close()
+
+		var all []models.Comment
+		for rows.Next() {
+			var c models.Comment
+			if err := rows.Scan(&c.ID, &c.StoryID, &c.Author, &c.IsAnonymous, &c.Text, &c.TimeBn, &c.CreatedAt, &c.StoryTitle); err == nil {
+				all = append(all, c)
+			}
+		}
+		if all == nil {
+			all = []models.Comment{}
+		}
+		return all
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	var all []models.Comment
-	for _, st := range r.state.Stories {
+	for _, st := range r.mem.Stories {
 		if st.Status != "published" {
 			continue
 		}
-		list := r.state.Comments[st.ID]
+		list := r.mem.Comments[st.ID]
 		if len(list) == 0 {
 			list = defaultComments(st.ID)
 		}
@@ -74,51 +142,33 @@ func (r *Repository) ListAllCommentsForAdmin() []models.Comment {
 			all = append(all, c)
 		}
 	}
+	if all == nil {
+		all = []models.Comment{}
+	}
 	return all
 }
 
 func (r *Repository) DeleteCommentByID(commentID string) bool {
+	if r.db != nil {
+		res, err := r.db.Exec(`DELETE FROM comments WHERE id = $1`, commentID)
+		if err != nil {
+			log.Printf("⚠️ PostgreSQL DeleteCommentByID error: %v", err)
+			return false
+		}
+		affected, _ := res.RowsAffected()
+		return affected > 0
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	for storyID, list := range r.state.Comments {
-		if len(list) == 0 {
-			list = defaultComments(storyID)
-		}
+	for storyID, list := range r.mem.Comments {
 		for idx, c := range list {
 			if c.ID == commentID {
-				updated := append(list[:idx], list[idx+1:]...)
-				r.state.Comments[storyID] = updated
-				_ = r.saveLocked()
-				if r.pg != nil {
-					_, _ = r.pg.Exec(`DELETE FROM comments WHERE id = $1`, commentID)
-				}
+				r.mem.Comments[storyID] = append(list[:idx], list[idx+1:]...)
 				return true
 			}
 		}
 	}
 	return false
 }
-
-func defaultComments(storyID string) []models.Comment {
-	return []models.Comment{
-		{
-			ID:        "c1",
-			StoryID:   storyID,
-			Author:    "তাসনিম জাহান",
-			Text:      "গল্পটা পড়ে মনটা ভীষণ ছুঁয়ে গেল। আমাদের সবার জীবনেই এমন কিছু না বলা অনুভূতি থাকে।",
-			TimeBn:    "২ ঘণ্টা আগে",
-			CreatedAt: time.Now().Add(-2 * time.Hour),
-		},
-		{
-			ID:          "c2",
-			StoryID:     storyID,
-			Author:      "নাম প্রকাশে অনিচ্ছুক",
-			IsAnonymous: true,
-			Text:        "একদম আমার জীবনের সাথে মিলে গেছে। লেখকের জন্য অনেক শুভকামনা ও ভালোবাসা রইল।",
-			TimeBn:      "৫ ঘণ্টা আগে",
-			CreatedAt:   time.Now().Add(-5 * time.Hour),
-		},
-	}
-}
-

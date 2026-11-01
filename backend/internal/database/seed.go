@@ -1,7 +1,10 @@
 package database
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/onuvuti/backend/internal/models"
@@ -211,5 +214,56 @@ func InitialDailyTraffic() map[string]models.DailyTrafficStat {
 		}
 	}
 	return stats
+}
+
+func SeedPostgresIfEmpty(db *sql.DB) error {
+	var storyCount int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM stories`).Scan(&storyCount); err == nil && storyCount == 0 {
+		stories := InitialStories()
+		for _, st := range stories {
+			contentBytes, _ := json.Marshal(st.Content)
+			_, err := db.Exec(`
+				INSERT INTO stories (
+					id, slug, title, excerpt, category, read_time_bn, date_bn, author,
+					is_anonymous, is_admin_post, confession_id_bn, image_url, admin_note,
+					views_count, likes_count, reaction_love, reaction_touched, reaction_relatable,
+					featured, content_json, raw_content, status, user_id, submitted_at, created_at
+				) VALUES (
+					$1,$2,$3,$4,$5,$6,$7,$8,
+					$9,$10,$11,$12,$13,
+					$14,$15,$16,$17,$18,
+					$19,$20,$21,$22,$23,$24,$25
+				)
+				ON CONFLICT (id) DO NOTHING
+			`,
+				st.ID, st.Slug, st.Title, st.Excerpt, st.Category, st.ReadTimeBn, st.DateBn, st.Author,
+				st.IsAnonymous, st.IsAdminPost, st.ConfessionIdBn, st.ImageURL, st.AdminNote,
+				st.ViewsCount, st.LikesCount, st.Reactions.Love, st.Reactions.Touched, st.Reactions.Relatable,
+				st.Featured, string(contentBytes), st.RawContent, st.Status, st.UserID, st.SubmittedAt, st.CreatedAt,
+			)
+			if err != nil {
+				log.Printf("⚠️ Seed story error: %v", err)
+			}
+		}
+		log.Printf("✅ Seeded initial %d stories into PostgreSQL", len(stories))
+	}
+
+	var trafficCount int
+	if err := db.QueryRow(`SELECT COUNT(*) FROM daily_traffic`).Scan(&trafficCount); err == nil && trafficCount == 0 {
+		traffic := InitialDailyTraffic()
+		for _, stat := range traffic {
+			_, err := db.Exec(`
+				INSERT INTO daily_traffic (date_key, page_views, unique_visits, story_reads, book_page_views, book_orders, revenue_bdt)
+				VALUES ($1,$2,$3,$4,$5,$6,$7)
+				ON CONFLICT (date_key) DO NOTHING
+			`, stat.Date, stat.PageViews, stat.UniqueVisits, stat.StoryReads, stat.BookPageViews, stat.BookOrders, stat.RevenueBdt)
+			if err != nil {
+				log.Printf("⚠️ Seed traffic error: %v", err)
+			}
+		}
+		log.Printf("✅ Seeded initial 365 days of traffic data into PostgreSQL")
+	}
+
+	return nil
 }
 
