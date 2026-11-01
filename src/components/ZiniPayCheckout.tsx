@@ -201,7 +201,29 @@ export default function ZiniPayCheckout() {
             </button>
           </div>
         ) : mode === "hosted" ? (
-          <form onSubmit={handleHostedCheckout} className="space-y-3.5">
+          <div className="space-y-4">
+            {/* Direct 1-Click ZiniPay Hosted Checkout Link */}
+            <a
+              href={BOOK_INFO.zinipayProductUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#80131E] text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2 shadow-md hover:bg-[#630d16] transition cursor-pointer"
+            >
+              <Lock className="w-4 h-4" />
+              <span>
+                ZiniPay সরাসরি গেটওয়েতে যান — ৳{BOOK_INFO.offerPriceBn}
+              </span>
+              <ArrowRight className="w-4 h-4" />
+            </a>
+
+            <div className="relative flex items-center justify-center my-2">
+              <div className="border-t border-stone-200 w-full" />
+              <span className="bg-white px-3 text-[11px] font-bold text-stone-400 tracking-wider absolute">
+                বা নাম ও নম্বর দিয়ে ইনভয়েস বানান
+              </span>
+            </div>
+
+            <form onSubmit={handleHostedCheckout} className="space-y-3.5">
             <div>
               <label className="block text-xs font-bold text-stone-700 mb-1">
                 আপনার নাম *
@@ -278,6 +300,7 @@ export default function ZiniPayCheckout() {
               )}
             </button>
           </form>
+        </div>
         ) : (
           <form onSubmit={handleVerifyTrx} className="space-y-3.5">
             <div className="rounded-xl bg-[#FAF4E6] border border-[#C59B27]/40 p-3.5 text-xs text-stone-700 leading-relaxed">

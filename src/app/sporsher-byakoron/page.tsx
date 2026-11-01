@@ -62,14 +62,15 @@ export default function SporsherByakoronLandingPage() {
             </a>
           </nav>
 
-          <button
-            type="button"
-            onClick={scrollToCheckout}
+          <a
+            href={BOOK_INFO.zinipayProductUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="px-4 py-2 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-sm hover:bg-[#630d16] transition cursor-pointer"
           >
             <ShoppingBag className="w-3.5 h-3.5" />
             <span>কিনুন • ৳{BOOK_INFO.offerPriceBn}</span>
-          </button>
+          </a>
         </div>
       </header>
 
@@ -110,14 +111,15 @@ export default function SporsherByakoronLandingPage() {
               </span>
             </div>
 
-            <button
-              type="button"
-              onClick={scrollToCheckout}
+            <a
+              href={BOOK_INFO.zinipayProductUrl}
+              target="_blank"
+              rel="noopener noreferrer"
               className="px-8 py-4 rounded-2xl bg-[#80131E] text-white font-bold text-base sm:text-lg inline-flex items-center gap-2.5 shadow-lg shadow-[#80131E]/20 hover:bg-[#630d16] transition cursor-pointer"
             >
               <span>এখনই ই-বুকটি নিন — ৳{BOOK_INFO.offerPriceBn}</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </a>
           </div>
 
           {/* 4. Short Description & 5 Highlights Card */}
@@ -272,14 +274,15 @@ export default function SporsherByakoronLandingPage() {
             {BOOK_INFO.discountPercentBn}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={scrollToCheckout}
+        <a
+          href={BOOK_INFO.zinipayProductUrl}
+          target="_blank"
+          rel="noopener noreferrer"
           className="px-5 py-2.5 rounded-xl bg-[#80131E] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer"
         >
           <ShoppingBag className="w-3.5 h-3.5" />
           <span>এখনই কিনুন</span>
-        </button>
+        </a>
       </div>
     </div>
   );

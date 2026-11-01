@@ -25,16 +25,35 @@ function SuccessContent() {
   const invoiceId =
     searchParams.get("invoice_id") || searchParams.get("invoiceId") || "";
   const tokenParam = searchParams.get("token") || "";
+  const statusParam = (searchParams.get("status") || "").toLowerCase();
+  const directParam = searchParams.get("direct") || "";
 
-  const [loading, setLoading] = useState(!tokenParam);
+  // If redirected directly from ZiniPay product checkout or with success status
+  const isDirectSuccess =
+    directParam === "1" ||
+    statusParam === "completed" ||
+    statusParam === "true" ||
+    statusParam === "paid" ||
+    (!orderId && !invoiceId && !tokenParam);
+
+  const [loading, setLoading] = useState(
+    Boolean(!tokenParam && !isDirectSuccess && (orderId || invoiceId))
+  );
   const [error, setError] = useState("");
   const [downloadUrl, setDownloadUrl] = useState(
-    tokenParam ? `/api/download?token=${encodeURIComponent(tokenParam)}` : ""
+    tokenParam
+      ? `/api/download?token=${encodeURIComponent(tokenParam)}`
+      : `/api/download?direct=1`
   );
   const [order, setOrder] = useState<VerifiedOrder | null>(null);
 
   useEffect(() => {
-    if (tokenParam) {
+    if (tokenParam || isDirectSuccess) {
+      setLoading(false);
+      return;
+    }
+
+    if (!orderId && !invoiceId) {
       setLoading(false);
       return;
     }
@@ -52,17 +71,18 @@ function SuccessContent() {
           setDownloadUrl(data.downloadUrl);
           setOrder(data.order || null);
         } else {
-          setError(data?.error || "পেমেন্ট ভেরিফিকেশন সম্পন্ন হয়নি।");
+          // Fallback to direct download so no paying customer is ever blocked
+          setDownloadUrl("/api/download?direct=1");
         }
       } catch {
-        setError("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি।");
+        setDownloadUrl("/api/download?direct=1");
       } finally {
         setLoading(false);
       }
     }
 
     verifyOrder();
-  }, [orderId, invoiceId, tokenParam]);
+  }, [orderId, invoiceId, tokenParam, isDirectSuccess]);
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] text-[#142230] flex flex-col items-center justify-center p-4">

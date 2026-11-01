@@ -27,6 +27,8 @@ export const BOOK_INFO = {
   offerPriceBdt: 99,
   offerPriceBn: "৯৯",
   discountPercentBn: "৫৫% ছাড়",
+  zinipayProductUrl:
+    "https://dash.zinipay.com/onuvuti/product/ca434ea6-acda-4e47-9f80-be86c33c10cf",
   highlights: [
     "ভালোবাসার মনস্তত্ত্ব ও আবেগের বিজ্ঞান",
     "স্পর্শের ভাষা ও অন্তরঙ্গতার কৌশল",
