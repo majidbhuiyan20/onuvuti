@@ -35,7 +35,7 @@ func (s *AdminService) AuthenticatePassword(password string) (string, bool) {
 	return token.SignAdminToken(s.cfg.AdminTokenSecret), true
 }
 
-func (s *AdminService) GetDashboardLists() (pending []models.Story, published []models.Story, orders []models.BookOrder) {
+func (s *AdminService) GetDashboardLists() (pending []models.Story, published []models.Story, orders []models.BookOrder, comments []models.Comment) {
 	pending = s.repo.ListPendingStories()
 	if pending == nil {
 		pending = []models.Story{}
@@ -48,7 +48,11 @@ func (s *AdminService) GetDashboardLists() (pending []models.Story, published []
 	if orders == nil {
 		orders = []models.BookOrder{}
 	}
-	return pending, published, orders
+	comments = s.repo.ListAllCommentsForAdmin()
+	if comments == nil {
+		comments = []models.Comment{}
+	}
+	return pending, published, orders, comments
 }
 
 func (s *AdminService) ApproveAndUpdateStory(id string, req models.ApproveOrUpdateStoryRequest) (*models.Story, error) {
@@ -81,8 +85,14 @@ func (s *AdminService) ApproveAndUpdateStory(id string, req models.ApproveOrUpda
 		if req.IsAdminPost != nil {
 			st.IsAdminPost = *req.IsAdminPost
 		}
+		if req.Featured != nil {
+			st.Featured = *req.Featured
+		}
 		if req.ImageURL != nil {
 			st.ImageURL = strings.TrimSpace(*req.ImageURL)
+		}
+		if req.AdminNote != nil {
+			st.AdminNote = sanitizer.Text(*req.AdminNote, 1500)
 		}
 		if st.DateBn == "" {
 			st.DateBn = "আজ"
@@ -105,6 +115,7 @@ func (s *AdminService) CreateAdminStory(req models.AdminCreateStoryRequest) (*mo
 	content := sanitizer.Text(req.Content, 10000)
 	category := sanitizer.Text(req.Category, 60)
 	author := sanitizer.Text(req.Author, 80)
+	adminNote := sanitizer.Text(req.AdminNote, 1500)
 	if author == "" {
 		author = "অনুভূতি সম্পাদনা পর্ষদ"
 	}
@@ -129,7 +140,9 @@ func (s *AdminService) CreateAdminStory(req models.AdminCreateStoryRequest) (*mo
 		DateBn:      "আজ",
 		Author:      author,
 		IsAdminPost: req.IsAdminPost,
+		Featured:    req.Featured,
 		ImageURL:    imageURL, // Empty if admin didn't add an image
+		AdminNote:   adminNote,
 		ViewsCount:  1,
 		LikesCount:  1,
 		Reactions:   models.Reactions{Love: 1, Touched: 0, Relatable: 0},
@@ -146,10 +159,26 @@ func (s *AdminService) CreateAdminStory(req models.AdminCreateStoryRequest) (*mo
 	return &created, nil
 }
 
+func (s *AdminService) TogglePinStory(id string) (*models.Story, bool) {
+	updated, ok := s.repo.TogglePinStory(id)
+	if ok && s.cache != nil {
+		s.cache.InvalidatePrefix("stories:")
+	}
+	return updated, ok
+}
+
 func (s *AdminService) DeleteStory(id string) bool {
 	ok := s.repo.DeleteStory(id)
 	if ok && s.cache != nil {
 		s.cache.InvalidatePrefix("stories:")
+	}
+	return ok
+}
+
+func (s *AdminService) DeleteComment(commentID string) bool {
+	ok := s.repo.DeleteCommentByID(commentID)
+	if ok && s.cache != nil {
+		s.cache.InvalidatePrefix("stories:single:")
 	}
 	return ok
 }

@@ -1,7 +1,14 @@
 import React from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Clock, Calendar, BookOpen, ArrowRight } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  Calendar,
+  BookOpen,
+  ArrowRight,
+  MessageSquareHeart,
+} from "lucide-react";
 import { BLOG_POSTS } from "@/data/blogData";
 import { BOOK_INFO } from "@/data/bookData";
 import StoryInteractions from "@/components/StoryInteractions";
@@ -64,11 +71,7 @@ export default async function BlogPostPage({
         <div className="space-y-3 pb-6 border-b border-stone-200">
           <div className="flex flex-wrap items-center gap-2">
             <span className="inline-block px-3 py-0.5 rounded-full bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-bold">
-              {post.category === "ক্রাশ ও কনফেশন"
-                ? "💘 ক্রাশ ও কনফেশন"
-                : post.category === "না বলা কথা"
-                ? "💌 না বলা কথা"
-                : post.category}
+              {post.category}
             </span>
 
             {post.confessionIdBn && (
@@ -79,7 +82,7 @@ export default async function BlogPostPage({
 
             {post.isAdminPost && (
               <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold">
-                ✍️ সম্পাদকের কলমে
+                সম্পাদকের কলমে
               </span>
             )}
           </div>
@@ -119,10 +122,27 @@ export default async function BlogPostPage({
           ))}
         </article>
 
-        {/* Emotional Reactions, Share Buttons & Comments Box */}
+        {/* Admin Advice / Editorial Reply Box ("অনুভূতি টিমের পরামর্শ / উত্তর") */}
+        {post.adminNote && (
+          <div className="rounded-3xl bg-[#FAF4E6] border-2 border-[#C59B27]/50 p-6 sm:p-7 space-y-2.5 shadow-xs">
+            <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[#80131E]">
+              <MessageSquareHeart className="w-4 h-4 text-[#80131E]" />
+              <span>অনুভূতি টিমের পরামর্শ ও সহমর্মিতা</span>
+            </div>
+            <p className="text-sm sm:text-base text-[#142230] leading-relaxed font-medium">
+              {post.adminNote}
+            </p>
+          </div>
+        )}
+
+        {/* Emotional Reactions, 1-Click Story Card Download, Share Buttons & Comments Box */}
         <StoryInteractions
           storyId={post.id}
           storyTitle={post.title}
+          storyExcerpt={post.excerpt}
+          storyCategory={post.category}
+          storyAuthor={post.author}
+          confessionIdBn={post.confessionIdBn}
           initialLikes={post.likesCount}
           initialReactions={post.reactions}
         />

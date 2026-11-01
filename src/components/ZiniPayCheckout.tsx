@@ -150,7 +150,7 @@ export default function ZiniPayCheckout() {
               : "border-transparent text-stone-500 hover:text-[#142230]"
           }`}
         >
-          ⚡ ZiniPay পেমেন্ট
+          ZiniPay পেমেন্ট
         </button>
         <button
           type="button"
@@ -164,7 +164,7 @@ export default function ZiniPayCheckout() {
               : "border-transparent text-stone-500 hover:text-[#142230]"
           }`}
         >
-          🔑 TrxID ভেরিফাই / ডাউনলোড
+          TrxID ভেরিফাই / ডাউনলোড
         </button>
       </div>
 

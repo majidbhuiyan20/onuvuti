@@ -44,8 +44,10 @@ func NewRouter(deps RouterDeps) http.Handler {
 	mux.HandleFunc("GET /api/v1/admin/dashboard", middleware.RequireAdmin(cfg, deps.AdminHandler.Dashboard))
 	mux.HandleFunc("GET /api/v1/admin/analytics", middleware.RequireAdmin(cfg, deps.AnalyticsHandler.GetAdminAnalytics))
 	mux.HandleFunc("PATCH /api/v1/admin/stories/{id}/approve", middleware.RequireAdmin(cfg, deps.AdminHandler.ApproveOrUpdateStory))
+	mux.HandleFunc("PATCH /api/v1/admin/stories/{id}/pin", middleware.RequireAdmin(cfg, deps.AdminHandler.TogglePinStory))
 	mux.HandleFunc("POST /api/v1/admin/stories", middleware.RequireAdmin(cfg, deps.AdminHandler.CreateStory))
 	mux.HandleFunc("DELETE /api/v1/admin/stories/{id}", middleware.RequireAdmin(cfg, deps.AdminHandler.DeleteStory))
+	mux.HandleFunc("DELETE /api/v1/admin/comments/{id}", middleware.RequireAdmin(cfg, deps.AdminHandler.DeleteComment))
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain
 	handler := middleware.Firewall(mux, deps.RateLimiter)

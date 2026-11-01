@@ -24,6 +24,11 @@ export interface BlogPost {
    * No default/placeholder image is shown when omitted.
    */
   imageUrl?: string;
+  /**
+   * Optional editorial advice/reply from Admin ("অনুভূতি টিমের পরামর্শ / উত্তর").
+   */
+  adminNote?: string;
+  viewsCount?: number;
   likesCount: number;
   reactions?: {
     love: number;
@@ -94,6 +99,8 @@ export const BLOG_POSTS: BlogPost[] = [
     dateBn: "৩০ অক্টোবর ২০২৬",
     author: "নাম প্রকাশে অনিচ্ছুক",
     isAnonymous: true,
+    adminNote:
+      "অভিমান মনের ভেতর জমিয়ে না রেখে একদিন আলতো করে তাঁর হাতটা ধরে মনের কথাটা বলেই দেখুন। সম্পর্কে নীরবতা ভাঙার প্রথম পদক্ষেপটাই সবচেয়ে সুন্দর পরিবর্তন আনে। — অনুভূতি সম্পাদনা পর্ষদ",
     likesCount: 312,
     reactions: { love: 312, touched: 175, relatable: 129 },
     content: [

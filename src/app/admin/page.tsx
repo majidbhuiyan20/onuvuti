@@ -23,6 +23,8 @@ import {
   TrendingUp,
   Calendar,
   ShoppingBag,
+  Pin,
+  MessageSquare,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
@@ -36,6 +38,15 @@ interface PendingStory {
   content: string;
   imageUrl?: string;
   submittedAt: string;
+}
+
+interface AdminCommentItem {
+  id: string;
+  storySlug: string;
+  storyTitle?: string;
+  author: string;
+  text: string;
+  timeBn: string;
 }
 
 interface DailyTrafficStat {
@@ -101,7 +112,7 @@ export default function AdminDashboardPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
-    "analytics" | "pending" | "published" | "create"
+    "analytics" | "pending" | "published" | "comments" | "create"
   >("analytics");
 
   // Analytics State (Daily, 7 Days, Monthly, Yearly, Custom Date Range)
@@ -118,6 +129,21 @@ export default function AdminDashboardPage() {
   const [pendingStories, setPendingStories] =
     useState<PendingStory[]>(INITIAL_PENDING);
   const [publishedList, setPublishedList] = useState<BlogPost[]>(BLOG_POSTS);
+  const [commentsList, setCommentsList] = useState<AdminCommentItem[]>([
+    {
+      id: "c-101",
+      storySlug: "campus-crush-104",
+      storyTitle: "ক্যাম্পাসের শেষ বিকেলের সেই নীল খাম ও না বলা ভালোবাসা",
+      author: "তাসনিম জাহান",
+      text: "গল্পটা পড়ে নিজের বিশ্ববিদ্যালয় জীবনের কথা মনে পড়ে গেল। সত্যিই অসাধারণ অনুভূতি!",
+      timeBn: "২ ঘণ্টা আগে",
+    },
+  ]);
+
+  // Admin Advice / Editorial Reply per Pending Story
+  const [pendingAdminNotes, setPendingAdminNotes] = useState<
+    Record<string, string>
+  >({});
 
   // Editing Pending Story State
   const [editingPendingId, setEditingPendingId] = useState<string | null>(null);
@@ -135,6 +161,7 @@ export default function AdminDashboardPage() {
   const [newCategory, setNewCategory] =
     useState<StoryCategory>("সম্পর্ক ও মনস্তত্ত্ব");
   const [newContent, setNewContent] = useState("");
+  const [newAdminNote, setNewAdminNote] = useState("");
   const [isAdminBadge, setIsAdminBadge] = useState(true);
   const [newImageDataUrl, setNewImageDataUrl] = useState<string | undefined>(
     undefined
@@ -216,6 +243,9 @@ export default function AdminDashboardPage() {
           }
           if (Array.isArray(data.publishedStories)) {
             setPublishedList(data.publishedStories);
+          }
+          if (Array.isArray(data.comments)) {
+            setCommentsList(data.comments);
           }
           if (data.analytics) {
             setAnalyticsData(data.analytics);
@@ -373,6 +403,7 @@ export default function AdminDashboardPage() {
     );
     const finalCategory = isEditingThis ? editPendingCategory : item.category;
     const finalImage = isEditingThis ? editPendingImage : item.imageUrl;
+    const finalAdminNote = sanitizeText(pendingAdminNotes[item.id] || "", 1200);
 
     try {
       const res = await fetch(
@@ -387,6 +418,7 @@ export default function AdminDashboardPage() {
             content: finalContent,
             category: finalCategory,
             imageUrl: finalImage || "",
+            adminNote: finalAdminNote,
           }),
         }
       );
@@ -413,6 +445,7 @@ export default function AdminDashboardPage() {
       category: finalCategory,
       confessionIdBn: confessionNum,
       imageUrl: finalImage || undefined,
+      adminNote: finalAdminNote || undefined,
       readTimeBn: "৩ মিনিট পাঠ",
       dateBn: "আজ",
       author: item.author,
@@ -442,11 +475,50 @@ export default function AdminDashboardPage() {
     setPendingStories((prev) => prev.filter((p) => p.id !== id));
   };
 
+  const handleTogglePin = async (post: BlogPost) => {
+    try {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/admin/stories/${encodeURIComponent(post.id)}/pin`,
+        {
+          method: "PATCH",
+          headers: getAdminAuthHeaders(),
+        }
+      );
+      if (res.ok) {
+        await fetchDashboardFromGo();
+        return;
+      }
+    } catch {
+      // Fallback to local state
+    }
+
+    const updated = publishedList.map((p) =>
+      p.id === post.id ? { ...p, featured: !p.featured } : p
+    );
+    syncPublishedToStorage(updated);
+  };
+
+  const handleDeleteComment = async (commentId: string) => {
+    try {
+      await fetch(
+        `${GO_API_BASE_URL}/admin/comments/${encodeURIComponent(commentId)}`,
+        {
+          method: "DELETE",
+          headers: getAdminAuthHeaders(),
+        }
+      );
+    } catch {
+      // Ignore if offline
+    }
+    setCommentsList((prev) => prev.filter((c) => c.id !== commentId));
+  };
+
   const handleCreateStory = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanTitle = sanitizeText(newTitle, 180);
     const cleanContent = sanitizeText(newContent, 10000);
     const cleanAuthor = sanitizeText(newAuthor, 80) || "অনুভূতি সম্পাদনা পর্ষদ";
+    const cleanAdminNote = sanitizeText(newAdminNote, 1200);
 
     if (!cleanTitle || !cleanContent) return;
 
@@ -461,6 +533,7 @@ export default function AdminDashboardPage() {
           author: cleanAuthor,
           isAdminPost: isAdminBadge,
           imageUrl: newImageDataUrl || "",
+          adminNote: cleanAdminNote,
         }),
       });
 
@@ -468,6 +541,7 @@ export default function AdminDashboardPage() {
         await fetchDashboardFromGo();
         setNewTitle("");
         setNewContent("");
+        setNewAdminNote("");
         setNewImageDataUrl(undefined);
         setActiveTab("published");
         return;
@@ -490,6 +564,7 @@ export default function AdminDashboardPage() {
       confessionIdBn: confessionNum,
       isAdminPost: isAdminBadge,
       imageUrl: newImageDataUrl || undefined,
+      adminNote: cleanAdminNote || undefined,
       readTimeBn: "৪ মিনিট পাঠ",
       dateBn: "আজ",
       author: cleanAuthor,
@@ -502,6 +577,7 @@ export default function AdminDashboardPage() {
     syncPublishedToStorage(nextPublished);
     setNewTitle("");
     setNewContent("");
+    setNewAdminNote("");
     setNewImageDataUrl(undefined);
     setActiveTab("published");
   };
@@ -674,6 +750,19 @@ export default function AdminDashboardPage() {
           >
             <FileText className="w-4 h-4" />
             <span>প্রকাশিত লেখাসমূহ ({publishedList.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("comments")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "comments"
+                ? "bg-[#80131E] text-white"
+                : "bg-white border border-stone-200 text-stone-700"
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" />
+            <span>কমেন্ট মডারেশন ({commentsList.length})</span>
           </button>
 
           <button
@@ -919,8 +1008,9 @@ export default function AdminDashboardPage() {
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Top Stories */}
               <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs">
-                <h3 className="text-sm sm:text-base font-extrabold text-[#142230]">
-                  🔥 সবচেয়ে বেশি পড়া গল্প ও কনফেশন
+                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-[#80131E]" />
+                  <span>সবচেয়ে বেশি পড়া গল্প ও কনফেশন</span>
                 </h3>
                 <div className="space-y-3">
                   {(analyticsData?.topStories ?? []).map((st, idx) => (
@@ -937,7 +1027,7 @@ export default function AdminDashboardPage() {
                             {st.title}
                           </p>
                           <p className="text-[11px] text-stone-500">
-                            {st.category} • ❤️ {st.likesCount}
+                            {st.category} • পছন্দ: {st.likesCount}
                           </p>
                         </div>
                       </div>
@@ -951,8 +1041,9 @@ export default function AdminDashboardPage() {
 
               {/* Date-by-Date Table */}
               <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs">
-                <h3 className="text-sm sm:text-base font-extrabold text-[#142230]">
-                  📅 তারিখ অনুযায়ী বিস্তারিত ট্রাফিক লগ
+                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#80131E]" />
+                  <span>তারিখ অনুযায়ী বিস্তারিত ট্রাফিক লগ</span>
                 </h3>
                 <div className="max-h-72 overflow-y-auto pr-1">
                   <table className="w-full text-left border-collapse text-xs">
@@ -1113,6 +1204,26 @@ export default function AdminDashboardPage() {
                       </>
                     )}
 
+                    {/* Admin Advice / Editorial Reply Input Box */}
+                    <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/40 p-3.5 space-y-2">
+                      <label className="block text-xs font-extrabold text-[#80131E]">
+                        সম্পাদকের কথা / অনুভূতি টিমের পরামর্শ (ঐচ্ছিক — গল্পের নিচে আলাদা বক্সে দেখাবে)
+                      </label>
+                      <textarea
+                        rows={2}
+                        maxLength={1200}
+                        value={pendingAdminNotes[item.id] || ""}
+                        onChange={(e) =>
+                          setPendingAdminNotes((prev) => ({
+                            ...prev,
+                            [item.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="পাঠকের এই গল্প বা সমস্যার নিচে ২–৩ লাইনের সহমর্মিতা বা পরামর্শ লিখুন..."
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs sm:text-sm focus:outline-none focus:border-[#80131E]"
+                      />
+                    </div>
+
                     <div className="pt-2 flex flex-wrap items-center gap-3">
                       <button
                         type="button"
@@ -1156,7 +1267,11 @@ export default function AdminDashboardPage() {
             {publishedList.map((post) => (
               <div
                 key={post.id}
-                className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                className={`rounded-2xl bg-white border p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${
+                  post.featured
+                    ? "border-[#80131E]/50 ring-1 ring-[#80131E]/15"
+                    : "border-stone-200"
+                }`}
               >
                 <div className="flex items-center gap-3.5">
                   {post.imageUrl && (
@@ -1169,6 +1284,12 @@ export default function AdminDashboardPage() {
                   )}
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2 text-xs">
+                      {post.featured && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#80131E] text-white text-[10px] font-extrabold">
+                          <Pin className="w-2.5 h-2.5" />
+                          পিন করা (Featured)
+                        </span>
+                      )}
                       <span className="font-bold text-[#80131E]">
                         {post.category}
                       </span>
@@ -1179,7 +1300,12 @@ export default function AdminDashboardPage() {
                       )}
                       {post.isAdminPost && (
                         <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
-                          ✍️ সম্পাদকের কলমে
+                          সম্পাদকের কলমে
+                        </span>
+                      )}
+                      {post.adminNote && (
+                        <span className="px-2 py-0.5 rounded-full bg-stone-100 text-stone-700 text-[10px] font-bold">
+                          পরামর্শ যুক্ত
                         </span>
                       )}
                       <span className="text-stone-400">• {post.author}</span>
@@ -1191,6 +1317,20 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleTogglePin(post)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer transition ${
+                      post.featured
+                        ? "bg-[#80131E] text-white"
+                        : "bg-stone-100 text-stone-700 hover:bg-[#FAF4E6] hover:text-[#80131E]"
+                    }`}
+                    title="হোমপেজের ওপরে পিন করে রাখুন"
+                  >
+                    <Pin className="w-3.5 h-3.5" />
+                    <span>{post.featured ? "পিন সরান" : "পিন করুন"}</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={async () => {
@@ -1222,7 +1362,51 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Tab 3: Create New Story (Admin Writing + Optional Image) */}
+        {/* Tab 3: Comments Moderation */}
+        {activeTab === "comments" && (
+          <div className="space-y-3">
+            {commentsList.length === 0 ? (
+              <div className="rounded-2xl bg-white border border-stone-200 p-10 text-center text-sm text-stone-500">
+                এই মুহূর্তে কোনো পাঠকের মতামত বা কমেন্ট নেই।
+              </div>
+            ) : (
+              commentsList.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="font-extrabold text-[#142230]">
+                        {comment.author}
+                      </span>
+                      <span className="text-stone-400">• {comment.timeBn}</span>
+                      {comment.storyTitle && (
+                        <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] text-[#80131E] font-bold">
+                          গল্প: {comment.storyTitle}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-stone-700 leading-relaxed">
+                      {comment.text}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteComment(comment.id)}
+                    className="px-3.5 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold inline-flex items-center gap-1.5 hover:bg-rose-100 cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>কমেন্ট মুছুন</span>
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* Tab 4: Create New Story (Admin Writing + Optional Image) */}
         {activeTab === "create" && (
           <form
             onSubmit={handleCreateStory}
@@ -1241,7 +1425,7 @@ export default function AdminDashboardPage() {
                   onChange={(e) => setIsAdminBadge(e.target.checked)}
                   className="accent-[#80131E]"
                 />
-                <span>‘✍️ সম্পাদকের কলমে’ ব্যাজ</span>
+                <span>‘সম্পাদকের কলমে’ ব্যাজ</span>
               </label>
             </div>
 
@@ -1271,13 +1455,13 @@ export default function AdminDashboardPage() {
                   className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
                 >
                   <option value="সম্পর্ক ও মনস্তত্ত্ব">
-                    🧠 সম্পর্ক ও মনস্তত্ত্ব
+                    সম্পর্ক ও মনস্তত্ত্ব
                   </option>
-                  <option value="ক্রাশ ও কনফেশন">💘 ক্রাশ ও কনফেশন</option>
-                  <option value="রোমান্টিক গল্প">💕 রোমান্টিক গল্প</option>
-                  <option value="জীবনের গল্প">🌿 জীবনের গল্প</option>
-                  <option value="না বলা কথা">💌 না বলা কথা</option>
-                  <option value="বিচ্ছেদ ও প্রাক্তন">💔 বিচ্ছেদ ও প্রাক্তন</option>
+                  <option value="ক্রাশ ও কনফেশন">ক্রাশ ও কনফেশন</option>
+                  <option value="রোমান্টিক গল্প">রোমান্টিক গল্প</option>
+                  <option value="জীবনের গল্প">জীবনের গল্প</option>
+                  <option value="না বলা কথা">না বলা কথা</option>
+                  <option value="বিচ্ছেদ ও প্রাক্তন">বিচ্ছেদ ও প্রাক্তন</option>
                 </select>
               </div>
             </div>
@@ -1309,6 +1493,20 @@ export default function AdminDashboardPage() {
                 onChange={(e) => setNewContent(e.target.value)}
                 placeholder="এখানে সম্পূর্ণ গল্প বা আর্টিকেলটি লিখুন..."
                 className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[#80131E] mb-1">
+                সম্পাদকের কথা / অনুভূতি টিমের পরামর্শ (ঐচ্ছিক)
+              </label>
+              <textarea
+                rows={2}
+                maxLength={1200}
+                value={newAdminNote}
+                onChange={(e) => setNewAdminNote(e.target.value)}
+                placeholder="চাইলে লেখার নিচে পাঠকদের উদ্দেশ্যে ২–৩ লাইনের পরামর্শ বা নোট যুক্ত করুন..."
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#FAF4E6] border border-[#C59B27]/40 text-sm"
               />
             </div>
 

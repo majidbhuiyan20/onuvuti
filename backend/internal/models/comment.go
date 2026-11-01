@@ -5,6 +5,7 @@ import "time"
 type Comment struct {
 	ID          string    `json:"id"`
 	StoryID     string    `json:"storyId"`
+	StoryTitle  string    `json:"storyTitle,omitempty"`
 	Author      string    `json:"author"`
 	IsAnonymous bool      `json:"isAnonymous,omitempty"`
 	Text        string    `json:"text"`

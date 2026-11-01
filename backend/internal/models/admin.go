@@ -10,7 +10,9 @@ type ApproveOrUpdateStoryRequest struct {
 	Category    string  `json:"category"`
 	Author      string  `json:"author,omitempty"`
 	IsAdminPost *bool   `json:"isAdminPost,omitempty"`
+	Featured    *bool   `json:"featured,omitempty"`
 	ImageURL    *string `json:"imageUrl,omitempty"` // Pointer so admin can clear ("") or update optional image
+	AdminNote   *string `json:"adminNote,omitempty"`
 }
 
 type AdminCreateStoryRequest struct {
@@ -19,6 +21,8 @@ type AdminCreateStoryRequest struct {
 	Category    string `json:"category"`
 	Author      string `json:"author"`
 	IsAdminPost bool   `json:"isAdminPost"`
+	Featured    bool   `json:"featured"`
 	ImageURL    string `json:"imageUrl,omitempty"`
+	AdminNote   string `json:"adminNote,omitempty"`
 }
 

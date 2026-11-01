@@ -20,6 +20,9 @@ import {
   Trash2,
   ShieldCheck,
   AlertCircle,
+  Pin,
+  TrendingUp,
+  MessageSquareHeart,
 } from "lucide-react";
 import { BLOG_CATEGORIES, BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { BOOK_INFO } from "@/data/bookData";
@@ -91,15 +94,25 @@ export default function OnuvutiBlogHomePage() {
     loadStoriesFromGo();
   }, []);
 
-  const filteredPosts = posts.filter((post) => {
-    const matchCat =
-      activeCategory === "সকল গল্প" || post.category === activeCategory;
-    const matchSearch =
-      !searchQuery.trim() ||
-      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchCat && matchSearch;
-  });
+  const filteredPosts = posts
+    .filter((post) => {
+      const matchCat =
+        activeCategory === "সকল গল্প" || post.category === activeCategory;
+      const matchSearch =
+        !searchQuery.trim() ||
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchCat && matchSearch;
+    })
+    .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
+
+  // Top 3 Trending / Most Read Stories ("সপ্তাহের সেরা ও সবচেয়ে বেশি পড়া লেখা")
+  const trendingPosts = [...posts]
+    .sort(
+      (a, b) =>
+        (b.viewsCount || b.likesCount * 5) - (a.viewsCount || a.likesCount * 5)
+    )
+    .slice(0, 3);
 
   const totalPages = Math.max(
     1,
@@ -263,7 +276,7 @@ export default function OnuvutiBlogHomePage() {
         <div className="rounded-3xl bg-white border border-stone-200/90 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF4E6] text-[#80131E] text-xs font-bold">
-              💘 রোমান্টিক গল্প • ক্রাশ ও কনফেশন • না বলা কথা
+              রোমান্টিক গল্প • ক্রাশ ও কনফেশন • না বলা কথা
             </span>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142230] leading-snug">
               ভালোবাসার গল্প, গোপন ক্রাশ, জীবনের গল্প ও মনের না বলা কথা
@@ -282,6 +295,48 @@ export default function OnuvutiBlogHomePage() {
             <span>গল্প / কনফেশন পাঠান</span>
           </button>
         </div>
+
+        {/* Trending / Most Read Stories Section ("সপ্তাহের সেরা ও পাঠকপ্রিয় লেখা") */}
+        {trendingPosts.length > 0 && !searchQuery.trim() && (
+          <div className="rounded-3xl bg-white border border-stone-200/90 p-5 sm:p-6 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm sm:text-base font-extrabold text-[#142230]">
+                <TrendingUp className="w-4 h-4 text-[#80131E]" />
+                <span>সপ্তাহের সেরা ও পাঠকপ্রিয় লেখা</span>
+              </div>
+              <span className="text-xs font-bold text-[#80131E]">
+                সর্বাধিক পঠিত
+              </span>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-4">
+              {trendingPosts.map((tp, idx) => (
+                <Link
+                  key={tp.id}
+                  href={`/blog/${tp.slug}`}
+                  className="group rounded-2xl bg-[#FDF8F2] border border-stone-200/80 p-4 hover:border-[#80131E]/50 transition flex flex-col justify-between gap-2"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="font-bold text-[#80131E]">
+                        #{idx + 1} • {tp.category}
+                      </span>
+                      <span className="text-stone-400 font-semibold">
+                        পছন্দ: {tp.likesCount}
+                      </span>
+                    </div>
+                    <h3 className="text-xs sm:text-sm font-extrabold text-[#142230] group-hover:text-[#80131E] line-clamp-2 leading-snug">
+                      {tp.title}
+                    </h3>
+                  </div>
+                  <span className="text-[11px] text-stone-500 truncate">
+                    — {tp.author}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Category Filter & Search */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -302,7 +357,7 @@ export default function OnuvutiBlogHomePage() {
                       : "bg-white text-stone-600 border border-stone-200 hover:border-[#80131E]/40"
                   }`}
                 >
-                  {cat === "ক্রাশ ও কনফেশন" ? "💘 ক্রাশ ও কনফেশন" : cat}
+                  {cat}
                 </button>
               );
             })}
@@ -363,11 +418,7 @@ export default function OnuvutiBlogHomePage() {
                               : "bg-[#FAF4E6] text-[#80131E]"
                           }`}
                         >
-                          {isConfession
-                            ? "💘 ক্রাশ ও কনফেশন"
-                            : isUnspoken
-                            ? "💌 না বলা কথা"
-                            : post.category}
+                          {post.category}
                         </span>
 
                         {post.confessionIdBn && (
@@ -378,7 +429,14 @@ export default function OnuvutiBlogHomePage() {
 
                         {post.isAdminPost && (
                           <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[11px] font-extrabold">
-                            ✍️ সম্পাদকের কলমে
+                            সম্পাদকের কলমে
+                          </span>
+                        )}
+
+                        {post.featured && (
+                          <span className="px-2 py-0.5 rounded-full bg-stone-900 text-white text-[11px] font-bold inline-flex items-center gap-1">
+                            <Pin className="w-2.5 h-2.5" />
+                            <span>পিন করা</span>
                           </span>
                         )}
                       </div>
@@ -396,6 +454,15 @@ export default function OnuvutiBlogHomePage() {
                     <p className="text-xs sm:text-sm text-stone-600 leading-relaxed line-clamp-3">
                       “{post.excerpt}”
                     </p>
+
+                    {post.adminNote && (
+                      <div className="pt-1">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#80131E] bg-[#FAF4E6] border border-[#C59B27]/40 px-2.5 py-0.5 rounded-lg">
+                          <MessageSquareHeart className="w-3 h-3" />
+                          <span>অনুভূতি টিমের পরামর্শ যুক্ত</span>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -632,11 +699,11 @@ export default function OnuvutiBlogHomePage() {
                       }
                       className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
                     >
-                      <option value="ক্রাশ ও কনফেশন">💘 ক্রাশ ও কনফেশন</option>
-                      <option value="না বলা কথা">💌 না বলা কথা</option>
-                      <option value="রোমান্টিক গল্প">💕 রোমান্টিক গল্প</option>
-                      <option value="জীবনের গল্প">🌿 জীবনের গল্প</option>
-                      <option value="বিচ্ছেদ ও প্রাক্তন">💔 বিচ্ছেদ ও প্রাক্তন</option>
+                      <option value="ক্রাশ ও কনফেশন">ক্রাশ ও কনফেশন</option>
+                      <option value="না বলা কথা">না বলা কথা</option>
+                      <option value="রোমান্টিক গল্প">রোমান্টিক গল্প</option>
+                      <option value="জীবনের গল্প">জীবনের গল্প</option>
+                      <option value="বিচ্ছেদ ও প্রাক্তন">বিচ্ছেদ ও প্রাক্তন</option>
                     </select>
                   </div>
 

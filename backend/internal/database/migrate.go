@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS stories (
     is_admin_post BOOLEAN NOT NULL DEFAULT FALSE,
     confession_id_bn VARCHAR(60) DEFAULT '',
     image_url TEXT DEFAULT '',
+    admin_note TEXT DEFAULT '',
     views_count INTEGER NOT NULL DEFAULT 120,
     likes_count INTEGER NOT NULL DEFAULT 1,
     reaction_love INTEGER NOT NULL DEFAULT 1,

@@ -62,6 +62,7 @@ func InitialStories() []models.Story {
 			DateBn:      "৩০ অক্টোবর ২০২৬",
 			Author:      "নাম প্রকাশে অনিচ্ছুক",
 			IsAnonymous: true,
+			AdminNote:   "অভিমান জমিয়ে না রেখে একদিন আলতো করে তাঁর হাতটা ধরে মনের কথাটা বলেই দেখুন। সম্পর্কে নীরবতা ভাঙার প্রথম পদক্ষেপটাই সবচেয়ে সুন্দর পরিবর্তন আনে। — অনুভূতি সম্পাদনা পর্ষদ",
 			ViewsCount:  1680,
 			LikesCount:  312,
 			Reactions:   models.Reactions{Love: 312, Touched: 175, Relatable: 129},

@@ -22,6 +22,8 @@ type Story struct {
 	ConfessionIdBn string    `json:"confessionIdBn,omitempty"`
 	// ImageURL is strictly optional (omitempty). Only present if writer or admin explicitly added one.
 	ImageURL    string    `json:"imageUrl,omitempty"`
+	// AdminNote is an optional editorial reply/advice ("সম্পাদকের কথা / পরামর্শ") shown below the story.
+	AdminNote   string    `json:"adminNote,omitempty"`
 	ViewsCount  int       `json:"viewsCount"`
 	LikesCount  int       `json:"likesCount"`
 	Reactions   Reactions `json:"reactions"`

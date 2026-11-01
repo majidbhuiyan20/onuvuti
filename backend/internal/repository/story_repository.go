@@ -109,6 +109,22 @@ func (r *Repository) UpdateAndApproveStory(id string, updater func(*models.Story
 	return nil, false
 }
 
+func (r *Repository) TogglePinStory(id string) (*models.Story, bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for i, st := range r.state.Stories {
+		if st.ID == id {
+			st.Featured = !st.Featured
+			r.state.Stories[i] = st
+			_ = r.saveLocked()
+			r.upsertStoryPostgres(st)
+			return &st, true
+		}
+	}
+	return nil, false
+}
+
 func (r *Repository) DeleteStory(id string) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()

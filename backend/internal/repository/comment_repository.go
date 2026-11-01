@@ -55,6 +55,51 @@ func (r *Repository) CreateComment(storyIDOrSlug string, c models.Comment) (*mod
 	return &c, true
 }
 
+func (r *Repository) ListAllCommentsForAdmin() []models.Comment {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var all []models.Comment
+	for _, st := range r.state.Stories {
+		if st.Status != "published" {
+			continue
+		}
+		list := r.state.Comments[st.ID]
+		if len(list) == 0 {
+			list = defaultComments(st.ID)
+		}
+		for _, c := range list {
+			c.StoryID = st.ID
+			c.StoryTitle = st.Title
+			all = append(all, c)
+		}
+	}
+	return all
+}
+
+func (r *Repository) DeleteCommentByID(commentID string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for storyID, list := range r.state.Comments {
+		if len(list) == 0 {
+			list = defaultComments(storyID)
+		}
+		for idx, c := range list {
+			if c.ID == commentID {
+				updated := append(list[:idx], list[idx+1:]...)
+				r.state.Comments[storyID] = updated
+				_ = r.saveLocked()
+				if r.pg != nil {
+					_, _ = r.pg.Exec(`DELETE FROM comments WHERE id = $1`, commentID)
+				}
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func defaultComments(storyID string) []models.Comment {
 	return []models.Comment{
 		{

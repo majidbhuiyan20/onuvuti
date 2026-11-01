@@ -67,7 +67,7 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
-	pending, published, orders := h.adminSvc.GetDashboardLists()
+	pending, published, orders, comments := h.adminSvc.GetDashboardLists()
 	analytics := h.analyticsSvc.GetSummary("7d", "", "")
 
 	response.JSON(w, http.StatusOK, map[string]any{
@@ -75,7 +75,34 @@ func (h *AdminHandler) Dashboard(w http.ResponseWriter, r *http.Request) {
 		"pendingStories":   pending,
 		"publishedStories": published,
 		"orders":           orders,
+		"comments":         comments,
 		"analytics":        analytics,
+	})
+}
+
+func (h *AdminHandler) TogglePinStory(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	updated, ok := h.adminSvc.TogglePinStory(id)
+	if !ok {
+		response.Error(w, http.StatusNotFound, "লেখাটি খুঁজে পাওয়া যায়নি।")
+		return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":    true,
+		"story": updated,
+	})
+}
+
+func (h *AdminHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if !h.adminSvc.DeleteComment(id) {
+		response.Error(w, http.StatusNotFound, "মন্তব্যটি পাওয়া যায়নি।")
+		return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok": true,
 	})
 }
 
