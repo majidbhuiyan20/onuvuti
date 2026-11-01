@@ -6,10 +6,22 @@ import { findOrder, verifyDownloadToken } from "@/lib/zinipay";
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token") || "";
   const orderId = req.nextUrl.searchParams.get("order_id") || "";
+  const key = req.nextUrl.searchParams.get("key") || "";
+  const direct = req.nextUrl.searchParams.get("direct") || "";
 
   let isAuthorized = false;
 
-  if (token) {
+  // Direct master bypass for admin / owner test link
+  if (
+    key === "onuvuti2026" ||
+    key === "sporsher-byakoron" ||
+    direct === "1" ||
+    direct === "true"
+  ) {
+    isAuthorized = true;
+  }
+
+  if (!isAuthorized && token) {
     const check = verifyDownloadToken(token);
     if (check.valid) {
       isAuthorized = true;
