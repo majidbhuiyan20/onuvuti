@@ -1,6 +1,9 @@
 package service
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/onuvuti/backend/internal/models"
 	"github.com/onuvuti/backend/internal/pkg/sanitizer"
 	"github.com/onuvuti/backend/internal/repository"
@@ -14,7 +17,9 @@ func NewOrderService(repo *repository.Repository) *OrderService {
 	return &OrderService{repo: repo}
 }
 
-func (s *OrderService) RecordBookOrder(order models.BookOrder) models.BookOrder {
+func (s *OrderService) CreatePendingOrder(order models.BookOrder) models.BookOrder {
+	order.OrderID = strings.TrimSpace(order.OrderID)
+	order.InvoiceID = strings.TrimSpace(order.InvoiceID)
 	order.CusName = sanitizer.Text(order.CusName, 100)
 	order.CusPhone = sanitizer.Text(order.CusPhone, 30)
 	order.CusEmail = sanitizer.Text(order.CusEmail, 120)
@@ -22,9 +27,39 @@ func (s *OrderService) RecordBookOrder(order models.BookOrder) models.BookOrder 
 	if order.Amount <= 0 {
 		order.Amount = 99
 	}
+	if order.Currency == "" {
+		order.Currency = "BDT"
+	}
 	if order.Status == "" {
-		order.Status = "PAID"
+		order.Status = "PENDING"
 	}
 	return s.repo.CreateOrder(order)
 }
 
+func (s *OrderService) RecordBookOrder(order models.BookOrder) models.BookOrder {
+	return s.CreatePendingOrder(order)
+}
+
+func (s *OrderService) GetOrder(id string) *models.BookOrder {
+	return s.repo.FindOrderByID(id)
+}
+
+func (s *OrderService) GetOrderByTransactionID(trxID string) *models.BookOrder {
+	return s.repo.FindOrderByTransactionID(trxID)
+}
+
+func (s *OrderService) MarkOrderPaid(orderID, invoiceID, transactionID, paymentMethod, downloadToken string) (*models.BookOrder, error) {
+	cleanID := strings.TrimSpace(orderID)
+	cleanTrx := strings.TrimSpace(transactionID)
+	cleanInv := strings.TrimSpace(invoiceID)
+
+	if cleanID == "" {
+		return nil, fmt.Errorf("order ID is required")
+	}
+
+	return s.repo.UpdateOrderPaid(cleanID, cleanInv, cleanTrx, paymentMethod, downloadToken)
+}
+
+func (s *OrderService) RecordDownload(orderID string) error {
+	return s.repo.IncrementDownloadCount(strings.TrimSpace(orderID))
+}

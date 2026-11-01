@@ -1,19 +1,43 @@
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { findOrder, markOrderAsPaid } from "@/lib/zinipay";
+import {
+  findOrder,
+  markOrderAsPaid,
+  verifyZiniPayInvoice,
+  isTransactionIdAlreadyUsed,
+  getBookPriceBdt,
+} from "@/lib/zinipay";
 
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
     const webhookSecret = (process.env.ZINIPAY_WEBHOOK_SECRET || "").trim();
-    const incomingSig = req.headers.get("x-zinipay-signature") || "";
+    const incomingSig =
+      req.headers.get("x-zinipay-signature") ||
+      req.headers.get("x-webhook-signature") ||
+      "";
 
-    if (webhookSecret && incomingSig) {
+    // 1. If webhook secret is configured in environment, strictly enforce HMAC authentication
+    if (webhookSecret) {
+      if (!incomingSig) {
+        return NextResponse.json(
+          { ok: false, error: "Missing webhook signature" },
+          { status: 401 }
+        );
+      }
+
       const expectedSig = crypto
         .createHmac("sha256", webhookSecret)
         .update(rawBody)
         .digest("hex");
-      if (incomingSig !== expectedSig) {
+
+      const inBuf = Buffer.from(incomingSig, "utf-8");
+      const expBuf = Buffer.from(expectedSig, "utf-8");
+
+      if (
+        inBuf.length !== expBuf.length ||
+        !crypto.timingSafeEqual(inBuf, expBuf)
+      ) {
         return NextResponse.json(
           { ok: false, error: "Invalid webhook signature" },
           { status: 401 }
@@ -21,38 +45,116 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const payload = JSON.parse(rawBody || "{}");
-    const statusStr = String(
-      payload?.status || payload?.payment_status || "COMPLETED"
-    ).toUpperCase();
+    // 2. Parse payload safely (supports JSON body or URL-encoded query parameters)
+    let payload: Record<string, any> = {};
+    try {
+      payload = JSON.parse(rawBody || "{}");
+    } catch {
+      // Fallback to URL search params if ZiniPay sent query-parameter format
+      const params = req.nextUrl.searchParams;
+      payload = {
+        invoice_id: params.get("invoice_id") || params.get("invoiceId"),
+        status: params.get("status"),
+      };
+    }
 
-    if (
-      statusStr === "COMPLETED" ||
-      statusStr === "PAID" ||
-      statusStr === "SUCCESS" ||
-      payload?.transactionId
-    ) {
-      const orderId =
-        payload?.metadata?.order_id ||
-        payload?.order_id ||
-        findOrder({ invoiceId: payload?.invoice_id })?.orderId;
+    const invoiceId = String(
+      payload?.invoice_id ||
+        payload?.invoiceId ||
+        payload?.data?.invoice_id ||
+        ""
+    ).trim();
 
-      if (orderId) {
-        markOrderAsPaid(orderId, {
-          invoiceId: payload?.invoice_id,
-          transactionId: payload?.transactionId || payload?.transaction_id,
-          paymentMethod: payload?.provider || payload?.payment_method || "ZiniPay Webhook",
-        });
+    if (!invoiceId) {
+      return NextResponse.json(
+        { ok: false, error: "Missing invoice_id in webhook" },
+        { status: 400 }
+      );
+    }
+
+    // 3. Look up order associated with this invoice ID
+    const existingOrder = findOrder({ invoiceId });
+    if (!existingOrder) {
+      // Unknown invoice not matching any order in our system -> reject
+      return NextResponse.json(
+        { ok: false, error: "No pending order found matching this invoice_id" },
+        { status: 404 }
+      );
+    }
+
+    // 4. Idempotency check: If order is already fulfilled/PAID, return 200 OK immediately
+    if (existingOrder.status === "PAID") {
+      return NextResponse.json({
+        ok: true,
+        message: "Order already fulfilled (idempotent)",
+      });
+    }
+
+    // 5. CRITICAL OFFICIAL REQUIREMENT:
+    // Never trust the webhook body alone! Never default missing status to COMPLETED!
+    // Always call ZiniPay's official server-to-server verify API to confirm payment!
+    const verification = await verifyZiniPayInvoice(invoiceId);
+
+    if (!verification.verified || verification.status !== "COMPLETED") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `Payment is not completed at provider (status: ${verification.status || "UNKNOWN"})`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 6. Validate exact amount against expected price (৳99)
+    const expectedAmount = existingOrder.amount || getBookPriceBdt();
+    if (typeof verification.amount === "number" && verification.amount > 0) {
+      if (verification.amount < expectedAmount) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: `Payment amount mismatch: expected ৳${expectedAmount}, got ৳${verification.amount}`,
+          },
+          { status: 400 }
+        );
       }
     }
 
-    return NextResponse.json({ ok: true });
+    // 7. Validate transaction ID uniqueness (double-spending protection)
+    const cleanTrx = (verification.transactionId || "").trim().toUpperCase();
+    if (cleanTrx && isTransactionIdAlreadyUsed(cleanTrx, existingOrder.orderId)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Transaction ID already used on another order",
+        },
+        { status: 409 }
+      );
+    }
+
+    // 8. Safely and idempotently mark the order as PAID
+    const markResult = markOrderAsPaid(existingOrder.orderId, {
+      invoiceId,
+      transactionId: cleanTrx,
+      paymentMethod: verification.paymentMethod || "ZiniPay Webhook Verified",
+    });
+
+    if (!markResult.ok) {
+      return NextResponse.json(
+        { ok: false, error: markResult.error || "Failed to update order status" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      message: "Order successfully verified and fulfilled via webhook",
+      orderId: existingOrder.orderId,
+    });
   } catch (err) {
-    console.error("ZiniPay webhook error:", err);
+    console.error("ZiniPay webhook processing error:", err);
     return NextResponse.json(
-      { ok: false, error: "Webhook processing error" },
+      { ok: false, error: "Internal webhook processing error" },
       { status: 500 }
     );
   }
 }
-

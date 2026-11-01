@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/onuvuti/backend/internal/models"
 	"github.com/onuvuti/backend/internal/pkg/response"
@@ -31,3 +32,91 @@ func (h *OrderHandler) RecordOrder(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *OrderHandler) GetOrder(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimPrefix(r.URL.Path, "/api/v1/orders/")
+	id = strings.TrimSpace(id)
+	if id == "" {
+		response.Error(w, http.StatusBadRequest, "অর্ডার আইডি প্রয়োজন।")
+		return
+	}
+
+	order := h.orderSvc.GetOrder(id)
+	if order == nil {
+		response.Error(w, http.StatusNotFound, "অর্ডারটি পাওয়া যায়নি।")
+		return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":    true,
+		"order": order,
+	})
+}
+
+func (h *OrderHandler) CheckTransaction(w http.ResponseWriter, r *http.Request) {
+	trxID := strings.TrimPrefix(r.URL.Path, "/api/v1/orders/trx/")
+	trxID = strings.TrimSpace(trxID)
+	if trxID == "" {
+		response.Error(w, http.StatusBadRequest, "ট্রানজেকশন আইডি প্রয়োজন।")
+		return
+	}
+
+	existing := h.orderSvc.GetOrderByTransactionID(trxID)
+	if existing != nil {
+		response.JSON(w, http.StatusOK, map[string]any{
+			"ok":     true,
+			"exists": true,
+			"order":  existing,
+		})
+		return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":     true,
+		"exists": false,
+	})
+}
+
+type MarkPaidRequest struct {
+	InvoiceID     string `json:"invoiceId"`
+	TransactionID string `json:"transactionId"`
+	PaymentMethod string `json:"paymentMethod"`
+	DownloadToken string `json:"downloadToken"`
+}
+
+func (h *OrderHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimPrefix(r.URL.Path, "/api/v1/orders/")
+	id = strings.TrimSuffix(id, "/paid")
+	id = strings.TrimSpace(id)
+
+	var req MarkPaidRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		response.Error(w, http.StatusBadRequest, "পেমেন্ট তথ্য সঠিক নয়।")
+		return
+	}
+
+	updated, err := h.orderSvc.MarkOrderPaid(id, req.InvoiceID, req.TransactionID, req.PaymentMethod, req.DownloadToken)
+	if err != nil {
+		response.Error(w, http.StatusConflict, err.Error())
+		return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":    true,
+		"order": updated,
+	})
+}
+
+func (h *OrderHandler) RecordDownload(w http.ResponseWriter, r *http.Request) {
+	id := strings.TrimPrefix(r.URL.Path, "/api/v1/orders/")
+	id = strings.TrimSuffix(id, "/download")
+	id = strings.TrimSpace(id)
+
+	if err := h.orderSvc.RecordDownload(id); err != nil {
+		response.Error(w, http.StatusInternalServerError, "ডাউনলোড কাউন্ট আপডেট করা যায়নি।")
+		return
+	}
+
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok": true,
+	})
+}

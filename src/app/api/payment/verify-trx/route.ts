@@ -90,10 +90,22 @@ export async function POST(req: NextRequest) {
       amount,
     });
 
-    const paidOrder = markOrderAsPaid(newOrder.orderId, {
+    const markResult = markOrderAsPaid(newOrder.orderId, {
       transactionId,
       paymentMethod: trxCheck.provider || "ZiniPay TrxID",
     });
+
+    if (!markResult.ok || !markResult.order) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: markResult.error || "অর্ডার সম্পন্ন করা সম্ভব হয়নি।",
+        },
+        { status: 500 }
+      );
+    }
+
+    const paidOrder = markResult.order;
 
     return NextResponse.json({
       ok: true,

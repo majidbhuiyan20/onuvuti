@@ -2,62 +2,91 @@ import fs from "fs";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { findOrder, verifyDownloadToken } from "@/lib/zinipay";
+import { checkRateLimit, getClientIp } from "@/lib/security";
+import { GO_API_BASE_URL } from "@/lib/goApi";
 
 export async function GET(req: NextRequest) {
-  const token = req.nextUrl.searchParams.get("token") || "";
-  const orderId = req.nextUrl.searchParams.get("order_id") || "";
-  const key = req.nextUrl.searchParams.get("key") || "";
-  const direct = req.nextUrl.searchParams.get("direct") || "";
+  // 1. Enforce strict rate limiting per client IP to prevent token brute-forcing / DDoS
+  const clientIp = getClientIp(req.headers);
+  const rate = checkRateLimit({
+    bucket: "pdf_download",
+    identifier: clientIp,
+    maxRequests: 15,
+    windowMs: 5 * 60_000,
+    blockDurationMs: 15 * 60_000,
+  });
 
-  let isAuthorized = false;
-
-  // Direct master bypass for admin / owner test link
-  if (
-    key === "onuvuti2026" ||
-    key === "sporsher-byakoron" ||
-    direct === "1" ||
-    direct === "true"
-  ) {
-    isAuthorized = true;
-  }
-
-  if (!isAuthorized && token) {
-    const check = verifyDownloadToken(token);
-    if (check.valid) {
-      isAuthorized = true;
-    }
-  }
-
-  if (!isAuthorized && orderId) {
-    const order = findOrder({ orderId });
-    if (order && order.status === "PAID") {
-      isAuthorized = true;
-    }
-  }
-
-  if (!isAuthorized) {
+  if (!rate.allowed) {
     return NextResponse.json(
       {
         ok: false,
-        error:
-          "ডাউনলোড টোকেনটি বৈধ নয় বা মেয়াদোত্তীর্ণ হয়েছে। অনুগ্রহ করে আপনার পেমেন্ট ভেরিফাই করুন।",
+        error: `অতিরিক্ত ডাউনলোড রিকোয়েস্ট। অনুগ্রহ করে ${rate.retryAfterSeconds} সেকেন্ড পর চেষ্টা করুন।`,
+      },
+      { status: 429 }
+    );
+  }
+
+  // 2. Extract ONLY the cryptographically signed download token.
+  // ALL master keys, URL bypasses, and unauthenticated order_ids are strictly removed.
+  const token = req.nextUrl.searchParams.get("token") || "";
+
+  if (!token) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "ডাউনলোড টোকেন অনুপস্থিত। সঠিক টোকেন ছাড়া বই ডাউনলোড করা সম্ভব নয়।",
       },
       { status: 403 }
     );
   }
 
-  const pdfPath = path.join(process.cwd(), "storage", "sporsher_byakoron.pdf");
+  // 3. Cryptographic signature and expiration verification (constant-time timingSafeEqual)
+  const tokenCheck = verifyDownloadToken(token);
+  if (!tokenCheck.valid || !tokenCheck.orderId) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: tokenCheck.error || "ডাউনলোড টোকেনটি অবৈধ বা মেয়াদোত্তীর্ণ হয়েছে।",
+      },
+      { status: 403 }
+    );
+  }
+
+  // 4. Authoritative Database Verification: Order must exist and have status 'PAID'
+  const order = findOrder({ orderId: tokenCheck.orderId });
+  if (!order || order.status !== "PAID") {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "এই অর্ডারের জন্য কোনো পরিশোধিত পেমেন্ট রেকর্ড খুঁজে পাওয়া যায়নি।",
+      },
+      { status: 403 }
+    );
+  }
+
+  // 5. Secure file resolution (prevents path traversal)
+  const pdfPath = path.resolve(process.cwd(), "storage", "sporsher_byakoron.pdf");
 
   if (!fs.existsSync(pdfPath)) {
     return NextResponse.json(
       {
         ok: false,
-        error: "ই-বুক পিডিএফ ফাইলটি সার্ভারে পাওয়া যায়নি।",
+        error: "ই-বুক পিডিএফ ফাইলটি সার্ভারে পাওয়া যায়নি। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।",
       },
       { status: 404 }
     );
   }
 
+  // 6. Record download count in database
+  try {
+    fetch(`${GO_API_BASE_URL}/orders/${encodeURIComponent(order.orderId)}/download`, {
+      method: "PATCH",
+    }).catch(() => {});
+  } catch {
+    // Non-blocking telemetry
+  }
+
+  // 7. Stream the PDF safely with hardened headers
   const fileBuffer = fs.readFileSync(pdfPath);
 
   return new NextResponse(fileBuffer, {
@@ -67,8 +96,9 @@ export async function GET(req: NextRequest) {
       "Content-Disposition":
         'attachment; filename="Sporsher-Byakoron-Onuvuti-Publications.pdf"',
       "Content-Length": String(fileBuffer.length),
-      "Cache-Control": "private, no-store",
+      "Cache-Control": "private, no-store, max-age=0, must-revalidate",
+      "X-Content-Type-Options": "nosniff",
+      "X-Download-Options": "noopen",
     },
   });
 }
-

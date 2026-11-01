@@ -6,15 +6,16 @@ services:
     container_name: onuvuti-postgres
     restart: always
     environment:
-      POSTGRES_USER: onuvuti_user
-      POSTGRES_PASSWORD: onuvuti_secure_password_2026
-      POSTGRES_DB: onuvuti
+      POSTGRES_USER: ${POSTGRES_USER:-onuvuti_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_this_strong_password_in_prod_2026}
+      POSTGRES_DB: ${POSTGRES_DB:-onuvuti}
+    # Security: Bind ONLY to localhost (127.0.0.1), NEVER expose 5432 to public 0.0.0.0
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - onuvuti_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U onuvuti_user -d onuvuti"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-onuvuti_user} -d ${POSTGRES_DB:-onuvuti}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -31,13 +32,14 @@ services:
     environment:
       PORT: 8081
       APP_ENV: production
-      DATABASE_URL: postgres://onuvuti_user:onuvuti_secure_password_2026@db:5432/onuvuti?sslmode=disable
-      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-onuvuti-admin-2026}
-      ADMIN_TOKEN_SECRET: ${ADMIN_TOKEN_SECRET:-onuvuti-jwt-secret-replace-in-aws-2026}
+      DATABASE_URL: postgres://${POSTGRES_USER:-onuvuti_user}:${POSTGRES_PASSWORD:-change_this_strong_password_in_prod_2026}@db:5432/${POSTGRES_DB:-onuvuti}?sslmode=disable
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_TOKEN_SECRET: ${ADMIN_TOKEN_SECRET}
+      ORDER_SECRET_KEY: ${ORDER_SECRET_KEY}
       CORS_ALLOWED_ORIGINS: http://localhost:3000,https://onuvuti.site,https://www.onuvuti.site
+    # Expose only port 8081 for backend API (managed by Nginx reverse proxy on EC2)
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
 
 volumes:
   onuvuti_pgdata:
-

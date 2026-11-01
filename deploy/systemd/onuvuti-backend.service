@@ -1,0 +1,23 @@
+[Unit]
+Description=Onuvuti Go Microservice Backend
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Onuvuti/backend
+EnvironmentFile=/home/ubuntu/Onuvuti/backend/.env
+ExecStart=/home/ubuntu/Onuvuti/backend/onuvuti-server
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=onuvuti-backend
+
+# Security sandbox
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

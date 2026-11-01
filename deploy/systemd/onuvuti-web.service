@@ -1,0 +1,22 @@
+[Unit]
+Description=Onuvuti Next.js Web Frontend & Payment Routes
+After=network.target onuvuti-backend.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Onuvuti
+EnvironmentFile=/home/ubuntu/Onuvuti/.env.production
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=onuvuti-web
+
+# Security sandbox
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

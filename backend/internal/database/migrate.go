@@ -56,15 +56,31 @@ CREATE INDEX IF NOT EXISTS idx_comments_story_id ON comments(story_id, created_a
 
 CREATE TABLE IF NOT EXISTS book_orders (
     order_id VARCHAR(64) PRIMARY KEY,
+    invoice_id VARCHAR(120) DEFAULT '',
     cus_name VARCHAR(120) NOT NULL,
     cus_phone VARCHAR(40) NOT NULL,
     cus_email VARCHAR(140) NOT NULL,
     amount INTEGER NOT NULL DEFAULT 99,
-    transaction_id VARCHAR(80) NOT NULL,
-    payment_method VARCHAR(60) NOT NULL,
-    status VARCHAR(24) NOT NULL DEFAULT 'PAID',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    currency VARCHAR(10) NOT NULL DEFAULT 'BDT',
+    transaction_id VARCHAR(120) NOT NULL DEFAULT '',
+    payment_method VARCHAR(60) NOT NULL DEFAULT '',
+    status VARCHAR(24) NOT NULL DEFAULT 'PENDING',
+    download_token TEXT NOT NULL DEFAULT '',
+    download_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    verified_at TIMESTAMPTZ
 );
+
+-- Idempotent column migrations for existing databases
+ALTER TABLE book_orders ADD COLUMN IF NOT EXISTS invoice_id VARCHAR(120) DEFAULT '';
+ALTER TABLE book_orders ADD COLUMN IF NOT EXISTS currency VARCHAR(10) DEFAULT 'BDT';
+ALTER TABLE book_orders ADD COLUMN IF NOT EXISTS download_token TEXT DEFAULT '';
+ALTER TABLE book_orders ADD COLUMN IF NOT EXISTS download_count INTEGER DEFAULT 0;
+ALTER TABLE book_orders ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ;
+
+CREATE INDEX IF NOT EXISTS idx_book_orders_invoice ON book_orders(invoice_id) WHERE invoice_id != '';
+CREATE INDEX IF NOT EXISTS idx_book_orders_status ON book_orders(status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_book_orders_trx ON book_orders(transaction_id) WHERE transaction_id != '';
 
 CREATE TABLE IF NOT EXISTS daily_traffic (
     date_key VARCHAR(16) PRIMARY KEY,
