@@ -580,6 +580,33 @@ export default function OnuvutiBlogHomePage() {
     }
   };
 
+  const removeSavedSubmission = (id: string) => {
+    setMySubmittedIds((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      try {
+        localStorage.setItem("onuvuti_my_submissions", JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
+  const clearDeletedSubmissions = () => {
+    setMySubmittedIds((prev) => {
+      const updated = prev.filter((item) => {
+        const itemStatus = trackedStoriesMap[item.id]?.status;
+        return itemStatus !== "deleted";
+      });
+      try {
+        localStorage.setItem("onuvuti_my_submissions", JSON.stringify(updated));
+      } catch {
+        // ignore
+      }
+      return updated;
+    });
+  };
+
   const openTrackerModal = async () => {
     setIsTrackerModalOpen(true);
     setManualTrackError(null);
@@ -605,6 +632,14 @@ export default function OnuvutiBlogHomePage() {
           if (data.ok && data.story) {
             updatedMap[sub.id] = data.story;
           }
+        } else if (res.status === 404) {
+          // Admin deleted or rejected this submission
+          updatedMap[sub.id] = {
+            id: sub.id,
+            title: sub.title,
+            category: sub.category,
+            status: "deleted",
+          } as any;
         }
       } catch {
         // Fallback if offline
@@ -1834,9 +1869,22 @@ export default function OnuvutiBlogHomePage() {
 
               {/* Automatically Saved Submissions in This Browser */}
               <div className="space-y-3">
-                <h4 className="text-xs font-extrabold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
-                  এই ব্রাউজার থেকে আপনার পাঠানো লেখা ({mySubmittedIds.length})
-                </h4>
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs font-extrabold text-stone-500 dark:text-stone-400 uppercase tracking-wider">
+                    এই ব্রাউজার থেকে আপনার পাঠানো লেখা ({mySubmittedIds.length})
+                  </h4>
+                  {mySubmittedIds.some(
+                    (s) => trackedStoriesMap[s.id]?.status === "deleted"
+                  ) && (
+                    <button
+                      type="button"
+                      onClick={clearDeletedSubmissions}
+                      className="text-xs font-bold text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+                    >
+                      বাতিলগুলো মুছুন
+                    </button>
+                  )}
+                </div>
 
                 {mySubmittedIds.length === 0 ? (
                   <div className="rounded-2xl bg-[#FDF8F2] dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 p-6 text-center space-y-2">
@@ -1852,6 +1900,7 @@ export default function OnuvutiBlogHomePage() {
                     const liveItem =
                       trackedStoriesMap[sub.id] ||
                       posts.find((p) => p.id === sub.id);
+                    const isDeleted = liveItem?.status === "deleted";
                     const isPublished =
                       Boolean(posts.find((p) => p.id === sub.id)) ||
                       (liveItem && liveItem.status === "published");
@@ -1865,22 +1914,42 @@ export default function OnuvutiBlogHomePage() {
                           <span className="font-bold text-[#80131E] dark:text-rose-400">
                             কোড: #{sub.id} • {sub.category}
                           </span>
-                          <span
-                            className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
-                              isPublished
-                                ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
-                                : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
-                            }`}
-                          >
-                            {isPublished
-                              ? "প্রকাশিত হয়েছে"
-                              : "অপেক্ষমাণ (রিভিউ চলছে)"}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${
+                                isPublished
+                                  ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300"
+                                  : isDeleted
+                                  ? "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300"
+                                  : "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300"
+                              }`}
+                            >
+                              {isPublished
+                                ? "প্রকাশিত হয়েছে"
+                                : isDeleted
+                                ? "বাতিল / মুছে ফেলা হয়েছে"
+                                : "অপেক্ষমাণ (রিভিউ চলছে)"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => removeSavedSubmission(sub.id)}
+                              title="তালিকা থেকে সরান"
+                              className="p-1 rounded-md text-stone-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-stone-200/60 dark:hover:bg-stone-700 transition cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
 
                         <h5 className="text-sm font-extrabold text-[#142230] dark:text-white">
                           {liveItem?.title || sub.title}
                         </h5>
+
+                        {isDeleted && (
+                          <p className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+                            এই লেখাটি কর্তৃপক্ষ দ্বারা বাতিল অথবা ডাটাবেস থেকে মুছে ফেলা হয়েছে।
+                          </p>
+                        )}
 
                         {liveItem?.adminNote && (
                           <div className="rounded-xl bg-[#FAF4E6] dark:bg-[#1A2234] border border-[#C59B27]/45 dark:border-[#C59B27]/30 p-3 text-xs text-stone-700 dark:text-stone-300">

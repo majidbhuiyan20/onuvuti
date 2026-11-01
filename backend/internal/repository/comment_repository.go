@@ -1,33 +1,46 @@
 package repository
 
 import (
+	"fmt"
 	"log"
 	"time"
 
 	"github.com/onuvuti/backend/internal/models"
 )
 
-func defaultComments(storyID string) []models.Comment {
-	return []models.Comment{
-		{
-			ID:          "c-1",
-			StoryID:     storyID,
-			Author:      "তাসনিম জাহান",
-			IsAnonymous: false,
-			Text:        "গল্পটা পড়ে নিজের জীবনের একটি অধ্যায়ের কথা মনে পড়ে গেল। সত্যিই অসাধারণ অনুভূতি!",
-			TimeBn:      "২ ঘণ্টা আগে",
-			CreatedAt:   time.Now().Add(-2 * time.Hour),
-		},
-		{
-			ID:          "c-2",
-			StoryID:     storyID,
-			Author:      "নাম প্রকাশে অনিচ্ছুক",
-			IsAnonymous: true,
-			Text:        "কিছু না বলা কথা আসলেই চিরকাল বুকের ভেতরেই থেকে যায়। খুব স্পর্শ করল লেখাটি।",
-			TimeBn:      "৪ ঘণ্টা আগে",
-			CreatedAt:   time.Now().Add(-4 * time.Hour),
-		},
+func toBengaliDigits(n int) string {
+	bnDigits := []rune{'০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'}
+	s := fmt.Sprintf("%d", n)
+	var out []rune
+	for _, ch := range s {
+		if ch >= '0' && ch <= '9' {
+			out = append(out, bnDigits[ch-'0'])
+		} else {
+			out = append(out, ch)
+		}
 	}
+	return string(out)
+}
+
+func FormatTimeBn(t time.Time) string {
+	diff := time.Since(t)
+	if diff < time.Minute {
+		return "এইমাত্র"
+	}
+	mins := int(diff.Minutes())
+	if mins < 60 {
+		return fmt.Sprintf("%s মিনিট আগে", toBengaliDigits(mins))
+	}
+	hrs := int(diff.Hours())
+	if hrs < 24 {
+		return fmt.Sprintf("%s ঘণ্টা আগে", toBengaliDigits(hrs))
+	}
+	days := hrs / 24
+	if days < 30 {
+		return fmt.Sprintf("%s দিন আগে", toBengaliDigits(days))
+	}
+	months := days / 30
+	return fmt.Sprintf("%s মাস আগে", toBengaliDigits(months))
 }
 
 func (r *Repository) ListCommentsByStoryID(storyID string) []models.Comment {
@@ -40,19 +53,17 @@ func (r *Repository) ListCommentsByStoryID(storyID string) []models.Comment {
 		`, storyID)
 		if err != nil {
 			log.Printf("⚠️ PostgreSQL ListCommentsByStoryID error: %v", err)
-			return defaultComments(storyID)
+			return []models.Comment{}
 		}
 		defer rows.Close()
 
-		var out []models.Comment
+		out := make([]models.Comment, 0)
 		for rows.Next() {
 			var c models.Comment
 			if err := rows.Scan(&c.ID, &c.StoryID, &c.Author, &c.IsAnonymous, &c.Text, &c.TimeBn, &c.CreatedAt); err == nil {
+				c.TimeBn = FormatTimeBn(c.CreatedAt)
 				out = append(out, c)
 			}
-		}
-		if len(out) == 0 {
-			return defaultComments(storyID)
 		}
 		return out
 	}
@@ -61,8 +72,8 @@ func (r *Repository) ListCommentsByStoryID(storyID string) []models.Comment {
 	defer r.mu.RUnlock()
 
 	comments := r.mem.Comments[storyID]
-	if len(comments) == 0 {
-		return defaultComments(storyID)
+	if comments == nil {
+		return []models.Comment{}
 	}
 	return comments
 }
@@ -115,6 +126,7 @@ func (r *Repository) ListAllCommentsForAdmin() []models.Comment {
 		for rows.Next() {
 			var c models.Comment
 			if err := rows.Scan(&c.ID, &c.StoryID, &c.Author, &c.IsAnonymous, &c.Text, &c.TimeBn, &c.CreatedAt, &c.StoryTitle); err == nil {
+				c.TimeBn = FormatTimeBn(c.CreatedAt)
 				all = append(all, c)
 			}
 		}
@@ -133,12 +145,10 @@ func (r *Repository) ListAllCommentsForAdmin() []models.Comment {
 			continue
 		}
 		list := r.mem.Comments[st.ID]
-		if len(list) == 0 {
-			list = defaultComments(st.ID)
-		}
 		for _, c := range list {
 			c.StoryID = st.ID
 			c.StoryTitle = st.Title
+			c.TimeBn = FormatTimeBn(c.CreatedAt)
 			all = append(all, c)
 		}
 	}

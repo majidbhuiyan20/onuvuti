@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Heart,
   Share2,
@@ -16,11 +16,12 @@ import {
 import { sanitizeText } from "@/lib/security";
 import { GO_API_BASE_URL } from "@/lib/goApi";
 
-interface CommentItem {
+export interface CommentItem {
   id: string;
   author: string;
   text: string;
   timeBn: string;
+  createdAt?: string;
 }
 
 interface StoryInteractionsProps {
@@ -36,6 +37,7 @@ interface StoryInteractionsProps {
     touched: number;
     relatable: number;
   };
+  initialComments?: CommentItem[];
 }
 
 function wrapCanvasText(
@@ -71,6 +73,7 @@ export default function StoryInteractions({
   confessionIdBn,
   initialLikes,
   initialReactions,
+  initialComments = [],
 }: StoryInteractionsProps) {
   const [activeReaction, setActiveReaction] = useState<
     "love" | "touched" | "relatable" | null
@@ -78,33 +81,38 @@ export default function StoryInteractions({
   const [copied, setCopied] = useState(false);
   const [downloadingCard, setDownloadingCard] = useState(false);
 
-  const baseLove = initialReactions?.love ?? initialLikes;
-  const baseTouched =
-    initialReactions?.touched ?? Math.round(initialLikes * 0.45);
-  const baseRelatable =
-    initialReactions?.relatable ?? Math.round(initialLikes * 0.3);
+  const [reactions, setReactions] = useState<{
+    love: number;
+    touched: number;
+    relatable: number;
+  }>({
+    love: initialReactions?.love ?? (initialLikes || 1),
+    touched: initialReactions?.touched ?? 0,
+    relatable: initialReactions?.relatable ?? 0,
+  });
 
-  const [comments, setComments] = useState<CommentItem[]>([
-    {
-      id: "c1",
-      author: "তাসনিম জাহান",
-      text: "গল্পটা পড়ে মনটা ভীষণ ছুঁয়ে গেল। আমাদের সবার জীবনেই এমন কিছু না বলা অনুভূতি থাকে।",
-      timeBn: "২ ঘণ্টা আগে",
-    },
-    {
-      id: "c2",
-      author: "নাম প্রকাশে অনিচ্ছুক",
-      text: "একদম আমার জীবনের সাথে মিলে গেছে। লেখকের জন্য অনেক শুভকামনা ও ভালোবাসা রইল।",
-      timeBn: "৫ ঘণ্টা আগে",
-    },
-  ]);
-
+  const [comments, setComments] = useState<CommentItem[]>(initialComments);
   const [commentAuthor, setCommentAuthor] = useState("");
   const [isAnonComment, setIsAnonComment] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [honeypot, setHoneypot] = useState("");
   const [lastCommentAt, setLastCommentAt] = useState(0);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [commentSuccess, setCommentSuccess] = useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedReaction = localStorage.getItem(`onuvuti_reacted_${storyId}`);
+      if (
+        savedReaction === "love" ||
+        savedReaction === "touched" ||
+        savedReaction === "relatable"
+      ) {
+        setActiveReaction(savedReaction);
+      }
+    }
+  }, [storyId]);
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
@@ -248,66 +256,111 @@ export default function StoryInteractions({
     }
   };
 
-  const handleAddComment = (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
     setCommentError(null);
+    setCommentSuccess(false);
 
     if (honeypot.trim().length > 0) return;
 
     const now = Date.now();
-    if (now - lastCommentAt < 10_000) {
-      setCommentError("অনুগ্রহ করে ১০ সেকেন্ড অপেক্ষা করে পরবর্তী মন্তব্য করুন।");
+    if (now - lastCommentAt < 6_000) {
+      setCommentError("অনুগ্রহ করে ৬ সেকেন্ড অপেক্ষা করে পরবর্তী মন্তব্য করুন।");
       return;
     }
 
     const cleanText = sanitizeText(commentText, 800);
     const cleanAuthor = sanitizeText(commentAuthor, 60);
 
-    if (!cleanText || cleanText.length < 2) return;
+    if (!cleanText || cleanText.length < 2) {
+      setCommentError("মন্তব্যটি খুব ছোট। অনুগ্রহ করে মনের অনুভূতি প্রকাশ করুন।");
+      return;
+    }
 
-    const newComment: CommentItem = {
-      id: `c-${now}`,
-      author: isAnonComment
-        ? "নাম প্রকাশে অনিচ্ছুক"
-        : cleanAuthor || "পাঠক",
-      text: cleanText,
-      timeBn: "এইমাত্র",
-    };
+    setIsSubmittingComment(true);
 
-    setComments((prev) => [newComment, ...prev]);
-    setCommentText("");
-    setLastCommentAt(now);
+    try {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/stories/${encodeURIComponent(storyId)}/comments`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            author: cleanAuthor,
+            isAnonymous: isAnonComment,
+            text: cleanText,
+            websiteUrl: honeypot,
+          }),
+        }
+      );
 
-    fetch(
-      `${GO_API_BASE_URL}/stories/${encodeURIComponent(storyId)}/comments`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          author: cleanAuthor,
-          isAnonymous: isAnonComment,
-          text: cleanText,
-          websiteUrl: honeypot,
-        }),
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok && data.comment) {
+        setComments((prev) => [data.comment, ...prev]);
+        setCommentText("");
+        setLastCommentAt(now);
+        setCommentSuccess(true);
+        setTimeout(() => setCommentSuccess(false), 4000);
+      } else {
+        const errMsg =
+          data?.error ||
+          "মন্তব্য সংরক্ষণ করতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।";
+        setCommentError(errMsg);
       }
-    ).catch(() => {});
+    } catch {
+      // Offline fallback
+      const fallbackComment: CommentItem = {
+        id: `c-${now}`,
+        author: isAnonComment
+          ? "নাম প্রকাশে অনিচ্ছুক"
+          : cleanAuthor || "পাঠক",
+        text: cleanText,
+        timeBn: "এইমাত্র",
+      };
+      setComments((prev) => [fallbackComment, ...prev]);
+      setCommentText("");
+      setLastCommentAt(now);
+      setCommentSuccess(true);
+      setTimeout(() => setCommentSuccess(false), 4000);
+    } finally {
+      setIsSubmittingComment(false);
+    }
   };
 
-  const toggleReaction = (type: "love" | "touched" | "relatable") => {
-    setActiveReaction((prev) => {
-      const next = prev === type ? null : type;
-      if (next) {
-        fetch(
-          `${GO_API_BASE_URL}/stories/${encodeURIComponent(storyId)}/react`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type }),
-          }
-        ).catch(() => {});
+  const toggleReaction = async (type: "love" | "touched" | "relatable") => {
+    if (activeReaction === type) return;
+
+    const prevType = activeReaction;
+    setActiveReaction(type);
+
+    setReactions((prev) => ({
+      ...prev,
+      [type]: (prev[type] || 0) + 1,
+      ...(prevType ? { [prevType]: Math.max(0, (prev[prevType] || 0) - 1) } : {}),
+    }));
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`onuvuti_reacted_${storyId}`, type);
+    }
+
+    try {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/stories/${encodeURIComponent(storyId)}/react`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ type }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && data.reactions) {
+          setReactions(data.reactions);
+        }
       }
-      return next;
-    });
+    } catch {
+      // optimistic count retained
+    }
   };
 
   return (
@@ -330,9 +383,7 @@ export default function StoryInteractions({
                   activeReaction === "love" ? "fill-white" : ""
                 }`}
               />
-              <span>
-                ভালোবাসা ({baseLove + (activeReaction === "love" ? 1 : 0)})
-              </span>
+              <span>ভালোবাসা ({reactions.love})</span>
             </button>
 
             <button
@@ -345,10 +396,7 @@ export default function StoryInteractions({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>
-                মন ছুঁয়েছে (
-                {baseTouched + (activeReaction === "touched" ? 1 : 0)})
-              </span>
+              <span>মন ছুঁয়েছে ({reactions.touched})</span>
             </button>
 
             <button
@@ -361,10 +409,7 @@ export default function StoryInteractions({
               }`}
             >
               <Users className="w-3.5 h-3.5" />
-              <span>
-                আমারও গল্প (
-                {baseRelatable + (activeReaction === "relatable" ? 1 : 0)})
-              </span>
+              <span>আমারও গল্প ({reactions.relatable})</span>
             </button>
           </div>
 
@@ -490,12 +535,20 @@ export default function StoryInteractions({
             />
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 hover:bg-[#630d16] transition cursor-pointer shrink-0 shadow-xs"
+              disabled={isSubmittingComment}
+              className="px-5 py-2.5 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 hover:bg-[#630d16] disabled:opacity-60 transition cursor-pointer shrink-0 shadow-xs"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>পাঠান</span>
+              <span>{isSubmittingComment ? "পাঠানো হচ্ছে..." : "পাঠান"}</span>
             </button>
           </div>
+
+          {commentSuccess && (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+              <Check className="w-3.5 h-3.5" />
+              <span>আপনার মন্তব্যটি সফলভাবে যুক্ত হয়েছে!</span>
+            </p>
+          )}
 
           {commentError && (
             <p className="text-xs text-rose-600 dark:text-rose-400 font-bold">{commentError}</p>
@@ -504,20 +557,32 @@ export default function StoryInteractions({
 
         {/* Comments List */}
         <div className="space-y-3 pt-2">
-          {comments.map((c) => (
-            <div
-              key={c.id}
-              className="rounded-2xl bg-[#FDF8F2] dark:bg-[#161E2E] border border-stone-200/80 dark:border-stone-800 p-4 space-y-1"
-            >
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[#80131E] dark:text-rose-400">{c.author}</span>
-                <span className="text-stone-400 dark:text-stone-500">{c.timeBn}</span>
-              </div>
-              <p className="text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
-                {c.text}
+          {comments.length === 0 ? (
+            <div className="rounded-2xl bg-[#FDF8F2] dark:bg-[#161E2E] border border-stone-200/80 dark:border-stone-800 p-6 text-center space-y-1.5">
+              <MessageCircle className="w-8 h-8 text-[#80131E]/40 dark:text-rose-400/40 mx-auto" />
+              <p className="text-xs sm:text-sm font-bold text-stone-700 dark:text-stone-300">
+                এই গল্পটিতে এখনো কোনো মন্তব্য করা হয়নি।
+              </p>
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                লেখাটি পড়ে আপনার অনুভূতি বা সহমর্মিতা প্রথম প্রকাশ করুন।
               </p>
             </div>
-          ))}
+          ) : (
+            comments.map((c) => (
+              <div
+                key={c.id}
+                className="rounded-2xl bg-[#FDF8F2] dark:bg-[#161E2E] border border-stone-200/80 dark:border-stone-800 p-4 space-y-1 transition"
+              >
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#80131E] dark:text-rose-400">{c.author}</span>
+                  <span className="text-stone-400 dark:text-stone-500">{c.timeBn || "এইমাত্র"}</span>
+                </div>
+                <p className="text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap">
+                  {c.text}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

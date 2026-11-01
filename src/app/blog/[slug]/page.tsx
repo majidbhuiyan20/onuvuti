@@ -12,13 +12,18 @@ import {
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { BOOK_INFO } from "@/data/bookData";
-import StoryInteractions from "@/components/StoryInteractions";
+import StoryInteractions, { CommentItem } from "@/components/StoryInteractions";
 import ThemeToggle from "@/components/ThemeToggle";
 import { getGoApiBaseUrl } from "@/lib/goApi";
 
 export const instant = false;
 
-async function fetchStory(slug: string): Promise<BlogPost | null> {
+interface StoryFetchResult {
+  post: BlogPost;
+  comments: CommentItem[];
+}
+
+async function fetchStory(slug: string): Promise<StoryFetchResult | null> {
   // 1. Try fetching from Go Backend (PostgreSQL single source of truth)
   try {
     const baseUrl = getGoApiBaseUrl();
@@ -38,24 +43,27 @@ async function fetchStory(slug: string): Promise<BlogPost | null> {
                 .filter(Boolean);
 
         return {
-          id: s.id,
-          slug: s.slug,
-          title: s.title,
-          excerpt: s.excerpt || paragraphs[0] || "",
-          category: (s.category || "না বলা কথা") as StoryCategory,
-          readTimeBn: s.readTimeBn || "৩ মিনিট পাঠ",
-          dateBn: s.dateBn || "আজ",
-          author: s.author || "নাম প্রকাশে অনিচ্ছুক",
-          isAnonymous: Boolean(s.isAnonymous),
-          isAdminPost: Boolean(s.isAdminPost),
-          confessionIdBn: s.confessionIdBn,
-          imageUrl: s.imageUrl || undefined,
-          adminNote: s.adminNote || undefined,
-          viewsCount: s.viewsCount || 1,
-          likesCount: s.likesCount || 0,
-          reactions: s.reactions || { love: 0, touched: 0, relatable: 0 },
-          featured: Boolean(s.featured),
-          content: paragraphs.length > 0 ? paragraphs : [s.rawContent || ""],
+          post: {
+            id: s.id,
+            slug: s.slug,
+            title: s.title,
+            excerpt: s.excerpt || paragraphs[0] || "",
+            category: (s.category || "না বলা কথা") as StoryCategory,
+            readTimeBn: s.readTimeBn || "৩ মিনিট পাঠ",
+            dateBn: s.dateBn || "আজ",
+            author: s.author || "নাম প্রকাশে অনিচ্ছুক",
+            isAnonymous: Boolean(s.isAnonymous),
+            isAdminPost: Boolean(s.isAdminPost),
+            confessionIdBn: s.confessionIdBn,
+            imageUrl: s.imageUrl || undefined,
+            adminNote: s.adminNote || undefined,
+            viewsCount: s.viewsCount || 1,
+            likesCount: s.likesCount || 0,
+            reactions: s.reactions || { love: 0, touched: 0, relatable: 0 },
+            featured: Boolean(s.featured),
+            content: paragraphs.length > 0 ? paragraphs : [s.rawContent || ""],
+          },
+          comments: Array.isArray(data.comments) ? data.comments : [],
         };
       }
     }
@@ -65,7 +73,10 @@ async function fetchStory(slug: string): Promise<BlogPost | null> {
 
   // 2. Fallback to hardcoded editorial BLOG_POSTS
   const fallback = BLOG_POSTS.find((p) => p.slug === slug);
-  return fallback || null;
+  if (fallback) {
+    return { post: fallback, comments: [] };
+  }
+  return null;
 }
 
 async function fetchRelatedStories(currentSlug: string): Promise<BlogPost[]> {
@@ -98,12 +109,13 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = await fetchStory(slug);
-  if (!post) {
+  const result = await fetchStory(slug);
+  if (!result || !result.post) {
     return {
       title: "লেখাটি খুঁজে পাওয়া যায়নি | অনুভূতি",
     };
   }
+  const post = result.post;
 
   return {
     title: `${post.title} | অনুভূতি`,
@@ -122,11 +134,13 @@ export default async function BlogPostPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await fetchStory(slug);
+  const result = await fetchStory(slug);
 
-  if (!post) {
+  if (!result || !result.post) {
     notFound();
   }
+
+  const { post, comments } = result;
 
   const relatedPosts = await fetchRelatedStories(slug);
 
@@ -269,6 +283,7 @@ export default async function BlogPostPage({
           confessionIdBn={post.confessionIdBn}
           initialLikes={post.likesCount}
           initialReactions={post.reactions}
+          initialComments={comments}
         />
 
         {/* Minimal Book Callout at End of Article */}
