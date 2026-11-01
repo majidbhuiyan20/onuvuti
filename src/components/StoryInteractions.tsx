@@ -10,6 +10,8 @@ import {
   EyeOff,
   UserCheck,
 } from "lucide-react";
+import { sanitizeText } from "@/lib/security";
+import { GO_API_BASE_URL } from "@/lib/goApi";
 
 interface CommentItem {
   id: string;
@@ -22,14 +24,28 @@ interface StoryInteractionsProps {
   storyId: string;
   storyTitle: string;
   initialLikes: number;
+  initialReactions?: {
+    love: number;
+    touched: number;
+    relatable: number;
+  };
 }
 
 export default function StoryInteractions({
+  storyId,
   storyTitle,
   initialLikes,
+  initialReactions,
 }: StoryInteractionsProps) {
-  const [liked, setLiked] = useState(false);
+  const [activeReaction, setActiveReaction] = useState<
+    "love" | "touched" | "relatable" | null
+  >(null);
   const [copied, setCopied] = useState(false);
+
+  const baseLove = initialReactions?.love ?? initialLikes;
+  const baseTouched = initialReactions?.touched ?? Math.round(initialLikes * 0.45);
+  const baseRelatable =
+    initialReactions?.relatable ?? Math.round(initialLikes * 0.3);
 
   const [comments, setComments] = useState<CommentItem[]>([
     {
@@ -49,6 +65,9 @@ export default function StoryInteractions({
   const [commentAuthor, setCommentAuthor] = useState("");
   const [isAnonComment, setIsAnonComment] = useState(false);
   const [commentText, setCommentText] = useState("");
+  const [honeypot, setHoneypot] = useState("");
+  const [lastCommentAt, setLastCommentAt] = useState(0);
+  const [commentError, setCommentError] = useState<string | null>(null);
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
@@ -83,79 +102,167 @@ export default function StoryInteractions({
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!commentText.trim()) return;
+    setCommentError(null);
+
+    // Anti-bot honeypot
+    if (honeypot.trim().length > 0) return;
+
+    // Rate-limit: 10 seconds cooldown between comments
+    const now = Date.now();
+    if (now - lastCommentAt < 10_000) {
+      setCommentError("অনুগ্রহ করে ১০ সেকেন্ড অপেক্ষা করে পরবর্তী মন্তব্য করুন।");
+      return;
+    }
+
+    const cleanText = sanitizeText(commentText, 800);
+    const cleanAuthor = sanitizeText(commentAuthor, 60);
+
+    if (!cleanText || cleanText.length < 2) return;
 
     const newComment: CommentItem = {
-      id: `c-${Date.now()}`,
+      id: `c-${now}`,
       author: isAnonComment
         ? "নাম প্রকাশে অনিচ্ছুক"
-        : commentAuthor.trim() || "পাঠক",
-      text: commentText.trim(),
+        : cleanAuthor || "পাঠক",
+      text: cleanText,
       timeBn: "এইমাত্র",
     };
 
     setComments((prev) => [newComment, ...prev]);
     setCommentText("");
+    setLastCommentAt(now);
+
+    // Sync comment to Go Backend
+    fetch(
+      `${GO_API_BASE_URL}/stories/${encodeURIComponent(storyId)}/comments`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          author: cleanAuthor,
+          isAnonymous: isAnonComment,
+          text: cleanText,
+          websiteUrl: honeypot,
+        }),
+      }
+    ).catch(() => {});
+  };
+
+  const toggleReaction = (type: "love" | "touched" | "relatable") => {
+    setActiveReaction((prev) => {
+      const next = prev === type ? null : type;
+      if (next) {
+        fetch(
+          `${GO_API_BASE_URL}/stories/${encodeURIComponent(storyId)}/react`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ type }),
+          }
+        ).catch(() => {});
+      }
+      return next;
+    });
   };
 
   return (
     <div className="space-y-8 pt-6 border-t border-stone-200">
-      {/* Love Reaction & Social Share Bar */}
-      <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 shadow-xs">
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => setLiked((prev) => !prev)}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center gap-2 transition cursor-pointer ${
-              liked
-                ? "bg-[#80131E] text-white shadow-sm"
-                : "bg-[#FAF4E6] text-[#80131E] border border-[#C59B27]/40 hover:bg-[#f3e7cb]"
-            }`}
-          >
-            <Heart className={`w-4 h-4 ${liked ? "fill-white" : ""}`} />
-            <span>ভালোবাসা জানান ({initialLikes + (liked ? 1 : 0)})</span>
-          </button>
-        </div>
+      {/* 3 Emotional Reactions & Social Share Bar */}
+      <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-4 shadow-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => toggleReaction("love")}
+              className={`px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer ${
+                activeReaction === "love"
+                  ? "bg-[#80131E] text-white shadow-sm"
+                  : "bg-[#FAF4E6] text-[#80131E] border border-[#C59B27]/40 hover:bg-[#f3e7cb]"
+              }`}
+            >
+              <Heart
+                className={`w-4 h-4 ${
+                  activeReaction === "love" ? "fill-white" : ""
+                }`}
+              />
+              <span>
+                ভালোবাসা ({baseLove + (activeReaction === "love" ? 1 : 0)})
+              </span>
+            </button>
 
-        {/* Share Buttons */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-stone-500 font-medium mr-1">
-            প্রিয়জনকে শেয়ার করুন:
-          </span>
+            <button
+              type="button"
+              onClick={() => toggleReaction("touched")}
+              className={`px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer ${
+                activeReaction === "touched"
+                  ? "bg-[#80131E] text-white shadow-sm"
+                  : "bg-stone-50 text-stone-700 border border-stone-200 hover:border-[#80131E]/40"
+              }`}
+            >
+              <span>🥺</span>
+              <span>
+                মন ছুঁয়েছে (
+                {baseTouched + (activeReaction === "touched" ? 1 : 0)})
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={handleWhatsAppShare}
-            className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs hover:bg-emerald-100 transition cursor-pointer"
-          >
-            WhatsApp
-          </button>
+            <button
+              type="button"
+              onClick={() => toggleReaction("relatable")}
+              className={`px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer ${
+                activeReaction === "relatable"
+                  ? "bg-[#80131E] text-white shadow-sm"
+                  : "bg-stone-50 text-stone-700 border border-stone-200 hover:border-[#80131E]/40"
+              }`}
+            >
+              <span>🤝</span>
+              <span>
+                আমারও গল্প (
+                {baseRelatable + (activeReaction === "relatable" ? 1 : 0)})
+              </span>
+            </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={handleFacebookShare}
-            className="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs hover:bg-blue-100 transition cursor-pointer"
-          >
-            Facebook
-          </button>
+          {/* Share Buttons */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-stone-500 font-medium mr-1">
+              শেয়ার করুন:
+            </span>
 
-          <button
-            type="button"
-            onClick={handleCopyLink}
-            className="px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 font-bold text-xs inline-flex items-center gap-1 hover:bg-stone-200 transition cursor-pointer"
-          >
-            {copied ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span>কপি হয়েছে!</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="w-3.5 h-3.5" />
-                <span>লিংক কপি</span>
-              </>
-            )}
-          </button>
+            <button
+              type="button"
+              onClick={handleWhatsAppShare}
+              className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs hover:bg-emerald-100 transition cursor-pointer"
+            >
+              WhatsApp
+            </button>
+
+            <button
+              type="button"
+              onClick={handleFacebookShare}
+              className="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs hover:bg-blue-100 transition cursor-pointer"
+            >
+              Facebook
+            </button>
+
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 font-bold text-xs inline-flex items-center gap-1 hover:bg-stone-200 transition cursor-pointer"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>কপি হয়েছে!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>লিংক কপি</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -170,10 +277,21 @@ export default function StoryInteractions({
 
         {/* Write Comment Form */}
         <form onSubmit={handleAddComment} className="space-y-3">
+          <input
+            type="text"
+            name="website_url"
+            tabIndex={-1}
+            autoComplete="off"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            className="hidden"
+          />
+
           <div className="flex flex-wrap items-center justify-between gap-2">
             {!isAnonComment ? (
               <input
                 type="text"
+                maxLength={60}
                 value={commentAuthor}
                 onChange={(e) => setCommentAuthor(e.target.value)}
                 placeholder="আপনার নাম লিখুন"
@@ -209,6 +327,7 @@ export default function StoryInteractions({
             <input
               type="text"
               required
+              maxLength={800}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="এই গল্পটি পড়ে আপনার অনুভূতি বা সহমর্মিতা লিখুন..."
@@ -222,6 +341,10 @@ export default function StoryInteractions({
               <span>পাঠান</span>
             </button>
           </div>
+
+          {commentError && (
+            <p className="text-xs text-rose-600 font-bold">{commentError}</p>
+          )}
         </form>
 
         {/* Comments List */}
@@ -245,4 +368,3 @@ export default function StoryInteractions({
     </div>
   );
 }
-

@@ -4,13 +4,32 @@ import {
   createZiniPayInvoice,
   getBookPriceBdt,
 } from "@/lib/zinipay";
+import { checkRateLimit, getClientIp, sanitizeText } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req.headers);
+    const rate = checkRateLimit({
+      bucket: "payment_create",
+      identifier: clientIp,
+      maxRequests: 10,
+      windowMs: 5 * 60_000,
+    });
+
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `অতিরিক্ত পেমেন্ট রিকোয়েস্ট। অনুগ্রহ করে ${rate.retryAfterSeconds} সেকেন্ড পর আবার চেষ্টা করুন।`,
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
-    const cusName = String(body?.cusName || "").trim();
-    const cusEmail = String(body?.cusEmail || "").trim();
-    const cusPhone = String(body?.cusPhone || "").trim();
+    const cusName = sanitizeText(String(body?.cusName || ""), 100);
+    const cusEmail = sanitizeText(String(body?.cusEmail || ""), 120);
+    const cusPhone = sanitizeText(String(body?.cusPhone || ""), 30);
 
     if (!cusName || !cusPhone) {
       return NextResponse.json(

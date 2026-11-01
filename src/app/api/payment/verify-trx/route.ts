@@ -6,14 +6,37 @@ import {
   markOrderAsPaid,
   verifyAndConfirmZiniPayTrx,
 } from "@/lib/zinipay";
+import { checkRateLimit, getClientIp, sanitizeText } from "@/lib/security";
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req.headers);
+    const rate = checkRateLimit({
+      bucket: "payment_verify_trx",
+      identifier: clientIp,
+      maxRequests: 8,
+      windowMs: 5 * 60_000,
+      blockDurationMs: 10 * 60_000,
+    });
+
+    if (!rate.allowed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `অতিরিক্তবার ভুল TrxID দেওয়ার কারণে সাময়িকভাবে ব্লক করা হয়েছে। অনুগ্রহ করে ${rate.retryAfterSeconds} সেকেন্ড পর চেষ্টা করুন।`,
+        },
+        { status: 429 }
+      );
+    }
+
     const body = await req.json();
-    const transactionId = String(body?.transactionId || "").trim().toUpperCase();
-    const cusName = String(body?.cusName || "পাঠক").trim();
-    const cusPhone = String(body?.cusPhone || "").trim();
-    const cusEmail = String(body?.cusEmail || "").trim();
+    const transactionId = sanitizeText(
+      String(body?.transactionId || ""),
+      40
+    ).toUpperCase();
+    const cusName = sanitizeText(String(body?.cusName || "পাঠক"), 100);
+    const cusPhone = sanitizeText(String(body?.cusPhone || ""), 30);
+    const cusEmail = sanitizeText(String(body?.cusEmail || ""), 120);
 
     if (!transactionId) {
       return NextResponse.json(

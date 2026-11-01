@@ -1,0 +1,56 @@
+package routes
+
+import (
+	"net/http"
+
+	"github.com/onuvuti/backend/internal/config"
+	"github.com/onuvuti/backend/internal/handlers"
+	"github.com/onuvuti/backend/internal/middleware"
+)
+
+type RouterDeps struct {
+	Config           *config.Config
+	RateLimiter      *middleware.RateLimiter
+	HealthHandler    *handlers.HealthHandler
+	StoryHandler     *handlers.StoryHandler
+	CommentHandler   *handlers.CommentHandler
+	AdminHandler     *handlers.AdminHandler
+	OrderHandler     *handlers.OrderHandler
+	AnalyticsHandler *handlers.AnalyticsHandler
+}
+
+func NewRouter(deps RouterDeps) http.Handler {
+	mux := http.NewServeMux()
+	cfg := deps.Config
+
+	// 1. Health & Security Status
+	mux.HandleFunc("GET /api/v1/health", deps.HealthHandler.Check)
+
+	// 2. Public Story & Confession Routes
+	mux.HandleFunc("GET /api/v1/stories", deps.StoryHandler.ListPublished)
+	mux.HandleFunc("GET /api/v1/stories/{slug}", deps.StoryHandler.GetSingle)
+	mux.HandleFunc("POST /api/v1/stories", deps.StoryHandler.Submit)
+	mux.HandleFunc("POST /api/v1/stories/{id}/react", deps.StoryHandler.React)
+	mux.HandleFunc("POST /api/v1/stories/{id}/comments", deps.CommentHandler.Add)
+
+	// 3. Public Visitor Traffic Tracking Route
+	mux.HandleFunc("POST /api/v1/analytics/track", deps.AnalyticsHandler.TrackVisit)
+
+	// 4. Book Order Recording Route
+	mux.HandleFunc("POST /api/v1/orders", deps.OrderHandler.RecordOrder)
+
+	// 5. Admin Authentication & Protected Admin Routes
+	mux.HandleFunc("POST /api/v1/admin/login", deps.AdminHandler.Login)
+	mux.HandleFunc("GET /api/v1/admin/dashboard", middleware.RequireAdmin(cfg, deps.AdminHandler.Dashboard))
+	mux.HandleFunc("GET /api/v1/admin/analytics", middleware.RequireAdmin(cfg, deps.AnalyticsHandler.GetAdminAnalytics))
+	mux.HandleFunc("PATCH /api/v1/admin/stories/{id}/approve", middleware.RequireAdmin(cfg, deps.AdminHandler.ApproveOrUpdateStory))
+	mux.HandleFunc("POST /api/v1/admin/stories", middleware.RequireAdmin(cfg, deps.AdminHandler.CreateStory))
+	mux.HandleFunc("DELETE /api/v1/admin/stories/{id}", middleware.RequireAdmin(cfg, deps.AdminHandler.DeleteStory))
+
+	// Apply Firewall + Rate Limiter + CORS middleware chain
+	handler := middleware.Firewall(mux, deps.RateLimiter)
+	handler = middleware.CORS(handler, cfg.CorsAllowedOrigins)
+
+	return handler
+}
+

@@ -6,6 +6,12 @@ import { BLOG_POSTS } from "@/data/blogData";
 import { BOOK_INFO } from "@/data/bookData";
 import StoryInteractions from "@/components/StoryInteractions";
 
+export async function generateStaticParams() {
+  return BLOG_POSTS.map((post) => ({
+    slug: post.slug,
+  }));
+}
+
 export default async function BlogPostPage({
   params,
 }: {
@@ -56,9 +62,27 @@ export default async function BlogPostPage({
       {/* Article Content */}
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 space-y-8">
         <div className="space-y-3 pb-6 border-b border-stone-200">
-          <span className="inline-block px-3 py-0.5 rounded-full bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-bold">
-            {post.category === "না বলা কথা" ? "💌 না বলা কথা" : post.category}
-          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-block px-3 py-0.5 rounded-full bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-bold">
+              {post.category === "ক্রাশ ও কনফেশন"
+                ? "💘 ক্রাশ ও কনফেশন"
+                : post.category === "না বলা কথা"
+                ? "💌 না বলা কথা"
+                : post.category}
+            </span>
+
+            {post.confessionIdBn && (
+              <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-[#80131E] text-xs font-extrabold">
+                {post.confessionIdBn}
+              </span>
+            )}
+
+            {post.isAdminPost && (
+              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-xs font-extrabold">
+                ✍️ সম্পাদকের কলমে
+              </span>
+            )}
+          </div>
 
           <h1 className="text-2xl sm:text-4xl font-extrabold text-[#142230] leading-snug">
             {post.title}
@@ -77,17 +101,30 @@ export default async function BlogPostPage({
           </div>
         </div>
 
+        {/* ONLY render image if writer or admin explicitly added one */}
+        {post.imageUrl && (
+          <div className="rounded-3xl overflow-hidden border border-stone-200 bg-white shadow-xs">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={post.imageUrl}
+              alt={post.title}
+              className="w-full max-h-96 object-cover"
+            />
+          </div>
+        )}
+
         <article className="space-y-5 text-base sm:text-lg text-stone-800 leading-relaxed bg-white p-6 sm:p-8 rounded-3xl border border-stone-200/80 shadow-xs">
           {post.content.map((para, i) => (
             <p key={i}>{para}</p>
           ))}
         </article>
 
-        {/* Love Reaction, Share Buttons & Comments Box */}
+        {/* Emotional Reactions, Share Buttons & Comments Box */}
         <StoryInteractions
           storyId={post.id}
           storyTitle={post.title}
           initialLikes={post.likesCount}
+          initialReactions={post.reactions}
         />
 
         {/* Minimal Book Callout at End of Article */}

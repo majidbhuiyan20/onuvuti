@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -10,96 +10,587 @@ import {
   Clock,
   FileText,
   Sparkles,
+  Lock,
+  ShieldCheck,
+  ImagePlus,
+  Edit3,
+  LogOut,
+  AlertCircle,
+  BarChart3,
+  Users,
+  Eye,
+  BookOpen,
+  TrendingUp,
+  Calendar,
+  ShoppingBag,
 } from "lucide-react";
-import { BLOG_POSTS, BlogPost } from "@/data/blogData";
+import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
+import { sanitizeText, validateImageUpload } from "@/lib/security";
+import { GO_API_BASE_URL, getAdminAuthHeaders } from "@/lib/goApi";
 
 interface PendingStory {
   id: string;
   title: string;
   author: string;
-  category: BlogPost["category"];
+  category: StoryCategory;
   content: string;
+  imageUrl?: string;
   submittedAt: string;
 }
 
+interface DailyTrafficStat {
+  date: string;
+  labelBn: string;
+  pageViews: number;
+  uniqueVisits: number;
+  storyReads: number;
+  bookPageViews: number;
+  bookOrders: number;
+  revenueBdt: number;
+}
+
+interface TopStoryStat {
+  id: string;
+  slug: string;
+  title: string;
+  category: string;
+  viewsCount: number;
+  likesCount: number;
+}
+
+interface AnalyticsSummary {
+  period: string;
+  startDate: string;
+  endDate: string;
+  totalViews: number;
+  uniqueVisits: number;
+  storyReads: number;
+  bookPageViews: number;
+  totalOrders: number;
+  totalRevenue: number;
+  timeline: DailyTrafficStat[];
+  topStories: TopStoryStat[];
+}
+
+const INITIAL_PENDING: PendingStory[] = [
+  {
+    id: "p-101",
+    title: "বাসের জানালার পাশের সেই মেয়েটি ও একটি অসমাপ্ত গল্প",
+    author: "রাফসান কবির, ঢাকা",
+    category: "ক্রাশ ও কনফেশন",
+    content:
+      "প্রতিদিন অফিস যাওয়ার পথে শাহবাগ মোড়ে বাসে উঠত মেয়েটা। হাতে সবসময় একটা বই থাকত। একদিন সাহস করে কথা বলব ভেবেছিলাম, কিন্তু পরদিন থেকে তাকে আর দেখিনি...",
+    submittedAt: "১০ মিনিট আগে",
+  },
+  {
+    id: "p-102",
+    title: "মা হওয়ার পর নিজের স্বপ্নগুলো যখন আলমারির কোণে জমে থাকে",
+    author: "নাম প্রকাশে অনিচ্ছুক",
+    category: "না বলা কথা",
+    content:
+      "সংসার আর সন্তানের মুখের দিকে তাকিয়ে সব কষ্ট ভুলে যাই ঠিকই, কিন্তু মাঝে মাঝে মধ্যরাতে নিজের পুরোনো সার্টিফিকেটগুলো ছুঁয়ে দেখতে ইচ্ছা করে...",
+    submittedAt: "১ ঘণ্টা আগে",
+  },
+];
+
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState<"pending" | "published" | "create">(
-    "pending"
+  // Security Gate State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<
+    "analytics" | "pending" | "published" | "create"
+  >("analytics");
+
+  // Analytics State (Daily, 7 Days, Monthly, Yearly, Custom Date Range)
+  const [analyticsPeriod, setAnalyticsPeriod] = useState<
+    "daily" | "7d" | "monthly" | "yearly" | "custom"
+  >("7d");
+  const [customStartDate, setCustomStartDate] = useState("");
+  const [customEndDate, setCustomEndDate] = useState("");
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsSummary | null>(
+    null
   );
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
 
-  const [pendingStories, setPendingStories] = useState<PendingStory[]>([
-    {
-      id: "p-101",
-      title: "বাসের জানালার পাশের সেই মেয়েটি ও একটি অসমাপ্ত গল্প",
-      author: "রাফসান কবির, ঢাকা",
-      category: "রোমান্টিক গল্প",
-      content:
-        "প্রতিদিন অফিস যাওয়ার পথে শাহবাগ মোড়ে বাসে উঠত মেয়েটা। হাতে সবসময় একটা বই থাকত। একদিন সাহস করে কথা বলব ভেবেছিলাম, কিন্তু পরদিন থেকে তাকে আর দেখিনি...",
-      submittedAt: "১০ মিনিট আগে",
-    },
-    {
-      id: "p-102",
-      title: "মা হওয়ার পর নিজের স্বপ্নগুলো যখন আলমারির কোণে জমে থাকে",
-      author: "নাম প্রকাশে অনিচ্ছুক",
-      category: "না বলা কথা",
-      content:
-        "সংসার আর সন্তানের মুখের দিকে তাকিয়ে সব কষ্ট ভুলে যাই ঠিকই, কিন্তু মাঝে মাঝে মধ্যরাতে নিজের পুরোনো সার্টিফিকেটগুলো ছুঁয়ে দেখতে ইচ্ছা করে...",
-      submittedAt: "১ ঘণ্টা আগে",
-    },
-  ]);
-
+  const [pendingStories, setPendingStories] =
+    useState<PendingStory[]>(INITIAL_PENDING);
   const [publishedList, setPublishedList] = useState<BlogPost[]>(BLOG_POSTS);
 
-  // Create New Story Form State
-  const [newTitle, setNewTitle] = useState("");
-  const [newAuthor, setNewAuthor] = useState("অনুভূতি ডেস্ক");
-  const [newCategory, setNewCategory] =
-    useState<BlogPost["category"]>("রোমান্টিক গল্প");
-  const [newContent, setNewContent] = useState("");
+  // Editing Pending Story State
+  const [editingPendingId, setEditingPendingId] = useState<string | null>(null);
+  const [editPendingTitle, setEditPendingTitle] = useState("");
+  const [editPendingContent, setEditPendingContent] = useState("");
+  const [editPendingCategory, setEditPendingCategory] =
+    useState<StoryCategory>("ক্রাশ ও কনফেশন");
+  const [editPendingImage, setEditPendingImage] = useState<string | undefined>(
+    undefined
+  );
 
-  const handleApprove = (item: PendingStory) => {
+  // Create New Story Form State (Admin Writing)
+  const [newTitle, setNewTitle] = useState("");
+  const [newAuthor, setNewAuthor] = useState("অনুভূতি সম্পাদনা পর্ষদ");
+  const [newCategory, setNewCategory] =
+    useState<StoryCategory>("সম্পর্ক ও মনস্তত্ত্ব");
+  const [newContent, setNewContent] = useState("");
+  const [isAdminBadge, setIsAdminBadge] = useState(true);
+  const [newImageDataUrl, setNewImageDataUrl] = useState<string | undefined>(
+    undefined
+  );
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  const fetchAnalytics = useCallback(
+    async (
+      period: "daily" | "7d" | "monthly" | "yearly" | "custom",
+      start = "",
+      end = ""
+    ) => {
+      setIsLoadingAnalytics(true);
+      const query = new URLSearchParams({
+        period,
+        ...(start ? { startDate: start } : {}),
+        ...(end ? { endDate: end } : {}),
+      }).toString();
+
+      try {
+        const res = await fetch(`${GO_API_BASE_URL}/admin/analytics?${query}`, {
+          headers: getAdminAuthHeaders(),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.analytics) {
+            setAnalyticsData(data.analytics);
+            setIsLoadingAnalytics(false);
+            return;
+          }
+        }
+      } catch {
+        // Fallback to Next.js API if Go server is offline
+      }
+
+      try {
+        const fallbackRes = await fetch(`/api/admin/analytics?${query}`);
+        if (fallbackRes.ok) {
+          const fallbackData = await fallbackRes.json();
+          if (fallbackData.ok && fallbackData.analytics) {
+            setAnalyticsData(fallbackData.analytics);
+          }
+        }
+      } catch {
+        // Ignore error
+      } finally {
+        setIsLoadingAnalytics(false);
+      }
+    },
+    []
+  );
+
+  const fetchDashboardFromGo = useCallback(async () => {
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/dashboard`, {
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok) {
+          if (Array.isArray(data.pendingStories)) {
+            setPendingStories(
+              data.pendingStories.map(
+                (
+                  st: BlogPost & { rawContent?: string; submittedAt?: string }
+                ) => ({
+                  id: st.id,
+                  title: st.title,
+                  author: st.author,
+                  category: st.category,
+                  content:
+                    st.rawContent ||
+                    (Array.isArray(st.content) ? st.content.join("\n\n") : ""),
+                  imageUrl: st.imageUrl,
+                  submittedAt: st.submittedAt || "এইমাত্র",
+                })
+              )
+            );
+          }
+          if (Array.isArray(data.publishedStories)) {
+            setPublishedList(data.publishedStories);
+          }
+          if (data.analytics) {
+            setAnalyticsData(data.analytics);
+          }
+          return;
+        }
+      }
+    } catch {
+      // Fallback to localStorage if Go server is unreachable
+    }
+  }, []);
+
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const weekAgoDate = new Date();
+    weekAgoDate.setDate(weekAgoDate.getDate() - 6);
+    setCustomStartDate(weekAgoDate.toISOString().slice(0, 10));
+    setCustomEndDate(today);
+
+    try {
+      const savedAuth = sessionStorage.getItem("onuvuti_admin_authed");
+      if (savedAuth === "true") {
+        setIsAuthenticated(true);
+        fetchDashboardFromGo();
+        fetchAnalytics("7d");
+      }
+
+      const savedPending = localStorage.getItem("onuvuti_pending_stories");
+      if (savedPending) {
+        const parsed = JSON.parse(savedPending) as PendingStory[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setPendingStories([...parsed, ...INITIAL_PENDING]);
+        }
+      }
+
+      const savedPublished = localStorage.getItem("onuvuti_published_stories");
+      if (savedPublished) {
+        const parsedPub = JSON.parse(savedPublished) as BlogPost[];
+        if (Array.isArray(parsedPub) && parsedPub.length > 0) {
+          setPublishedList(parsedPub);
+        }
+      }
+    } catch {
+      // Ignore storage errors
+    }
+  }, [fetchDashboardFromGo, fetchAnalytics]);
+
+  const handlePeriodSwitch = (
+    p: "daily" | "7d" | "monthly" | "yearly" | "custom"
+  ) => {
+    setAnalyticsPeriod(p);
+    if (p !== "custom") {
+      fetchAnalytics(p);
+    } else {
+      fetchAnalytics("custom", customStartDate, customEndDate);
+    }
+  };
+
+  const syncPublishedToStorage = (updated: BlogPost[]) => {
+    setPublishedList(updated);
+    try {
+      localStorage.setItem(
+        "onuvuti_published_stories",
+        JSON.stringify(updated)
+      );
+    } catch {
+      // Ignore storage errors
+    }
+  };
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+    setIsLoggingIn(true);
+
+    try {
+      let res: Response;
+      try {
+        res = await fetch(`${GO_API_BASE_URL}/admin/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: passwordInput }),
+        });
+      } catch {
+        res = await fetch("/api/admin/auth", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: passwordInput }),
+        });
+      }
+
+      const data = await res.json();
+      if (!res.ok || !data.ok) {
+        setAuthError(data.error || "অ্যাডমিন পাসওয়ার্ড সঠিক নয়।");
+        setIsLoggingIn(false);
+        return;
+      }
+
+      if (data.token) {
+        sessionStorage.setItem("onuvuti_admin_token", data.token);
+      }
+      sessionStorage.setItem("onuvuti_admin_authed", "true");
+      setIsAuthenticated(true);
+      setPasswordInput("");
+      await fetchDashboardFromGo();
+      await fetchAnalytics("7d");
+    } catch {
+      setAuthError("সার্ভারের সাথে সংযোগ করা যায়নি।");
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleImageFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onValidDataUrl: (url: string) => void
+  ) => {
+    setImageError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const check = validateImageUpload(file);
+    if (!check.valid) {
+      setImageError(check.errorBn || "ছবিটি গ্রহণযোগ্য নয়।");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        onValidDataUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const startEditingPending = (item: PendingStory) => {
+    setEditingPendingId(item.id);
+    setEditPendingTitle(item.title);
+    setEditPendingContent(item.content);
+    setEditPendingCategory(item.category);
+    setEditPendingImage(item.imageUrl);
+  };
+
+  const handleApprove = async (item: PendingStory) => {
+    const isEditingThis = editingPendingId === item.id;
+    const finalTitle = sanitizeText(
+      isEditingThis ? editPendingTitle : item.title,
+      180
+    );
+    const finalContent = sanitizeText(
+      isEditingThis ? editPendingContent : item.content,
+      8000
+    );
+    const finalCategory = isEditingThis ? editPendingCategory : item.category;
+    const finalImage = isEditingThis ? editPendingImage : item.imageUrl;
+
+    try {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/admin/stories/${encodeURIComponent(
+          item.id
+        )}/approve`,
+        {
+          method: "PATCH",
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({
+            title: finalTitle,
+            content: finalContent,
+            category: finalCategory,
+            imageUrl: finalImage || "",
+          }),
+        }
+      );
+
+      if (res.ok) {
+        await fetchDashboardFromGo();
+        setEditingPendingId(null);
+        return;
+      }
+    } catch {
+      // Fallback to local state if Go server is offline
+    }
+
+    const confessionNum =
+      finalCategory === "ক্রাশ ও কনফেশন"
+        ? `#কনফেশন_${105 + publishedList.length}`
+        : undefined;
+
     const newPost: BlogPost = {
       id: String(Date.now()),
       slug: `story-${Date.now()}`,
-      title: item.title,
-      excerpt: item.content.slice(0, 120) + "...",
-      category: item.category,
+      title: finalTitle,
+      excerpt: finalContent.slice(0, 125) + "...",
+      category: finalCategory,
+      confessionIdBn: confessionNum,
+      imageUrl: finalImage || undefined,
       readTimeBn: "৩ মিনিট পাঠ",
       dateBn: "আজ",
       author: item.author,
       likesCount: 1,
-      content: item.content.split("\n\n"),
+      reactions: { love: 1, touched: 0, relatable: 0 },
+      content: finalContent.split(/\n+/).filter(Boolean),
     };
-    setPublishedList((prev) => [newPost, ...prev]);
+
+    const nextPublished = [newPost, ...publishedList];
+    syncPublishedToStorage(nextPublished);
     setPendingStories((prev) => prev.filter((p) => p.id !== item.id));
+    setEditingPendingId(null);
   };
 
-  const handleReject = (id: string) => {
+  const handleReject = async (id: string) => {
+    try {
+      await fetch(
+        `${GO_API_BASE_URL}/admin/stories/${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          headers: getAdminAuthHeaders(),
+        }
+      );
+    } catch {
+      // Ignore if Go server offline
+    }
     setPendingStories((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const handleCreateStory = (e: React.FormEvent) => {
+  const handleCreateStory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim() || !newContent.trim()) return;
+    const cleanTitle = sanitizeText(newTitle, 180);
+    const cleanContent = sanitizeText(newContent, 10000);
+    const cleanAuthor = sanitizeText(newAuthor, 80) || "অনুভূতি সম্পাদনা পর্ষদ";
+
+    if (!cleanTitle || !cleanContent) return;
+
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/stories`, {
+        method: "POST",
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          title: cleanTitle,
+          content: cleanContent,
+          category: newCategory,
+          author: cleanAuthor,
+          isAdminPost: isAdminBadge,
+          imageUrl: newImageDataUrl || "",
+        }),
+      });
+
+      if (res.ok) {
+        await fetchDashboardFromGo();
+        setNewTitle("");
+        setNewContent("");
+        setNewImageDataUrl(undefined);
+        setActiveTab("published");
+        return;
+      }
+    } catch {
+      // Fallback to local state if Go server is offline
+    }
+
+    const confessionNum =
+      newCategory === "ক্রাশ ও কনফেশন"
+        ? `#কনফেশন_${105 + publishedList.length}`
+        : undefined;
 
     const created: BlogPost = {
       id: String(Date.now()),
       slug: `story-${Date.now()}`,
-      title: newTitle.trim(),
-      excerpt: newContent.trim().slice(0, 120) + "...",
+      title: cleanTitle,
+      excerpt: cleanContent.slice(0, 125) + "...",
       category: newCategory,
+      confessionIdBn: confessionNum,
+      isAdminPost: isAdminBadge,
+      imageUrl: newImageDataUrl || undefined,
       readTimeBn: "৪ মিনিট পাঠ",
       dateBn: "আজ",
-      author: newAuthor.trim() || "অনুভূতি ডেস্ক",
+      author: cleanAuthor,
       likesCount: 1,
-      content: newContent.trim().split("\n\n"),
+      reactions: { love: 1, touched: 0, relatable: 0 },
+      content: cleanContent.split(/\n+/).filter(Boolean),
     };
 
-    setPublishedList((prev) => [created, ...prev]);
+    const nextPublished = [created, ...publishedList];
+    syncPublishedToStorage(nextPublished);
     setNewTitle("");
     setNewContent("");
+    setNewImageDataUrl(undefined);
     setActiveTab("published");
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#FDF8F2] text-[#142230] flex items-center justify-center p-4">
+        <div className="max-w-md w-full rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm space-y-5">
+          <div className="flex items-center justify-between">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/Onuvuti-Publications-Logo.png"
+              alt="Onuvuti Publications"
+              className="h-11 w-auto object-contain mix-blend-multiply"
+            />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FAF4E6] text-[#80131E] text-xs font-extrabold">
+              <Lock className="w-3.5 h-3.5" />
+              সুরক্ষিত অ্যাডমিন
+            </span>
+          </div>
+
+          <div className="space-y-1">
+            <h1 className="text-xl font-extrabold text-[#142230]">
+              অ্যাডমিন প্যানেলে প্রবেশ করুন
+            </h1>
+            <p className="text-xs text-stone-500">
+              হ্যাকার ও ব্রুট-ফোর্স প্রতিরোধে ৫ বার ভুল পাসওয়ার্ড দিলে আইপি ৩০ মিনিটের জন্য ব্লক হয়ে যাবে।
+            </p>
+          </div>
+
+          {authError && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{authError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleAdminLogin} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-stone-700 mb-1">
+                অ্যাডমিন পাসওয়ার্ড
+              </label>
+              <input
+                type="password"
+                required
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                placeholder="পাসওয়ার্ড লিখুন..."
+                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm focus:outline-none focus:border-[#80131E]"
+              />
+              <p className="text-[11px] text-stone-400 mt-1.5">
+                ডেমো পাসওয়ার্ড (`.env`-এ পরিবর্তনযোগ্য):{" "}
+                <code className="text-[#80131E] font-bold">
+                  onuvuti-admin-2026
+                </code>
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className="w-full py-3 rounded-xl bg-[#80131E] text-white font-bold text-sm hover:bg-[#630d16] transition cursor-pointer disabled:opacity-60"
+            >
+              {isLoggingIn ? "যাচাই করা হচ্ছে..." : "লগইন করুন"}
+            </button>
+          </form>
+
+          <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs text-stone-500">
+            <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Rate-Limit Active
+            </span>
+            <Link href="/" className="font-bold hover:text-[#80131E]">
+              ← মূল ওয়েবসাইটে ফিরে যান
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Max views in current timeline for proportional bar chart height
+  const chartDays = analyticsData?.timeline
+    ? analyticsData.timeline.slice(-14)
+    : [];
+  const maxDayViews = Math.max(
+    1,
+    ...chartDays.map((d) => d.pageViews || 1)
+  );
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] text-[#142230]">
@@ -114,23 +605,51 @@ export default function AdminDashboardPage() {
               className="h-11 w-auto object-contain mix-blend-multiply"
             />
             <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-extrabold">
-              অ্যাডমিন প্যানেল
+              অ্যাডমিন ও অ্যানালিটিক্স ড্যাশবোর্ড
             </span>
           </div>
 
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-stone-600 hover:text-[#80131E]"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>মূল ওয়েবসাইটে যান</span>
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-stone-600 hover:text-[#80131E]"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>মূল ওয়েবসাইট</span>
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                sessionStorage.removeItem("onuvuti_admin_authed");
+                sessionStorage.removeItem("onuvuti_admin_token");
+                setIsAuthenticated(false);
+              }}
+              className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 hover:underline cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>লগআউট</span>
+            </button>
+          </div>
         </div>
       </header>
 
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Tabs */}
+        {/* Main Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("analytics")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "analytics"
+                ? "bg-[#80131E] text-white"
+                : "bg-white border border-stone-200 text-stone-700"
+            }`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>ট্রাফিক ও অ্যানালিটিক্স</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setActiveTab("pending")}
@@ -141,7 +660,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <Clock className="w-4 h-4" />
-            <span>পাঠকদের পাঠানো গল্প ({pendingStories.length})</span>
+            <span>পাঠকদের পাঠানো লেখা ({pendingStories.length})</span>
           </button>
 
           <button
@@ -154,7 +673,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <FileText className="w-4 h-4" />
-            <span>প্রকাশিত গল্পসমূহ ({publishedList.length})</span>
+            <span>প্রকাশিত লেখাসমূহ ({publishedList.length})</span>
           </button>
 
           <button
@@ -167,60 +686,466 @@ export default function AdminDashboardPage() {
             }`}
           >
             <PlusCircle className="w-4 h-4" />
-            <span>নতুন গল্প যোগ করুন</span>
+            <span>অ্যাডমিন নতুন লেখা প্রকাশ করুন</span>
           </button>
         </div>
+
+        {/* TAB 0: COMPLETE TRAFFIC & ANALYTICS (Daily, 7 Days, Monthly, Yearly, Custom) */}
+        {activeTab === "analytics" && (
+          <div className="space-y-6">
+            {/* Period Filter Bar */}
+            <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
+              <div>
+                <h2 className="text-base sm:text-lg font-extrabold text-[#142230] flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-[#80131E]" />
+                  <span>ওয়েবসাইট ভিজিটর, ট্রাফিক ও বই বিক্রির রিপোর্ট</span>
+                </h2>
+                <p className="text-xs text-stone-500">
+                  সময়কাল:{" "}
+                  <span className="font-bold text-stone-700">
+                    {analyticsData?.startDate} থেকে {analyticsData?.endDate}
+                  </span>
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {[
+                  { id: "daily", label: "আজকের (Daily)" },
+                  { id: "7d", label: "গত ৭ দিন (7 Days)" },
+                  { id: "monthly", label: "মাসিক (Monthly)" },
+                  { id: "yearly", label: "বাৎসরিক (Yearly)" },
+                  { id: "custom", label: "কাস্টম তারিখ (Custom)" },
+                ].map((btn) => (
+                  <button
+                    key={btn.id}
+                    type="button"
+                    onClick={() =>
+                      handlePeriodSwitch(
+                        btn.id as
+                          | "daily"
+                          | "7d"
+                          | "monthly"
+                          | "yearly"
+                          | "custom"
+                      )
+                    }
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      analyticsPeriod === btn.id
+                        ? "bg-[#80131E] text-white"
+                        : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                    }`}
+                  >
+                    {btn.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Date Range Picker */}
+            {analyticsPeriod === "custom" && (
+              <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/40 p-4 flex flex-wrap items-end gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    শুরুর তারিখ (Start Date)
+                  </label>
+                  <input
+                    type="date"
+                    value={customStartDate}
+                    onChange={(e) => setCustomStartDate(e.target.value)}
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    শেষ তারিখ (End Date)
+                  </label>
+                  <input
+                    type="date"
+                    value={customEndDate}
+                    onChange={(e) => setCustomEndDate(e.target.value)}
+                    className="px-3 py-2 rounded-xl bg-white border border-stone-200 text-xs font-bold"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    fetchAnalytics("custom", customStartDate, customEndDate)
+                  }
+                  className="px-4 py-2 rounded-xl bg-[#80131E] text-white text-xs font-bold cursor-pointer hover:bg-[#630d16]"
+                >
+                  রিপোর্ট দেখুন
+                </button>
+              </div>
+            )}
+
+            {/* 6 Core Analytics Summary Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+                  <span>মোট পেজ ভিউ (Page Views)</span>
+                  <Eye className="w-4 h-4 text-[#80131E]" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                  {isLoadingAnalytics
+                    ? "..."
+                    : (analyticsData?.totalViews ?? 0).toLocaleString()}
+                </div>
+                <p className="text-[11px] text-emerald-700 font-semibold">
+                  সম্পূর্ণ ওয়েবসাইটের মোট ভিজিট
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+                  <span>ইউনিক ভিজিটর (Unique Visitors)</span>
+                  <Users className="w-4 h-4 text-blue-600" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                  {isLoadingAnalytics
+                    ? "..."
+                    : (analyticsData?.uniqueVisits ?? 0).toLocaleString()}
+                </div>
+                <p className="text-[11px] text-stone-500">
+                  আলাদা পাঠক ও ব্রাউজার সংখ্যা
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+                  <span>গল্প ও কনফেশন পড়া হয়েছে</span>
+                  <FileText className="w-4 h-4 text-amber-600" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                  {isLoadingAnalytics
+                    ? "..."
+                    : (analyticsData?.storyReads ?? 0).toLocaleString()}
+                </div>
+                <p className="text-[11px] text-stone-500">
+                  গল্প, চিঠি ও কনফেশন রিডস
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+                  <span>‘স্পর্শের ব্যাকরণ’ বই পেজ ভিজিট</span>
+                  <BookOpen className="w-4 h-4 text-[#80131E]" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                  {isLoadingAnalytics
+                    ? "..."
+                    : (analyticsData?.bookPageViews ?? 0).toLocaleString()}
+                </div>
+                <p className="text-[11px] text-stone-500">
+                  বইয়ের ল্যান্ডিং পেজে আগ্রহী পাঠক
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-stone-500 font-bold">
+                  <span>মোট ই-বুক বিক্রি (Orders)</span>
+                  <ShoppingBag className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#142230]">
+                  {isLoadingAnalytics
+                    ? "..."
+                    : (analyticsData?.totalOrders ?? 0).toLocaleString()}{" "}
+                  কপি
+                </div>
+                <p className="text-[11px] text-emerald-700 font-semibold">
+                  প্রতি কপি ৳৯৯ (৫৫% ছাড়)
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-[#FAF4E6] border border-[#C59B27]/50 p-4 sm:p-5 space-y-1 shadow-xs">
+                <div className="flex items-center justify-between text-xs text-[#80131E] font-bold">
+                  <span>মোট বই বিক্রির আয় (Revenue)</span>
+                  <Sparkles className="w-4 h-4 text-[#80131E]" />
+                </div>
+                <div className="text-2xl sm:text-3xl font-extrabold text-[#80131E]">
+                  ৳
+                  {isLoadingAnalytics
+                    ? "..."
+                    : (analyticsData?.totalRevenue ?? 0).toLocaleString()}
+                </div>
+                <p className="text-[11px] text-stone-600">
+                  নির্বাচিত সময়ের সর্বমোট আয়
+                </p>
+              </div>
+            </div>
+
+            {/* Visual Daily Traffic Bar Graph */}
+            <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm sm:text-base font-extrabold text-[#142230] flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#80131E]" />
+                  <span>দৈনিক ট্রাফিক গ্রাফ (সর্বশেষ দিনগুলোর তুলনা)</span>
+                </h3>
+                <span className="text-xs text-stone-500">
+                  বার হোভার করলে বিস্তারিত দেখা যাবে
+                </span>
+              </div>
+
+              <div className="h-48 pt-6 pb-2 px-2 flex items-end gap-2 sm:gap-3 border-b border-stone-200 overflow-x-auto">
+                {chartDays.map((day) => {
+                  const heightPercent = Math.max(
+                    12,
+                    Math.round((day.pageViews / maxDayViews) * 100)
+                  );
+                  return (
+                    <div
+                      key={day.date}
+                      className="flex-1 min-w-[38px] flex flex-col items-center gap-1.5 group"
+                      title={`${day.date}: মোট ভিউ ${day.pageViews}, ইউনিক ${day.uniqueVisits}, বই বিক্রি ${day.bookOrders}টি`}
+                    >
+                      <span className="text-[10px] font-bold text-[#80131E] opacity-85 group-hover:opacity-100">
+                        {day.pageViews}
+                      </span>
+                      <div className="w-full h-32 flex items-end justify-center">
+                        <div
+                          style={{ height: `${heightPercent}%` }}
+                          className="w-full max-w-[30px] rounded-t-lg bg-[#80131E]/85 group-hover:bg-[#80131E] transition-all"
+                        />
+                      </div>
+                      <span className="text-[10px] font-semibold text-stone-500 truncate">
+                        {day.labelBn}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Top Performing Stories & Detailed Daily Breakdown */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Top Stories */}
+              <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs">
+                <h3 className="text-sm sm:text-base font-extrabold text-[#142230]">
+                  🔥 সবচেয়ে বেশি পড়া গল্প ও কনফেশন
+                </h3>
+                <div className="space-y-3">
+                  {(analyticsData?.topStories ?? []).map((st, idx) => (
+                    <div
+                      key={st.id}
+                      className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-[#FDF8F2] border border-stone-200/70"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="w-6 h-6 rounded-full bg-[#80131E] text-white text-xs font-extrabold flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-extrabold text-[#142230] truncate">
+                            {st.title}
+                          </p>
+                          <p className="text-[11px] text-stone-500">
+                            {st.category} • ❤️ {st.likesCount}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg bg-white border border-stone-200 text-xs font-extrabold text-[#80131E] shrink-0">
+                        {st.viewsCount.toLocaleString()} ভিউ
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Date-by-Date Table */}
+              <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs">
+                <h3 className="text-sm sm:text-base font-extrabold text-[#142230]">
+                  📅 তারিখ অনুযায়ী বিস্তারিত ট্রাফিক লগ
+                </h3>
+                <div className="max-h-72 overflow-y-auto pr-1">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-stone-200 text-stone-500">
+                        <th className="py-2 font-bold">তারিখ</th>
+                        <th className="py-2 font-bold">মোট ভিউ</th>
+                        <th className="py-2 font-bold">ইউনিক</th>
+                        <th className="py-2 font-bold">বই পেজ</th>
+                        <th className="py-2 font-bold">অর্ডার</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100">
+                      {(analyticsData?.timeline ?? [])
+                        .slice()
+                        .reverse()
+                        .slice(0, 30)
+                        .map((row) => (
+                          <tr key={row.date} className="hover:bg-stone-50">
+                            <td className="py-2.5 font-bold text-[#142230]">
+                              {row.date}
+                            </td>
+                            <td className="py-2.5 font-extrabold text-[#80131E]">
+                              {row.pageViews}
+                            </td>
+                            <td className="py-2.5 text-stone-600">
+                              {row.uniqueVisits}
+                            </td>
+                            <td className="py-2.5 text-stone-600">
+                              {row.bookPageViews}
+                            </td>
+                            <td className="py-2.5 font-bold text-emerald-700">
+                              {row.bookOrders}টি (৳{row.revenueBdt})
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab 1: Pending User Stories */}
         {activeTab === "pending" && (
           <div className="space-y-4">
             {pendingStories.length === 0 ? (
               <div className="rounded-2xl bg-white border border-stone-200 p-10 text-center text-sm text-stone-500">
-                এই মুহূর্তে অপেক্ষমাণ কোনো গল্প নেই।
+                এই মুহূর্তে অপেক্ষমাণ কোনো গল্প বা কনফেশন নেই।
               </div>
             ) : (
-              pendingStories.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl bg-white border border-stone-200 p-5 sm:p-6 space-y-3 shadow-xs"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] text-[#80131E] text-xs font-bold">
-                      {item.category}
-                    </span>
-                    <span className="text-xs text-stone-400">
-                      পাঠিয়েছেন: {item.author} • {item.submittedAt}
-                    </span>
+              pendingStories.map((item) => {
+                const isEditing = editingPendingId === item.id;
+                return (
+                  <div
+                    key={item.id}
+                    className="rounded-2xl bg-white border border-stone-200 p-5 sm:p-6 space-y-4 shadow-xs"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] text-[#80131E] text-xs font-bold">
+                        {item.category}
+                      </span>
+                      <span className="text-xs text-stone-400">
+                        পাঠিয়েছেন: {item.author} • {item.submittedAt}
+                      </span>
+                    </div>
+
+                    {isEditing ? (
+                      <div className="space-y-3 bg-stone-50 p-4 rounded-2xl border border-stone-200">
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            value={editPendingTitle}
+                            onChange={(e) => setEditPendingTitle(e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-sm font-bold"
+                          />
+                          <select
+                            value={editPendingCategory}
+                            onChange={(e) =>
+                              setEditPendingCategory(
+                                e.target.value as StoryCategory
+                              )
+                            }
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-sm"
+                          >
+                            <option value="ক্রাশ ও কনফেশন">ক্রাশ ও কনফেশন</option>
+                            <option value="রোমান্টিক গল্প">রোমান্টিক গল্প</option>
+                            <option value="জীবনের গল্প">জীবনের গল্প</option>
+                            <option value="না বলা কথা">না বলা কথা</option>
+                            <option value="বিচ্ছেদ ও প্রাক্তন">বিচ্ছেদ ও প্রাক্তন</option>
+                            <option value="সম্পর্ক ও মনস্তত্ত্ব">
+                              সম্পর্ক ও মনস্তত্ত্ব
+                            </option>
+                          </select>
+                        </div>
+
+                        <textarea
+                          rows={4}
+                          value={editPendingContent}
+                          onChange={(e) => setEditPendingContent(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-white border border-stone-200 text-sm"
+                        />
+
+                        <div className="flex flex-wrap items-center gap-3">
+                          {editPendingImage ? (
+                            <div className="flex items-center gap-3">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={editPendingImage}
+                                alt="Attached"
+                                className="h-14 w-20 object-cover rounded-lg border border-stone-200"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setEditPendingImage(undefined)}
+                                className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-bold cursor-pointer"
+                              >
+                                ছবি সরিয়ে ফেলুন
+                              </button>
+                            </div>
+                          ) : (
+                            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-stone-200 text-xs font-bold text-stone-700 cursor-pointer">
+                              <ImagePlus className="w-3.5 h-3.5 text-[#80131E]" />
+                              <span>চাইলে ছবি যুক্ত করুন (ঐচ্ছিক)</span>
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={(e) =>
+                                  handleImageFileSelect(e, (url) =>
+                                    setEditPendingImage(url)
+                                  )
+                                }
+                                className="hidden"
+                              />
+                            </label>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="text-lg font-extrabold text-[#142230]">
+                          {item.title}
+                        </h3>
+                        <p className="text-sm text-stone-700 leading-relaxed">
+                          {item.content}
+                        </p>
+                        {item.imageUrl && (
+                          <div className="pt-1">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title}
+                              className="h-36 w-auto rounded-xl border border-stone-200 object-cover"
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    <div className="pt-2 flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleApprove(item)}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs inline-flex items-center gap-1.5 hover:bg-emerald-700 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>অনুমোদন ও প্রকাশ করুন</span>
+                      </button>
+
+                      {!isEditing && (
+                        <button
+                          type="button"
+                          onClick={() => startEditingPending(item)}
+                          className="px-4 py-2 rounded-xl bg-stone-100 text-stone-700 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-stone-200 cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>এডিট / ছবি যোগ বা পরিবর্তন</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleReject(item.id)}
+                        className="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-rose-100 cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>মুছে ফেলুন</span>
+                      </button>
+                    </div>
                   </div>
-
-                  <h3 className="text-lg font-extrabold text-[#142230]">
-                    {item.title}
-                  </h3>
-                  <p className="text-sm text-stone-700 leading-relaxed">
-                    {item.content}
-                  </p>
-
-                  <div className="pt-2 flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleApprove(item)}
-                      className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs inline-flex items-center gap-1.5 hover:bg-emerald-700 cursor-pointer"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>অনুমোদন ও প্রকাশ করুন</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleReject(item.id)}
-                      className="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-rose-100 cursor-pointer"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>মুছে ফেলুন</span>
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
@@ -233,27 +1158,61 @@ export default function AdminDashboardPage() {
                 key={post.id}
                 className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
               >
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="font-bold text-[#80131E]">
-                      {post.category}
-                    </span>
-                    <span className="text-stone-400">• {post.author}</span>
+                <div className="flex items-center gap-3.5">
+                  {post.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={post.imageUrl}
+                      alt={post.title}
+                      className="w-16 h-14 rounded-xl object-cover border border-stone-200 shrink-0"
+                    />
+                  )}
+                  <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="font-bold text-[#80131E]">
+                        {post.category}
+                      </span>
+                      {post.confessionIdBn && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-100 text-[#80131E] text-[10px] font-bold">
+                          {post.confessionIdBn}
+                        </span>
+                      )}
+                      {post.isAdminPost && (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
+                          ✍️ সম্পাদকের কলমে
+                        </span>
+                      )}
+                      <span className="text-stone-400">• {post.author}</span>
+                    </div>
+                    <h4 className="text-base font-extrabold text-[#142230]">
+                      {post.title}
+                    </h4>
                   </div>
-                  <h4 className="text-base font-extrabold text-[#142230]">
-                    {post.title}
-                  </h4>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() =>
-                      setPublishedList((prev) =>
-                        prev.filter((p) => p.id !== post.id)
-                      )
-                    }
+                    onClick={async () => {
+                      try {
+                        await fetch(
+                          `${GO_API_BASE_URL}/admin/stories/${encodeURIComponent(
+                            post.id
+                          )}`,
+                          {
+                            method: "DELETE",
+                            headers: getAdminAuthHeaders(),
+                          }
+                        );
+                      } catch {
+                        // Ignore if offline
+                      }
+                      syncPublishedToStorage(
+                        publishedList.filter((p) => p.id !== post.id)
+                      );
+                    }}
                     className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                    title="মুছে ফেলুন"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -263,15 +1222,27 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Tab 3: Create New Story */}
+        {/* Tab 3: Create New Story (Admin Writing + Optional Image) */}
         {activeTab === "create" && (
           <form
             onSubmit={handleCreateStory}
             className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 space-y-4 max-w-2xl"
           >
-            <div className="flex items-center gap-2 text-sm font-bold text-[#80131E]">
-              <Sparkles className="w-4 h-4" />
-              <span>নতুন গল্প বা না বলা কথা প্রকাশ করুন</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#80131E]">
+                <Sparkles className="w-4 h-4" />
+                <span>অ্যাডমিন থেকে নতুন গল্প, কনফেশন বা আর্টিকেল লিখুন</span>
+              </div>
+
+              <label className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isAdminBadge}
+                  onChange={(e) => setIsAdminBadge(e.target.checked)}
+                  className="accent-[#80131E]"
+                />
+                <span>‘✍️ সম্পাদকের কলমে’ ব্যাজ</span>
+              </label>
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
@@ -281,6 +1252,7 @@ export default function AdminDashboardPage() {
                 </label>
                 <input
                   type="text"
+                  maxLength={80}
                   value={newAuthor}
                   onChange={(e) => setNewAuthor(e.target.value)}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
@@ -294,25 +1266,30 @@ export default function AdminDashboardPage() {
                 <select
                   value={newCategory}
                   onChange={(e) =>
-                    setNewCategory(e.target.value as BlogPost["category"])
+                    setNewCategory(e.target.value as StoryCategory)
                   }
                   className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
                 >
-                  <option value="রোমান্টিক গল্প">রোমান্টিক গল্প</option>
-                  <option value="জীবনের গল্প">জীবনের গল্প</option>
-                  <option value="না বলা কথা">না বলা কথা</option>
-                  <option value="সম্পর্ক ও মনস্তত্ত্ব">সম্পর্ক ও মনস্তত্ত্ব</option>
+                  <option value="সম্পর্ক ও মনস্তত্ত্ব">
+                    🧠 সম্পর্ক ও মনস্তত্ত্ব
+                  </option>
+                  <option value="ক্রাশ ও কনফেশন">💘 ক্রাশ ও কনফেশন</option>
+                  <option value="রোমান্টিক গল্প">💕 রোমান্টিক গল্প</option>
+                  <option value="জীবনের গল্প">🌿 জীবনের গল্প</option>
+                  <option value="না বলা কথা">💌 না বলা কথা</option>
+                  <option value="বিচ্ছেদ ও প্রাক্তন">💔 বিচ্ছেদ ও প্রাক্তন</option>
                 </select>
               </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-stone-700 mb-1">
-                গল্পের শিরোনাম *
+                লেখার শিরোনাম *
               </label>
               <input
                 type="text"
                 required
+                maxLength={180}
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
                 placeholder="শিরোনাম লিখুন..."
@@ -322,23 +1299,70 @@ export default function AdminDashboardPage() {
 
             <div>
               <label className="block text-xs font-bold text-stone-700 mb-1">
-                সম্পূর্ণ গল্প *
+                সম্পূর্ণ লেখা *
               </label>
               <textarea
                 rows={7}
                 required
+                maxLength={10000}
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
-                placeholder="এখানে সম্পূর্ণ গল্পটি লিখুন..."
+                placeholder="এখানে সম্পূর্ণ গল্প বা আর্টিকেলটি লিখুন..."
                 className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-stone-700">
+                ছবি যুক্ত করুন (ঐচ্ছিক — আপনি ছবি দিলে তবেই দেখাবে, না দিলে দেখাবে না)
+              </label>
+
+              {!newImageDataUrl ? (
+                <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-stone-300 bg-stone-50 hover:bg-stone-100 text-xs font-bold text-stone-600 cursor-pointer transition">
+                  <ImagePlus className="w-4 h-4 text-[#80131E]" />
+                  <span>চাইলে ছবি আপলোড করুন (JPG/PNG/WEBP, সর্বোচ্চ 2MB)</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(e) =>
+                      handleImageFileSelect(e, (url) => setNewImageDataUrl(url))
+                    }
+                    className="hidden"
+                  />
+                </label>
+              ) : (
+                <div className="rounded-xl border border-stone-200 bg-stone-50 p-2.5 flex items-center justify-between gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={newImageDataUrl}
+                    alt="Admin Upload Preview"
+                    className="h-16 w-24 object-cover rounded-lg border border-stone-200"
+                  />
+                  <span className="text-xs font-bold text-emerald-700 flex-1">
+                    কভার ছবি যুক্ত হয়েছে
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setNewImageDataUrl(undefined)}
+                    className="px-3 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-bold cursor-pointer"
+                  >
+                    ছবি বাদ দিন
+                  </button>
+                </div>
+              )}
+
+              {imageError && (
+                <p className="text-xs text-rose-600 font-semibold">
+                  {imageError}
+                </p>
+              )}
             </div>
 
             <button
               type="submit"
               className="px-6 py-3 rounded-xl bg-[#80131E] text-white font-bold text-sm hover:bg-[#630d16] transition cursor-pointer"
             >
-              গল্পটি প্রকাশ করুন
+              লেখাটি প্রকাশ করুন
             </button>
           </form>
         )}
@@ -346,4 +1370,3 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
-
