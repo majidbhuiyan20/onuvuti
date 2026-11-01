@@ -105,30 +105,30 @@ export default function ZiniPayCheckout() {
   };
 
   return (
-    <div className="rounded-3xl bg-white border border-stone-200/90 shadow-xl overflow-hidden text-[#142230]">
+    <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 shadow-xl overflow-hidden text-[#142230] dark:text-white">
       {/* Top Price Header */}
-      <div className="bg-[#FAF4E6] px-6 py-5 border-b border-[#C59B27]/30 flex items-center justify-between">
+      <div className="bg-[#FAF4E6] dark:bg-[#161E2E] px-6 py-5 border-b border-[#C59B27]/30 dark:border-[#C59B27]/20 flex items-center justify-between">
         <div>
-          <span className="text-xs font-bold text-[#80131E] uppercase tracking-wider flex items-center gap-1.5">
+          <span className="text-xs font-bold text-[#80131E] dark:text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
             <span>ই-বুক চেকআউট (অফিশিয়াল PDF)</span>
           </span>
-          <h3 className="text-xl font-extrabold text-[#142230] mt-0.5">
+          <h3 className="text-xl font-extrabold text-[#142230] dark:text-white mt-0.5">
             {BOOK_INFO.titleBn}
           </h3>
-          <p className="text-xs text-stone-500 font-medium mt-0.5">
+          <p className="text-xs text-stone-500 dark:text-stone-400 font-medium mt-0.5">
             অনভূতি পাবলিকেশন্স • ১৮টি অধ্যায় ও ৪টি পরিশিষ্ট
           </p>
         </div>
         <div className="text-right shrink-0">
-          <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#80131E]/10 text-[#80131E] text-xs font-extrabold mb-1">
+          <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#80131E]/10 dark:bg-rose-950/60 text-[#80131E] dark:text-rose-300 text-xs font-extrabold mb-1">
             {BOOK_INFO.discountPercentBn}
           </span>
           <div className="flex items-baseline justify-end gap-1.5">
             <span className="text-xs text-stone-400 line-through">
               ৳{BOOK_INFO.regularPriceBn}
             </span>
-            <span className="text-2xl sm:text-3xl font-extrabold text-[#80131E]">
+            <span className="text-2xl sm:text-3xl font-extrabold text-[#80131E] dark:text-rose-400">
               ৳{BOOK_INFO.offerPriceBn}
             </span>
           </div>

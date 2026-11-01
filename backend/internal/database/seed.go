@@ -3,7 +3,6 @@ package database
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -154,66 +153,12 @@ func InitialStories() []models.Story {
 			Status:    "published",
 			CreatedAt: now,
 		},
-		{
-			ID:          "p-101",
-			Slug:        "bus-window-girl-unfinished-story",
-			Title:       "বাসের জানালার পাশের সেই মেয়েটি ও একটি অসমাপ্ত গল্প",
-			Excerpt:     "প্রতিদিন অফিস যাওয়ার পথে শাহবাগ মোড়ে বাসে উঠত মেয়েটা। হাতে সবসময় একটা বই থাকত...",
-			Category:    "ক্রাশ ও কনফেশন",
-			Author:      "রাফসান কবির, ঢাকা",
-			RawContent:  "প্রতিদিন অফিস যাওয়ার পথে শাহবাগ মোড়ে বাসে উঠত মেয়েটা। হাতে সবসময় একটা বই থাকত। একদিন সাহস করে কথা বলব ভেবেছিলাম, কিন্তু পরদিন থেকে তাকে আর দেখিনি...",
-			Content:     []string{"প্রতিদিন অফিস যাওয়ার পথে শাহবাগ মোড়ে বাসে উঠত মেয়েটা। হাতে সবসময় একটা বই থাকত। একদিন সাহস করে কথা বলব ভেবেছিলাম, কিন্তু পরদিন থেকে তাকে আর দেখিনি..."},
-			Status:      "pending",
-			SubmittedAt: "১০ মিনিট আগে",
-			CreatedAt:   now,
-		},
-		{
-			ID:          "p-102",
-			Slug:        "motherhood-and-dreams-in-almirah",
-			Title:       "মা হওয়ার পর নিজের স্বপ্নগুলো যখন আলমারির কোণে জমে থাকে",
-			Excerpt:     "সংসার আর সন্তানের মুখের দিকে তাকিয়ে সব কষ্ট ভুলে যাই ঠিকই, কিন্তু মাঝে মাঝে মধ্যরাতে...",
-			Category:    "না বলা কথা",
-			Author:      "নাম প্রকাশে অনিচ্ছুক",
-			IsAnonymous: true,
-			RawContent:  "সংসার আর সন্তানের মুখের দিকে তাকিয়ে সব কষ্ট ভুলে যাই ঠিকই, কিন্তু মাঝে মাঝে মধ্যরাতে নিজের পুরোনো সার্টিফিকেটগুলো ছুঁয়ে দেখতে ইচ্ছা করে...",
-			Content:     []string{"সংসার আর সন্তানের মুখের দিকে তাকিয়ে সব কষ্ট ভুলে যাই ঠিকই, কিন্তু মাঝে মাঝে মধ্যরাতে নিজের পুরোনো সার্টিফিকেটগুলো ছুঁয়ে দেখতে ইচ্ছা করে..."},
-			Status:      "pending",
-			SubmittedAt: "১ ঘণ্টা আগে",
-			CreatedAt:   now,
-		},
 	}
 }
 
-// InitialDailyTraffic seeds 365 days of baseline traffic data so Daily, 7-Day, Monthly, Yearly & Custom Date filters work immediately.
+// InitialDailyTraffic returns an empty map for production. Genuine real-time visitors populate daily_traffic.
 func InitialDailyTraffic() map[string]models.DailyTrafficStat {
-	stats := make(map[string]models.DailyTrafficStat)
-	now := time.Now()
-	bnMonths := []string{"জানু", "ফেব্রু", "মার্চ", "এপ্রিল", "মে", "জুন", "জুলাই", "আগস্ট", "সেপ্টে", "অক্টো", "নভে", "ডিসে"}
-
-	for i := 364; i >= 0; i-- {
-		d := now.AddDate(0, 0, -i)
-		dateKey := d.Format("2006-01-02")
-		dayVariation := (d.Day()*17 + int(d.Weekday())*31 + i*7) % 180
-		views := 340 + dayVariation
-		unique := int(float64(views) * 0.68)
-		reads := int(float64(views) * 0.74)
-		bookViews := int(float64(views) * 0.26)
-		orders := (dayVariation % 5) + 1
-		rev := orders * 99
-
-		label := fmt.Sprintf("%d %s", d.Day(), bnMonths[int(d.Month())-1])
-		stats[dateKey] = models.DailyTrafficStat{
-			Date:          dateKey,
-			LabelBn:       label,
-			PageViews:     views,
-			UniqueVisits:  unique,
-			StoryReads:    reads,
-			BookPageViews: bookViews,
-			BookOrders:    orders,
-			RevenueBdt:    rev,
-		}
-	}
-	return stats
+	return make(map[string]models.DailyTrafficStat)
 }
 
 func SeedPostgresIfEmpty(db *sql.DB) error {

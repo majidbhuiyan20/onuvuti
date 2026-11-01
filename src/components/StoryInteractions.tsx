@@ -311,9 +311,9 @@ export default function StoryInteractions({
   };
 
   return (
-    <div className="space-y-8 pt-6 border-t border-stone-200">
+    <div className="space-y-8 pt-6 border-t border-stone-200 dark:border-stone-800">
       {/* 3 Emotional Reactions, 1-Click Story Poster Generator & Social Share Bar */}
-      <div className="rounded-2xl bg-white border border-stone-200 p-4 sm:p-5 space-y-4 shadow-xs">
+      <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 space-y-4 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -322,7 +322,7 @@ export default function StoryInteractions({
               className={`px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer ${
                 activeReaction === "love"
                   ? "bg-[#80131E] text-white shadow-sm"
-                  : "bg-[#FAF4E6] text-[#80131E] border border-[#C59B27]/40 hover:bg-[#f3e7cb]"
+                  : "bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 border border-[#C59B27]/40 dark:border-[#C59B27]/30 hover:bg-[#f3e7cb] dark:hover:bg-[#253348]"
               }`}
             >
               <Heart
@@ -341,7 +341,7 @@ export default function StoryInteractions({
               className={`px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer ${
                 activeReaction === "touched"
                   ? "bg-[#80131E] text-white shadow-sm"
-                  : "bg-stone-50 text-stone-700 border border-stone-200 hover:border-[#80131E]/40"
+                  : "bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-[#80131E]/40"
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -357,7 +357,7 @@ export default function StoryInteractions({
               className={`px-3.5 py-2 rounded-xl font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer ${
                 activeReaction === "relatable"
                   ? "bg-[#80131E] text-white shadow-sm"
-                  : "bg-stone-50 text-stone-700 border border-stone-200 hover:border-[#80131E]/40"
+                  : "bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700 hover:border-[#80131E]/40"
               }`}
             >
               <Users className="w-3.5 h-3.5" />
@@ -387,7 +387,7 @@ export default function StoryInteractions({
             <button
               type="button"
               onClick={handleWhatsAppShare}
-              className="px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs hover:bg-emerald-100 transition cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-bold text-xs hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition cursor-pointer"
             >
               WhatsApp
             </button>
@@ -395,7 +395,7 @@ export default function StoryInteractions({
             <button
               type="button"
               onClick={handleFacebookShare}
-              className="px-3 py-2 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-bold text-xs hover:bg-blue-100 transition cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-bold text-xs hover:bg-blue-100 dark:hover:bg-blue-900/60 transition cursor-pointer"
             >
               Facebook
             </button>
@@ -403,12 +403,12 @@ export default function StoryInteractions({
             <button
               type="button"
               onClick={handleCopyLink}
-              className="px-3 py-2 rounded-xl bg-stone-100 border border-stone-200 text-stone-700 font-bold text-xs inline-flex items-center gap-1 hover:bg-stone-200 transition cursor-pointer"
+              className="px-3 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 font-bold text-xs inline-flex items-center gap-1 hover:bg-stone-200 dark:hover:bg-stone-700 transition cursor-pointer"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>কপি হয়েছে!</span>
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-emerald-700 dark:text-emerald-400">কপি হয়েছে!</span>
                 </>
               ) : (
                 <>
@@ -422,10 +422,10 @@ export default function StoryInteractions({
       </div>
 
       {/* Reader Comments / Sympathy Box */}
-      <div className="rounded-3xl bg-white border border-stone-200 p-5 sm:p-7 space-y-6 shadow-xs">
+      <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-7 space-y-6 shadow-xs">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-extrabold text-[#142230] flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-[#80131E]" />
+          <h3 className="text-lg font-extrabold text-[#142230] dark:text-white flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
             <span>পাঠকের অনুভূতি ও সহমর্মিতা ({comments.length})</span>
           </h3>
         </div>
@@ -450,10 +450,10 @@ export default function StoryInteractions({
                 value={commentAuthor}
                 onChange={(e) => setCommentAuthor(e.target.value)}
                 placeholder="আপনার নাম লিখুন"
-                className="px-3.5 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs sm:text-sm text-[#142230] focus:outline-none focus:border-[#80131E]"
+                className="px-3.5 py-2 rounded-xl bg-stone-50 dark:bg-[#1A2234] border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:border-[#80131E]"
               />
             ) : (
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#80131E] bg-[#FAF4E6] px-3 py-1.5 rounded-lg">
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#80131E] dark:text-rose-300 bg-[#FAF4E6] dark:bg-[#1E293B] px-3 py-1.5 rounded-lg border border-[#C59B27]/30">
                 <EyeOff className="w-3.5 h-3.5" />
                 নাম গোপন থাকবে (নাম প্রকাশে অনিচ্ছুক)
               </span>
@@ -462,7 +462,7 @@ export default function StoryInteractions({
             <button
               type="button"
               onClick={() => setIsAnonComment((prev) => !prev)}
-              className="inline-flex items-center gap-1 text-xs font-bold text-stone-500 hover:text-[#80131E] cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-bold text-stone-500 dark:text-stone-400 hover:text-[#80131E] dark:hover:text-rose-400 cursor-pointer"
             >
               {isAnonComment ? (
                 <>
@@ -486,11 +486,11 @@ export default function StoryInteractions({
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               placeholder="এই গল্পটি পড়ে আপনার অনুভূতি বা সহমর্মিতা লিখুন..."
-              className="flex-1 px-4 py-2.5 rounded-xl bg-stone-50 border border-stone-200 text-sm text-[#142230] focus:outline-none focus:border-[#80131E] focus:bg-white"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-stone-50 dark:bg-[#1A2234] border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white placeholder-stone-400 dark:placeholder-stone-500 focus:outline-none focus:border-[#80131E] focus:bg-white dark:focus:bg-[#1A2234]"
             />
             <button
               type="submit"
-              className="px-5 py-2.5 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 hover:bg-[#630d16] transition cursor-pointer shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 hover:bg-[#630d16] transition cursor-pointer shrink-0 shadow-xs"
             >
               <Send className="w-3.5 h-3.5" />
               <span>পাঠান</span>
@@ -498,7 +498,7 @@ export default function StoryInteractions({
           </div>
 
           {commentError && (
-            <p className="text-xs text-rose-600 font-bold">{commentError}</p>
+            <p className="text-xs text-rose-600 dark:text-rose-400 font-bold">{commentError}</p>
           )}
         </form>
 
@@ -507,13 +507,13 @@ export default function StoryInteractions({
           {comments.map((c) => (
             <div
               key={c.id}
-              className="rounded-2xl bg-[#FDF8F2] border border-stone-200/80 p-4 space-y-1"
+              className="rounded-2xl bg-[#FDF8F2] dark:bg-[#161E2E] border border-stone-200/80 dark:border-stone-800 p-4 space-y-1"
             >
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[#80131E]">{c.author}</span>
-                <span className="text-stone-400">{c.timeBn}</span>
+                <span className="font-bold text-[#80131E] dark:text-rose-400">{c.author}</span>
+                <span className="text-stone-400 dark:text-stone-500">{c.timeBn}</span>
               </div>
-              <p className="text-xs sm:text-sm text-stone-700 leading-relaxed">
+              <p className="text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed">
                 {c.text}
               </p>
             </div>

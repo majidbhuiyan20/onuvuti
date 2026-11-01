@@ -5,6 +5,7 @@ import {
   isValidImageDataUrl,
   sanitizeText,
 } from "@/lib/security";
+import { getGoApiBaseUrl } from "@/lib/goApi";
 
 export async function POST(req: NextRequest) {
   try {
@@ -84,6 +85,30 @@ export async function POST(req: NextRequest) {
         },
         { status: 400 }
       );
+    }
+
+    // Forward to Go Backend to persist in PostgreSQL as pending story
+    const goBackendUrl = getGoApiBaseUrl();
+    try {
+      const goRes = await fetch(`${goBackendUrl}/stories`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          content,
+          category,
+          author,
+          isAnonymous,
+          imageUrl: rawImageUrl,
+          userId: sanitizeText(String(body?.userId || ""), 64),
+        }),
+      });
+      if (goRes.ok) {
+        const goData = await goRes.json();
+        return NextResponse.json(goData, { status: 201 });
+      }
+    } catch (goErr) {
+      console.warn("Could not proxy story to Go backend:", goErr);
     }
 
     return NextResponse.json({

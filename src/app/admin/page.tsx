@@ -29,6 +29,7 @@ import {
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
 import { GO_API_BASE_URL, getAdminAuthHeaders } from "@/lib/goApi";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface PendingStory {
   id: string;
@@ -83,26 +84,7 @@ interface AnalyticsSummary {
   topStories: TopStoryStat[];
 }
 
-const INITIAL_PENDING: PendingStory[] = [
-  {
-    id: "p-101",
-    title: "বাসের জানালার পাশের সেই মেয়েটি ও একটি অসমাপ্ত গল্প",
-    author: "রাফসান কবির, ঢাকা",
-    category: "ক্রাশ ও কনফেশন",
-    content:
-      "প্রতিদিন অফিস যাওয়ার পথে শাহবাগ মোড়ে বাসে উঠত মেয়েটা। হাতে সবসময় একটা বই থাকত। একদিন সাহস করে কথা বলব ভেবেছিলাম, কিন্তু পরদিন থেকে তাকে আর দেখিনি...",
-    submittedAt: "১০ মিনিট আগে",
-  },
-  {
-    id: "p-102",
-    title: "মা হওয়ার পর নিজের স্বপ্নগুলো যখন আলমারির কোণে জমে থাকে",
-    author: "নাম প্রকাশে অনিচ্ছুক",
-    category: "না বলা কথা",
-    content:
-      "সংসার আর সন্তানের মুখের দিকে তাকিয়ে সব কষ্ট ভুলে যাই ঠিকই, কিন্তু মাঝে মাঝে মধ্যরাতে নিজের পুরোনো সার্টিফিকেটগুলো ছুঁয়ে দেখতে ইচ্ছা করে...",
-    submittedAt: "১ ঘণ্টা আগে",
-  },
-];
+const INITIAL_PENDING: PendingStory[] = [];
 
 export default function AdminDashboardPage() {
   // Security Gate State
@@ -129,16 +111,7 @@ export default function AdminDashboardPage() {
   const [pendingStories, setPendingStories] =
     useState<PendingStory[]>(INITIAL_PENDING);
   const [publishedList, setPublishedList] = useState<BlogPost[]>(BLOG_POSTS);
-  const [commentsList, setCommentsList] = useState<AdminCommentItem[]>([
-    {
-      id: "c-101",
-      storySlug: "campus-crush-104",
-      storyTitle: "ক্যাম্পাসের শেষ বিকেলের সেই নীল খাম ও না বলা ভালোবাসা",
-      author: "তাসনিম জাহান",
-      text: "গল্পটা পড়ে নিজের বিশ্ববিদ্যালয় জীবনের কথা মনে পড়ে গেল। সত্যিই অসাধারণ অনুভূতি!",
-      timeBn: "২ ঘণ্টা আগে",
-    },
-  ]);
+  const [commentsList, setCommentsList] = useState<AdminCommentItem[]>([]);
 
   // Admin Advice / Editorial Reply per Pending Story
   const [pendingAdminNotes, setPendingAdminNotes] = useState<
@@ -417,6 +390,7 @@ export default function AdminDashboardPage() {
             title: finalTitle,
             content: finalContent,
             category: finalCategory,
+            author: item.author,
             imageUrl: finalImage || "",
             adminNote: finalAdminNote,
           }),
@@ -669,26 +643,28 @@ export default function AdminDashboardPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FDF8F2] text-[#142230]">
+    <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] transition-colors duration-200">
       {/* Top Admin Header */}
-      <header className="bg-white border-b border-stone-200">
+      <header className="bg-white dark:bg-[#111827] border-b border-stone-200 dark:border-stone-800">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/Onuvuti-Publications-Logo.png"
               alt="Onuvuti Publications"
-              className="h-11 w-auto object-contain mix-blend-multiply"
+              className="h-11 w-auto object-contain mix-blend-multiply dark:mix-blend-normal dark:bg-white/10 dark:p-1 dark:rounded-xl"
             />
-            <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] border border-[#C59B27]/40 text-[#80131E] text-xs font-extrabold">
+            <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 text-xs font-extrabold">
               অ্যাডমিন ও অ্যানালিটিক্স ড্যাশবোর্ড
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <ThemeToggle />
+
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-stone-600 hover:text-[#80131E]"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-stone-600 dark:text-stone-400 hover:text-[#80131E] dark:hover:text-rose-400"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>মূল ওয়েবসাইট</span>
@@ -701,7 +677,7 @@ export default function AdminDashboardPage() {
                 sessionStorage.removeItem("onuvuti_admin_token");
                 setIsAuthenticated(false);
               }}
-              className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 hover:underline cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 dark:text-rose-400 hover:underline cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>লগআউট</span>
@@ -719,7 +695,7 @@ export default function AdminDashboardPage() {
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
               activeTab === "analytics"
                 ? "bg-[#80131E] text-white"
-                : "bg-white border border-stone-200 text-stone-700"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
             }`}
           >
             <BarChart3 className="w-4 h-4" />
@@ -732,7 +708,7 @@ export default function AdminDashboardPage() {
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
               activeTab === "pending"
                 ? "bg-[#80131E] text-white"
-                : "bg-white border border-stone-200 text-stone-700"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
             }`}
           >
             <Clock className="w-4 h-4" />
@@ -745,7 +721,7 @@ export default function AdminDashboardPage() {
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
               activeTab === "published"
                 ? "bg-[#80131E] text-white"
-                : "bg-white border border-stone-200 text-stone-700"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -758,7 +734,7 @@ export default function AdminDashboardPage() {
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
               activeTab === "comments"
                 ? "bg-[#80131E] text-white"
-                : "bg-white border border-stone-200 text-stone-700"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
             }`}
           >
             <MessageSquare className="w-4 h-4" />
@@ -771,7 +747,7 @@ export default function AdminDashboardPage() {
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
               activeTab === "create"
                 ? "bg-[#80131E] text-white"
-                : "bg-white border border-stone-200 text-stone-700"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
             }`}
           >
             <PlusCircle className="w-4 h-4" />
