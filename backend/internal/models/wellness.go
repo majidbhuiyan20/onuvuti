@@ -46,3 +46,4 @@ type UpdateWellnessRequest struct {
 	ExpertAdvice         string   `json:"expertAdvice"`
 	IsActive             *bool    `json:"isActive,omitempty"`
 }
+

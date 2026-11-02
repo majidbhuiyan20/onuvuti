@@ -162,3 +162,4 @@ func (s *WellnessService) DeleteTip(id string) error {
 	}
 	return nil
 }
+

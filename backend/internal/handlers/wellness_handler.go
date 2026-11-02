@@ -87,3 +87,4 @@ func (h *WellnessHandler) DeleteTip(w http.ResponseWriter, r *http.Request) {
 		"msg": "সুস্থতা গাইড সফলভাবে মুছে ফেলা হয়েছে",
 	})
 }
+

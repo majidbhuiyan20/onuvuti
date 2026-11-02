@@ -251,3 +251,4 @@ func (r *Repository) defaultWellnessTips() []models.WellnessTip {
 		},
 	}
 }
+
