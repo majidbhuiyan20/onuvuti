@@ -25,6 +25,8 @@ import {
   ShoppingBag,
   Pin,
   MessageSquare,
+  Megaphone,
+  ExternalLink,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
@@ -84,6 +86,15 @@ interface AnalyticsSummary {
   topStories: TopStoryStat[];
 }
 
+interface AdminAdBanner {
+  slot: string;
+  title: string;
+  imageUrl: string;
+  linkUrl: string;
+  isActive: boolean;
+  updatedAt?: string;
+}
+
 const INITIAL_PENDING: PendingStory[] = [];
 
 export default function AdminDashboardPage() {
@@ -94,8 +105,28 @@ export default function AdminDashboardPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
-    "analytics" | "pending" | "published" | "comments" | "create"
+    "analytics" | "pending" | "published" | "comments" | "create" | "ads"
   >("analytics");
+
+  // Ads & Banners Management State
+  const [adsList, setAdsList] = useState<AdminAdBanner[]>([
+    {
+      slot: "left_sidebar",
+      title: "স্পর্শের ব্যাকরণ - অনুভূতি পাবলিকেশন্স",
+      imageUrl: "/images/book-cover.png",
+      linkUrl: "/sporsher-byakoron",
+      isActive: true,
+    },
+    {
+      slot: "right_sidebar",
+      title: "স্পর্শের ব্যাকরণ - ই-বুক সংগ্রহ করুন",
+      imageUrl: "/images/book-back.png",
+      linkUrl: "/sporsher-byakoron",
+      isActive: true,
+    },
+  ]);
+  const [adSaveStatus, setAdSaveStatus] = useState<Record<string, string>>({});
+  const [isSavingAd, setIsSavingAd] = useState<Record<string, boolean>>({});
 
   // Analytics State (Daily, 7 Days, Monthly, Yearly, Custom Date Range)
   const [analyticsPeriod, setAnalyticsPeriod] = useState<
@@ -231,6 +262,83 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
+  const fetchAdsFromGo = useCallback(async () => {
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/ads`, {
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && Array.isArray(data.ads) && data.ads.length > 0) {
+          setAdsList(data.ads);
+        }
+      }
+    } catch {
+      // Ignore if offline
+    }
+  }, []);
+
+  const handleUpdateAd = async (slot: string) => {
+    const targetAd = adsList.find((a) => a.slot === slot);
+    if (!targetAd) return;
+
+    setIsSavingAd((prev) => ({ ...prev, [slot]: true }));
+    setAdSaveStatus((prev) => ({ ...prev, [slot]: "" }));
+
+    try {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/admin/ads/${encodeURIComponent(slot)}`,
+        {
+          method: "PUT",
+          headers: {
+            ...getAdminAuthHeaders(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            title: targetAd.title,
+            imageUrl: targetAd.imageUrl,
+            linkUrl: targetAd.linkUrl,
+            isActive: targetAd.isActive,
+          }),
+        }
+      );
+
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        setAdSaveStatus((prev) => ({
+          ...prev,
+          [slot]: "✅ বিজ্ঞাপন সফলভাবে আপডেট ও সংরক্ষণ করা হয়েছে!",
+        }));
+        await fetchAdsFromGo();
+      } else {
+        setAdSaveStatus((prev) => ({
+          ...prev,
+          [slot]: `❌ ${data?.error || "বিজ্ঞাপন আপডেট করা যায়নি"}`,
+        }));
+      }
+    } catch {
+      setAdSaveStatus((prev) => ({
+        ...prev,
+        [slot]: "❌ সার্ভার সংযোগে সমস্যা হয়েছে! আবার চেষ্টা করুন।",
+      }));
+    } finally {
+      setIsSavingAd((prev) => ({ ...prev, [slot]: false }));
+      setTimeout(() => {
+        setAdSaveStatus((prev) => ({ ...prev, [slot]: "" }));
+      }, 5000);
+    }
+  };
+
+  const handleAdFieldChange = (
+    slot: string,
+    field: "title" | "imageUrl" | "linkUrl" | "isActive",
+    value: string | boolean
+  ) => {
+    setAdsList((prev) =>
+      prev.map((ad) => (ad.slot === slot ? { ...ad, [field]: value } : ad))
+    );
+  };
+
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
     const weekAgoDate = new Date();
@@ -244,6 +352,7 @@ export default function AdminDashboardPage() {
         setIsAuthenticated(true);
         fetchDashboardFromGo();
         fetchAnalytics("7d");
+        fetchAdsFromGo();
       }
 
       const savedPending = localStorage.getItem("onuvuti_pending_stories");
@@ -257,7 +366,7 @@ export default function AdminDashboardPage() {
     } catch {
       // Ignore storage errors
     }
-  }, [fetchDashboardFromGo, fetchAnalytics]);
+  }, [fetchDashboardFromGo, fetchAnalytics, fetchAdsFromGo]);
 
   const handlePeriodSwitch = (
     p: "daily" | "7d" | "monthly" | "yearly" | "custom"
@@ -318,6 +427,7 @@ export default function AdminDashboardPage() {
       setPasswordInput("");
       await fetchDashboardFromGo();
       await fetchAnalytics("7d");
+      await fetchAdsFromGo();
     } catch {
       setAuthError("সার্ভারের সাথে সংযোগ করা যায়নি।");
     } finally {
@@ -752,6 +862,19 @@ export default function AdminDashboardPage() {
           >
             <PlusCircle className="w-4 h-4" />
             <span>অ্যাডমিন নতুন লেখা প্রকাশ করুন</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("ads")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "ads"
+                ? "bg-[#80131E] text-white"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+            }`}
+          >
+            <Megaphone className="w-4 h-4" />
+            <span>বিজ্ঞাপন ও ব্যানার কন্ট্রোল</span>
           </button>
         </div>
 
@@ -1545,6 +1668,248 @@ export default function AdminDashboardPage() {
               লেখাটি প্রকাশ করুন
             </button>
           </form>
+        )}
+
+        {/* TAB 5: ADS & BANNER MANAGEMENT (Controlled from PostgreSQL & Go API) */}
+        {activeTab === "ads" && (
+          <div className="space-y-6">
+            {/* Intro & Overview Banner */}
+            <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-400 text-xs font-bold">
+                  <Megaphone className="w-3.5 h-3.5" />
+                  <span>সাইডবার ব্যানার ও স্পনসর কন্ট্রোল</span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-extrabold text-[#142230] dark:text-white">
+                  ওয়েবসাইটের বাম ও ডান পাশের বিজ্ঞাপন ও প্রমোশন ম্যানেজমেন্ট
+                </h2>
+                <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 max-w-2xl">
+                  ডেস্কটপ ও ল্যাপটপে হোমপেজ ও গল্পের পাতার বাম এবং ডান পাশের খালি জায়গায় এই ব্যানার দুটি স্বয়ংক্রিয়ভাবে ভেসে থাকে। আপনি যেকোনো সময় ব্যানার অন/অফ করতে পারবেন, নতুন ব্যানার ছবি ও ক্লিক করার লিংক যুক্ত করতে পারবেন।
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fetchAdsFromGo}
+                className="px-4 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition shrink-0"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>রিফ্রেশ ডেটা</span>
+              </button>
+            </div>
+
+            {/* Ads Grid (Left Banner & Right Banner) */}
+            <div className="grid lg:grid-cols-2 gap-6">
+              {[
+                {
+                  slot: "left_sidebar",
+                  titleBn: "👈 বাম পাশের ব্যানার (Left Sidebar)",
+                  subtitleBn: "ডেস্কটপ স্ক্রিনের বাম মার্জিনে ভেসে থাকবে",
+                },
+                {
+                  slot: "right_sidebar",
+                  titleBn: "👉 ডান পাশের ব্যানার (Right Sidebar)",
+                  subtitleBn: "ডেস্কটপ স্ক্রিনের ডান মার্জিনে ভেসে থাকবে",
+                },
+              ].map((meta) => {
+                const ad =
+                  adsList.find((a) => a.slot === meta.slot) || {
+                    slot: meta.slot,
+                    title: "",
+                    imageUrl: "",
+                    linkUrl: "",
+                    isActive: false,
+                  };
+                const statusMsg = adSaveStatus[meta.slot];
+                const isSaving = Boolean(isSavingAd[meta.slot]);
+
+                return (
+                  <div
+                    key={meta.slot}
+                    className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 space-y-5 shadow-xs flex flex-col justify-between"
+                  >
+                    <div className="space-y-4">
+                      {/* Slot Header & Active Status Switch */}
+                      <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-stone-800">
+                        <div>
+                          <h3 className="text-base font-extrabold text-[#142230] dark:text-white">
+                            {meta.titleBn}
+                          </h3>
+                          <p className="text-xs text-stone-500 dark:text-stone-400">
+                            {meta.subtitleBn}
+                          </p>
+                        </div>
+
+                        <label className="flex items-center gap-2 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={ad.isActive}
+                            onChange={(e) =>
+                              handleAdFieldChange(
+                                meta.slot,
+                                "isActive",
+                                e.target.checked
+                              )
+                            }
+                            className="w-4 h-4 text-[#80131E] rounded focus:ring-rose-500 cursor-pointer"
+                          />
+                          <span
+                            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                              ad.isActive
+                                ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
+                                : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                            }`}
+                          >
+                            {ad.isActive ? "সক্রিয় (Active)" : "নিষ্ক্রিয় (Off)"}
+                          </span>
+                        </label>
+                      </div>
+
+                      {/* Title Input */}
+                      <div>
+                        <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                          বিজ্ঞাপনের শিরোনাম / অল্টার টেক্সট
+                        </label>
+                        <input
+                          type="text"
+                          maxLength={160}
+                          value={ad.title}
+                          onChange={(e) =>
+                            handleAdFieldChange(
+                              meta.slot,
+                              "title",
+                              e.target.value
+                            )
+                          }
+                          placeholder="যেমন: স্পর্শের ব্যাকরণ - অনুভূতি পাবলিকেশন্স"
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#80131E]"
+                        />
+                      </div>
+
+                      {/* Image URL Input */}
+                      <div>
+                        <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                          ব্যানারের ছবির লিংক (Image URL)
+                        </label>
+                        <input
+                          type="text"
+                          value={ad.imageUrl}
+                          onChange={(e) =>
+                            handleAdFieldChange(
+                              meta.slot,
+                              "imageUrl",
+                              e.target.value
+                            )
+                          }
+                          placeholder="যেমন: /images/book-cover.png বা https://..."
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#80131E]"
+                        />
+                      </div>
+
+                      {/* Link URL Input */}
+                      <div>
+                        <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                          ক্লিক করার লিংক (Destination URL)
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={ad.linkUrl}
+                            onChange={(e) =>
+                              handleAdFieldChange(
+                                meta.slot,
+                                "linkUrl",
+                                e.target.value
+                              )
+                            }
+                            placeholder="যেমন: /sporsher-byakoron বা https://facebook.com/..."
+                            className="flex-1 px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#80131E]"
+                          />
+                          {ad.linkUrl && (
+                            <a
+                              href={ad.linkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2.5 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition"
+                              title="লিংক ওপেন করে দেখুন"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Live Preview Box */}
+                      <div>
+                        <span className="block text-[11px] font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-2">
+                          লাইভ প্রিভিউ (পাঠক যেমন দেখবে)
+                        </span>
+                        <div className="p-3 bg-[#FDF8F2] dark:bg-[#0B0F17] rounded-2xl border border-stone-200 dark:border-stone-800 flex justify-center">
+                          <div className="w-44 rounded-xl overflow-hidden bg-white dark:bg-[#111827] border border-[#C59B27]/40 dark:border-stone-700 shadow-sm text-center">
+                            <div className="bg-[#FAF4E6] dark:bg-[#1A2234] px-2 py-1 border-b border-stone-200/80 dark:border-stone-800 text-[9px] font-bold text-[#80131E] dark:text-rose-400">
+                              বিজ্ঞাপন
+                            </div>
+                            <div className="p-2.5 space-y-2">
+                              {ad.imageUrl ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={ad.imageUrl}
+                                  alt={ad.title || "Ad Preview"}
+                                  className="w-full h-32 object-contain rounded-lg bg-stone-50 dark:bg-stone-800/40"
+                                  onError={(e) => {
+                                    (e.target as HTMLElement).style.display =
+                                      "none";
+                                  }}
+                                />
+                              ) : (
+                                <div className="w-full h-32 bg-stone-100 dark:bg-stone-800 rounded-lg flex items-center justify-center text-xs text-stone-400">
+                                  ছবির লিংক দিন
+                                </div>
+                              )}
+                              <p className="text-xs font-bold text-[#142230] dark:text-white line-clamp-2">
+                                {ad.title || "বিজ্ঞাপনের শিরোনাম"}
+                              </p>
+                              <span className="inline-block w-full py-1.5 rounded-lg bg-[#80131E] text-white text-[11px] font-bold">
+                                বিস্তারিত দেখুন
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer Actions & Status */}
+                    <div className="pt-4 border-t border-stone-200 dark:border-stone-800 space-y-2">
+                      {statusMsg && (
+                        <p className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                          {statusMsg}
+                        </p>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateAd(meta.slot)}
+                        disabled={isSaving}
+                        className="w-full py-2.5 rounded-xl bg-[#80131E] hover:bg-[#630d16] disabled:opacity-50 text-white font-bold text-xs sm:text-sm cursor-pointer transition shadow-xs flex items-center justify-center gap-2"
+                      >
+                        {isSaving ? (
+                          <>
+                            <Sparkles className="w-4 h-4 animate-spin" />
+                            <span>সংরক্ষণ করা হচ্ছে...</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="w-4 h-4" />
+                            <span>এই ব্যানারের পরিবর্তন সেভ করুন</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </main>
     </div>

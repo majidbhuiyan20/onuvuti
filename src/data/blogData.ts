@@ -4,7 +4,8 @@ export type StoryCategory =
   | "জীবনের গল্প"
   | "না বলা কথা"
   | "বিচ্ছেদ ও প্রাক্তন"
-  | "সম্পর্ক ও মনস্তত্ত্ব";
+  | "সম্পর্ক ও মনস্তত্ত্ব"
+  | "স্বাস্থ্য ও সুস্থতা";
 
 export interface BlogPost {
   id: string;
@@ -47,6 +48,7 @@ export const BLOG_CATEGORIES: string[] = [
   "না বলা কথা",
   "বিচ্ছেদ ও প্রাক্তন",
   "সম্পর্ক ও মনস্তত্ত্ব",
+  "স্বাস্থ্য ও সুস্থতা",
 ];
 
 // In production, no hardcoded dummy stories exist.

@@ -14,6 +14,7 @@ import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { BOOK_INFO } from "@/data/bookData";
 import StoryInteractions, { CommentItem } from "@/components/StoryInteractions";
 import ThemeToggle from "@/components/ThemeToggle";
+import SidebarBanners from "@/components/SidebarBanners";
 import { getGoApiBaseUrl } from "@/lib/goApi";
 
 export const instant = false;
@@ -146,6 +147,9 @@ export default async function BlogPostPage({
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] transition-colors duration-200">
+      {/* Sticky Left and Right Desktop Sidebar Banners (Controlled by Backend) */}
+      <SidebarBanners />
+
       {/* Minimal Light/Dark Header with Navigation Menu */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/95 dark:bg-[#111827]/95 border-b border-stone-200/80 dark:border-stone-800">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">

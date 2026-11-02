@@ -57,3 +57,19 @@ CREATE TABLE IF NOT EXISTS book_orders (
 
 CREATE INDEX IF NOT EXISTS idx_book_orders_trx ON book_orders(transaction_id);
 
+CREATE TABLE IF NOT EXISTS ads (
+    slot VARCHAR(64) PRIMARY KEY,
+    title VARCHAR(160) NOT NULL DEFAULT '',
+    image_url TEXT NOT NULL DEFAULT '',
+    link_url TEXT NOT NULL DEFAULT '',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO ads (slot, title, image_url, link_url, is_active)
+VALUES 
+    ('left_sidebar', 'স্পর্শের ব্যাকরণ - অনুভূতি পাবলিকেশন্স', '/images/book-cover.png', '/sporsher-byakoron', true),
+    ('right_sidebar', 'স্পর্শের ব্যাকরণ - ই-বুক সংগ্রহ করুন', '/images/book-back.png', '/sporsher-byakoron', true)
+ON CONFLICT (slot) DO NOTHING;
+
+

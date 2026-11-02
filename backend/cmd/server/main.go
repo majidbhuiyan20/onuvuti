@@ -53,6 +53,7 @@ func main() {
 	orderSvc := service.NewOrderService(repo)
 	analyticsSvc := service.NewAnalyticsService(repo)
 	userSvc := service.NewUserService(repo, cfg)
+	adSvc := service.NewAdService(repo, memCache)
 
 	// 4. Initialize Middleware & HTTP Handlers
 	rl := middleware.NewRateLimiter()
@@ -66,6 +67,7 @@ func main() {
 		OrderHandler:     handlers.NewOrderHandler(orderSvc),
 		AnalyticsHandler: handlers.NewAnalyticsHandler(analyticsSvc),
 		UserHandler:      handlers.NewUserHandler(userSvc, rl),
+		AdHandler:        handlers.NewAdHandler(adSvc),
 	})
 
 	// 5. Hardened HTTP Server for Production

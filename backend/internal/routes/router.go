@@ -18,6 +18,7 @@ type RouterDeps struct {
 	OrderHandler     *handlers.OrderHandler
 	AnalyticsHandler *handlers.AnalyticsHandler
 	UserHandler      *handlers.UserHandler
+	AdHandler        *handlers.AdHandler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -62,6 +63,14 @@ func NewRouter(deps RouterDeps) http.Handler {
 	mux.HandleFunc("POST /api/v1/admin/stories", middleware.RequireAdmin(cfg, deps.AdminHandler.CreateStory))
 	mux.HandleFunc("DELETE /api/v1/admin/stories/{id}", middleware.RequireAdmin(cfg, deps.AdminHandler.DeleteStory))
 	mux.HandleFunc("DELETE /api/v1/admin/comments/{id}", middleware.RequireAdmin(cfg, deps.AdminHandler.DeleteComment))
+
+	// 6. Advertisement & Banner Management Routes
+	if deps.AdHandler != nil {
+		mux.HandleFunc("GET /api/v1/ads", deps.AdHandler.GetActive)
+		mux.HandleFunc("GET /api/v1/admin/ads", middleware.RequireAdmin(cfg, deps.AdHandler.GetAdminAds))
+		mux.HandleFunc("PUT /api/v1/admin/ads/{slot}", middleware.RequireAdmin(cfg, deps.AdHandler.UpdateAd))
+		mux.HandleFunc("POST /api/v1/admin/ads/{slot}", middleware.RequireAdmin(cfg, deps.AdHandler.UpdateAd))
+	}
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain
 	handler := middleware.Firewall(mux, deps.RateLimiter)

@@ -16,6 +16,7 @@ type memoryFallbackState struct {
 	Orders            []models.BookOrder
 	TrafficByDate     map[string]models.DailyTrafficStat
 	ConfessionCounter int
+	Ads               map[string]models.AdBanner
 }
 
 type Repository struct {
@@ -44,6 +45,7 @@ func NewRepository(db *sql.DB) (*Repository, error) {
 			Comments:          make(map[string][]models.Comment),
 			TrafficByDate:     make(map[string]models.DailyTrafficStat),
 			ConfessionCounter: 104,
+			Ads:               make(map[string]models.AdBanner),
 		},
 	}
 

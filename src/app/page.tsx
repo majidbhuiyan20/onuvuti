@@ -52,6 +52,8 @@ import { BOOK_INFO } from "@/data/bookData";
 import { validateImageUpload } from "@/lib/security";
 import { GO_API_BASE_URL, AppUser } from "@/lib/goApi";
 import ThemeToggle from "@/components/ThemeToggle";
+import SidebarBanners from "@/components/SidebarBanners";
+import DailyWellnessCard from "@/components/DailyWellnessCard";
 
 export default function OnuvutiBlogHomePage() {
   const router = useRouter();
@@ -699,6 +701,9 @@ export default function OnuvutiBlogHomePage() {
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] flex flex-col transition-colors duration-200">
+      {/* Sticky Left and Right Desktop Sidebar Banners (Controlled by Backend) */}
+      <SidebarBanners />
+
       {/* Clean Light/Dark Header with Full Desktop & Mobile Navigation Menu */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/95 dark:bg-[#111827]/95 border-b border-stone-200/80 dark:border-stone-800">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
@@ -1369,6 +1374,9 @@ export default function OnuvutiBlogHomePage() {
             </div>
           </div>
         )}
+
+        {/* FEATURE: Daily Health & Mental Wellness Tips Card */}
+        <DailyWellnessCard />
 
         {/* FEATURE 4: 1-Click Reader Poll ("পাঠক জরিপ / আজকের প্রশ্ন") */}
         <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs">
