@@ -932,83 +932,90 @@ export default function OnuvutiBlogHomePage() {
         )}
       </header>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8">
-        {/* Hero Welcome: Romantic Stories, Crush & Confession, Life Stories & Unspoken Words */}
-        <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-6 sm:p-8 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 text-xs font-bold">
-              রোমান্টিক গল্প • ক্রাশ ও কনফেশন • না বলা কথা
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142230] dark:text-white leading-snug">
-              ভালোবাসার গল্প, গোপন ক্রাশ, জীবনের গল্প ও মনের না বলা কথা
-            </h1>
-            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
-              এখানে মানুষ শেয়ার করে তাদের ভালোবাসার গল্প, গোপন কনফেশন, জীবনের অভিমান ও চাপা থাকা অনুভূতি। আপনিও নিজের নামে বা নাম গোপন রেখে আপনার গল্প পাঠাতে পারেন।
-            </p>
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-7">
+        {/* Unified Editorial Hero & Daily Vibe Header */}
+        <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-2.5 max-w-xl">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 text-xs font-bold">
+                ✨ অনুভূতির সাহিত্য, না বলা কথা ও জীবনের স্পন্দন
+              </span>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142230] dark:text-white leading-snug">
+                ভালোবাসার গল্প, গোপন ক্রাশ, জীবনের অভিজ্ঞতা ও মনের না বলা কথা
+              </h1>
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed font-medium">
+                এখানে মানুষ শেয়ার করে তাদের ভালোবাসার না বলা গল্প, গোপন কনফেশন, জীবনের অভিমান ও আবেগঘন স্মৃতি। আপনিও নিজের পরিচয় প্রকাশ করে বা সম্পূর্ণ নাম গোপন রেখে আপনার লেখা পাঠাতে পারেন।
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={openTrackerModal}
+                className="px-4 py-3 rounded-2xl bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/50 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 font-bold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#f3e8ce] dark:hover:bg-[#253348] transition cursor-pointer shadow-2xs"
+              >
+                <Clock className="w-4 h-4" />
+                <span>আমার পাঠানো লেখা ({mySubmittedIds.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsSubmitModalOpen(true)}
+                className="px-5 py-3 rounded-2xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-sm hover:bg-[#630d16] transition cursor-pointer"
+              >
+                <PenLine className="w-4 h-4" />
+                <span>গল্প / কনফেশন পাঠান</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <button
-              type="button"
-              onClick={openTrackerModal}
-              className="px-4 py-3.5 rounded-2xl bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/50 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 font-bold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#f3e8ce] dark:hover:bg-[#253348] transition cursor-pointer"
-            >
-              <Clock className="w-4 h-4" />
-              <span>আমার পাঠানো লেখা ({mySubmittedIds.length})</span>
-            </button>
+          {/* Integrated Daily Quote Bar ("আজকের অনুভূতি") */}
+          <div className="pt-4 border-t border-stone-200/80 dark:border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#FAF4E6]/50 dark:bg-[#161E2E]/50 -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 px-6 sm:px-8 py-3.5 rounded-b-3xl">
+            <div className="flex items-start sm:items-center gap-2.5 text-xs sm:text-sm text-[#142230] dark:text-stone-200">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#80131E] text-white text-[11px] font-extrabold shrink-0">
+                <Quote className="w-3 h-3" />
+                আজকের অনুভূতি
+              </span>
+              <p className="font-semibold italic text-stone-800 dark:text-stone-200 leading-relaxed text-xs sm:text-sm">
+                “{DAILY_QUOTES_BN[quoteIdx]}”
+              </p>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => setIsSubmitModalOpen(true)}
-              className="px-5 py-3.5 rounded-2xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md hover:bg-[#630d16] transition cursor-pointer"
-            >
-              <PenLine className="w-4 h-4" />
-              <span>গল্প / কনফেশন পাঠান</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  setQuoteIdx((prev) => (prev + 1) % DAILY_QUOTES_BN.length)
+                }
+                className="px-2.5 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-[11px] font-bold text-stone-600 dark:text-stone-300 hover:text-[#80131E] dark:hover:text-rose-400 cursor-pointer transition shadow-2xs"
+              >
+                পরের উক্তি
+              </button>
+              <button
+                type="button"
+                onClick={handleCopyDailyQuote}
+                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-bold text-[#80131E] dark:text-rose-400 hover:bg-stone-50 dark:hover:bg-stone-700 cursor-pointer transition shadow-2xs"
+              >
+                {quoteCopied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-emerald-700 dark:text-emerald-400">কপি হয়েছে</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>উক্তিটি কপি করুন</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* FEATURE 2: Daily One-Line Quote Bar ("আজকের অনুভূতি") */}
-        <div className="rounded-2xl bg-[#FAF4E6] dark:bg-[#161E2E] border border-[#C59B27]/45 dark:border-[#C59B27]/30 px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-start sm:items-center gap-2.5 text-xs sm:text-sm text-[#142230] dark:text-stone-200">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#80131E] text-white text-[11px] font-extrabold shrink-0">
-              <Quote className="w-3 h-3" />
-              আজকের অনুভূতি
-            </span>
-            <p className="font-semibold italic text-stone-800 dark:text-stone-200 leading-relaxed">
-              “{DAILY_QUOTES_BN[quoteIdx]}”
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() =>
-                setQuoteIdx((prev) => (prev + 1) % DAILY_QUOTES_BN.length)
-              }
-              className="px-2.5 py-1 rounded-lg bg-white/80 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-[11px] font-bold text-stone-600 dark:text-stone-300 hover:text-[#80131E] dark:hover:text-rose-400 cursor-pointer transition"
-            >
-              পরের উক্তি
-            </button>
-            <button
-              type="button"
-              onClick={handleCopyDailyQuote}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-bold text-[#80131E] dark:text-rose-400 hover:bg-stone-50 dark:hover:bg-stone-700 cursor-pointer transition"
-            >
-              {quoteCopied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span className="text-emerald-700 dark:text-emerald-400">কপি হয়েছে</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>উক্তিটি কপি করুন</span>
-                </>
-              )}
-            </button>
-          </div>
-        </div>
+        {/* FEATURE: Interactive Daily Mental & Physical Health Wellness Hub */}
+        {!searchQuery.trim() && !showSavedOnly && (
+          <DailyWellnessCard />
+        )}
 
         {/* Trending / Most Read Stories Section ("সপ্তাহের সেরা ও পাঠকপ্রিয় লেখা") */}
         {trendingPosts.length > 0 && !searchQuery.trim() && !showSavedOnly && (
@@ -1140,6 +1147,8 @@ export default function OnuvutiBlogHomePage() {
                   ? "আপনার প্রিয় তালিকায় এখনো কোনো গল্প সংরক্ষণ করা হয়নি।"
                   : searchQuery.trim()
                   ? `"${searchQuery}" দিয়ে কোনো লেখা খুঁজে পাওয়া যায়নি।`
+                  : activeCategory === "স্বাস্থ্য ও সুস্থতা"
+                  ? "স্বাস্থ্য ও মানসিক সুস্থতা বিষয়ক পূর্ণাঙ্গ গাইড উপরের কার্ডে রয়েছে।"
                   : activeCategory !== "সকল গল্প"
                   ? `"${activeCategory}" ক্যাটাগরিতে এখনো কোনো লেখা নেই।`
                   : "অনুভূতিতে আপনাকে স্বাগতম। এখনো কোনো গল্প প্রকাশিত হয়নি।"}
@@ -1147,8 +1156,12 @@ export default function OnuvutiBlogHomePage() {
               <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400">
                 {showSavedOnly
                   ? "যেকোনো গল্পের কার্ডের কোণায় থাকা বুকমার্ক আইকনে ক্লিক করে পরে পড়ার জন্য সংরক্ষণ করতে পারবেন।"
-                  : searchQuery.trim() || activeCategory !== "সকল গল্প"
-                  ? "অন্য কোনো ক্যাটাগরি বা কি-ওয়ার্ড নির্বাচন করে চেষ্টা করুন।"
+                  : searchQuery.trim()
+                  ? "অন্য কোনো কি-ওয়ার্ড দিয়ে চেষ্টা করুন বা ফিল্টার ক্লিয়ার করুন।"
+                  : activeCategory === "স্বাস্থ্য ও সুস্থতা"
+                  ? "উদ্বেগ দূর করা, গভীর ঘুম, সম্পর্কের যত্ন ও মানসিক প্রশান্তির পূর্ণাঙ্গ গাইড উপরের মডিউল থেকে বিস্তারিত পড়তে পারেন। এছাড়া আপনার স্বাস্থ্য অভিজ্ঞতাও আমাদের পাঠাতে পারেন।"
+                  : activeCategory !== "সকল গল্প"
+                  ? "অন্য কোনো ক্যাটাগরি নির্বাচন করুন অথবা এই ক্যাটাগরিতে আপনার লেখা পাঠান।"
                   : "আপনার মনের না বলা কোনো গল্প বা অনুভূতি আমাদের পাঠাতে পারেন। অনুমোদিত হলে তা হোমপেজে প্রকাশিত হবে।"}
               </p>
             </div>
@@ -1374,9 +1387,6 @@ export default function OnuvutiBlogHomePage() {
             </div>
           </div>
         )}
-
-        {/* FEATURE: Daily Health & Mental Wellness Tips Card */}
-        <DailyWellnessCard />
 
         {/* FEATURE 4: 1-Click Reader Poll ("পাঠক জরিপ / আজকের প্রশ্ন") */}
         <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs">
