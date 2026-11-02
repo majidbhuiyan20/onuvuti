@@ -20,16 +20,7 @@ export default function ThemeToggle({
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return (
-      <div
-        className={`w-9 h-9 rounded-xl bg-stone-100 dark:bg-stone-800 animate-pulse ${className}`}
-        aria-hidden="true"
-      />
-    );
-  }
-
-  const isDark = theme === "dark";
+  const isDark = mounted ? theme === "dark" : false;
 
   return (
     <button
@@ -37,9 +28,9 @@ export default function ThemeToggle({
       onClick={toggleTheme}
       aria-label={isDark ? "লাইট মোড চালু করুন" : "ডার্ক মোড চালু করুন"}
       title={isDark ? "লাইট মোড চালু করুন" : "ডার্ক মোড চালু করুন"}
-      className={`relative inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-200 cursor-pointer text-xs font-bold ${
+      className={`relative inline-flex items-center justify-center gap-1.5 w-9 h-9 rounded-full border transition-all duration-200 cursor-pointer text-xs font-bold ${
         isDark
-          ? "bg-stone-900/90 hover:bg-stone-800 text-amber-300 border-stone-700 shadow-inner"
+          ? "bg-stone-900 hover:bg-stone-800 text-amber-300 border-stone-700 shadow-inner"
           : "bg-white hover:bg-stone-100 text-stone-700 border-stone-200 shadow-xs"
       } ${className}`}
     >
@@ -56,4 +47,3 @@ export default function ThemeToggle({
     </button>
   );
 }
-
