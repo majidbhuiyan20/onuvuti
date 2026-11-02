@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   HeartPulse,
   Sparkles,
@@ -17,6 +17,7 @@ import {
   Activity,
   Flame,
 } from "lucide-react";
+import { GO_API_BASE_URL } from "@/lib/goApi";
 
 export interface WellnessGuide {
   id: string;
@@ -156,10 +157,24 @@ const WELLNESS_GUIDES: WellnessGuide[] = [
 ];
 
 export default function DailyWellnessCard() {
+  const [guidesList, setGuidesList] = useState<WellnessGuide[]>(WELLNESS_GUIDES);
   const [selectedCategory, setSelectedCategory] = useState<string>("সকল গাইড");
   const [activeGuideIdx, setActiveGuideIdx] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    fetch(`${GO_API_BASE_URL}/wellness`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.ok && Array.isArray(data.tips) && data.tips.length > 0) {
+          setGuidesList(data.tips);
+        }
+      })
+      .catch(() => {
+        // graceful fallback to initial guides
+      });
+  }, []);
 
   const categories = [
     "সকল গাইড",
@@ -171,11 +186,13 @@ export default function DailyWellnessCard() {
 
   const filteredGuides =
     selectedCategory === "সকল গাইড"
-      ? WELLNESS_GUIDES
-      : WELLNESS_GUIDES.filter((g) => g.category === selectedCategory);
+      ? guidesList
+      : guidesList.filter((g) => g.category === selectedCategory);
 
   const current =
-    filteredGuides[activeGuideIdx % filteredGuides.length] || WELLNESS_GUIDES[0];
+    filteredGuides[activeGuideIdx % (filteredGuides.length || 1)] ||
+    guidesList[0] ||
+    WELLNESS_GUIDES[0];
 
   const handleNext = () => {
     setActiveGuideIdx((prev) => (prev + 1) % filteredGuides.length);

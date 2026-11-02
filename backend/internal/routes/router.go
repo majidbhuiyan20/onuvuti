@@ -19,6 +19,7 @@ type RouterDeps struct {
 	AnalyticsHandler *handlers.AnalyticsHandler
 	UserHandler      *handlers.UserHandler
 	AdHandler        *handlers.AdHandler
+	WellnessHandler  *handlers.WellnessHandler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -70,6 +71,15 @@ func NewRouter(deps RouterDeps) http.Handler {
 		mux.HandleFunc("GET /api/v1/admin/ads", middleware.RequireAdmin(cfg, deps.AdHandler.GetAdminAds))
 		mux.HandleFunc("PUT /api/v1/admin/ads/{slot}", middleware.RequireAdmin(cfg, deps.AdHandler.UpdateAd))
 		mux.HandleFunc("POST /api/v1/admin/ads/{slot}", middleware.RequireAdmin(cfg, deps.AdHandler.UpdateAd))
+	}
+
+	// 7. Daily Health & Mental Wellness Guide Routes (PostgreSQL Dynamic Single Source of Truth)
+	if deps.WellnessHandler != nil {
+		mux.HandleFunc("GET /api/v1/wellness", deps.WellnessHandler.GetActive)
+		mux.HandleFunc("GET /api/v1/admin/wellness", middleware.RequireAdmin(cfg, deps.WellnessHandler.GetAdminTips))
+		mux.HandleFunc("POST /api/v1/admin/wellness", middleware.RequireAdmin(cfg, deps.WellnessHandler.CreateTip))
+		mux.HandleFunc("PUT /api/v1/admin/wellness/{id}", middleware.RequireAdmin(cfg, deps.WellnessHandler.UpdateTip))
+		mux.HandleFunc("DELETE /api/v1/admin/wellness/{id}", middleware.RequireAdmin(cfg, deps.WellnessHandler.DeleteTip))
 	}
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain

@@ -72,4 +72,24 @@ VALUES
     ('right_sidebar', 'স্পর্শের ব্যাকরণ - ই-বুক সংগ্রহ করুন', '/images/book-back.png', '/sporsher-byakoron', true)
 ON CONFLICT (slot) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS wellness_tips (
+    id VARCHAR(64) PRIMARY KEY,
+    category VARCHAR(64) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    summary TEXT NOT NULL,
+    read_time VARCHAR(32) NOT NULL DEFAULT '৩ মিনিট পাঠ',
+    symptoms TEXT DEFAULT '',
+    why_it_happens TEXT DEFAULT '',
+    action_steps JSONB NOT NULL DEFAULT '[]'::jsonb,
+    psychological_insight TEXT DEFAULT '',
+    daily_habit TEXT DEFAULT '',
+    expert_advice TEXT DEFAULT '',
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wellness_tips_active ON wellness_tips(is_active);
+CREATE INDEX IF NOT EXISTS idx_wellness_tips_category ON wellness_tips(category);
+
 

@@ -27,6 +27,7 @@ import {
   MessageSquare,
   Megaphone,
   ExternalLink,
+  HeartPulse,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
@@ -95,6 +96,22 @@ interface AdminAdBanner {
   updatedAt?: string;
 }
 
+interface AdminWellnessTip {
+  id: string;
+  category: string;
+  title: string;
+  summary: string;
+  readTime: string;
+  symptoms: string;
+  whyItHappens: string;
+  actionSteps: string[];
+  psychologicalInsight: string;
+  dailyHabit: string;
+  expertAdvice: string;
+  isActive: boolean;
+  createdAt?: string;
+}
+
 const INITIAL_PENDING: PendingStory[] = [];
 
 export default function AdminDashboardPage() {
@@ -105,8 +122,28 @@ export default function AdminDashboardPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
-    "analytics" | "pending" | "published" | "comments" | "create" | "ads"
+    "analytics" | "pending" | "published" | "comments" | "create" | "ads" | "wellness"
   >("analytics");
+
+  // Wellness Tips Management State (PostgreSQL Controlled)
+  const [wellnessTips, setWellnessTips] = useState<AdminWellnessTip[]>([]);
+  const [isLoadingWellness, setIsLoadingWellness] = useState(false);
+  const [editingTipId, setEditingTipId] = useState<string | null>(null);
+  const [wellnessSaveStatus, setWellnessSaveStatus] = useState<string>("");
+  const [isSavingWellness, setIsSavingWellness] = useState(false);
+
+  // Wellness Form Inputs
+  const [tipCategory, setTipCategory] = useState("মানসিক স্বাস্থ্য");
+  const [tipTitle, setTipTitle] = useState("");
+  const [tipSummary, setTipSummary] = useState("");
+  const [tipReadTime, setTipReadTime] = useState("৩ মিনিট পাঠ");
+  const [tipSymptoms, setTipSymptoms] = useState("");
+  const [tipWhyItHappens, setTipWhyItHappens] = useState("");
+  const [tipActionStepsText, setTipActionStepsText] = useState("");
+  const [tipPsychInsight, setTipPsychInsight] = useState("");
+  const [tipDailyHabit, setTipDailyHabit] = useState("");
+  const [tipExpertAdvice, setTipExpertAdvice] = useState("");
+  const [tipIsActive, setTipIsActive] = useState(true);
 
   // Ads & Banners Management State
   const [adsList, setAdsList] = useState<AdminAdBanner[]>([
@@ -339,6 +376,171 @@ export default function AdminDashboardPage() {
     );
   };
 
+  const fetchWellnessFromGo = useCallback(async () => {
+    setIsLoadingWellness(true);
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/wellness`, {
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && Array.isArray(data.tips)) {
+          setWellnessTips(data.tips);
+        }
+      }
+    } catch {
+      // offline fallback
+    } finally {
+      setIsLoadingWellness(false);
+    }
+  }, []);
+
+  const handleResetWellnessForm = () => {
+    setEditingTipId(null);
+    setTipCategory("মানসিক স্বাস্থ্য");
+    setTipTitle("");
+    setTipSummary("");
+    setTipReadTime("৩ মিনিট পাঠ");
+    setTipSymptoms("");
+    setTipWhyItHappens("");
+    setTipActionStepsText("");
+    setTipPsychInsight("");
+    setTipDailyHabit("");
+    setTipExpertAdvice("");
+    setTipIsActive(true);
+  };
+
+  const handleEditWellnessClick = (tip: AdminWellnessTip) => {
+    setEditingTipId(tip.id);
+    setTipCategory(tip.category);
+    setTipTitle(tip.title);
+    setTipSummary(tip.summary);
+    setTipReadTime(tip.readTime || "৩ মিনিট পাঠ");
+    setTipSymptoms(tip.symptoms || "");
+    setTipWhyItHappens(tip.whyItHappens || "");
+    setTipActionStepsText(
+      Array.isArray(tip.actionSteps) ? tip.actionSteps.join("\n") : ""
+    );
+    setTipPsychInsight(tip.psychologicalInsight || "");
+    setTipDailyHabit(tip.dailyHabit || "");
+    setTipExpertAdvice(tip.expertAdvice || "");
+    setTipIsActive(tip.isActive);
+    window.scrollTo({ top: 350, behavior: "smooth" });
+  };
+
+  const handleSaveWellness = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tipTitle.trim() || !tipSummary.trim()) {
+      setWellnessSaveStatus("❌ শিরোনাম এবং সারসংক্ষেপ অবশ্যই পূরণ করতে হবে।");
+      return;
+    }
+
+    setIsSavingWellness(true);
+    setWellnessSaveStatus("");
+
+    const actionSteps = tipActionStepsText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const payload = {
+      category: tipCategory,
+      title: tipTitle.trim(),
+      summary: tipSummary.trim(),
+      readTime: tipReadTime.trim(),
+      symptoms: tipSymptoms.trim(),
+      whyItHappens: tipWhyItHappens.trim(),
+      actionSteps,
+      psychologicalInsight: tipPsychInsight.trim(),
+      dailyHabit: tipDailyHabit.trim(),
+      expertAdvice: tipExpertAdvice.trim(),
+      isActive: tipIsActive,
+    };
+
+    try {
+      let res: Response;
+      if (editingTipId) {
+        res = await fetch(
+          `${GO_API_BASE_URL}/admin/wellness/${encodeURIComponent(editingTipId)}`,
+          {
+            method: "PUT",
+            headers: {
+              ...getAdminAuthHeaders(),
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          }
+        );
+      } else {
+        res = await fetch(`${GO_API_BASE_URL}/admin/wellness`, {
+          method: "POST",
+          headers: {
+            ...getAdminAuthHeaders(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+      }
+
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        setWellnessSaveStatus(
+          editingTipId
+            ? "✅ সুস্থতা গাইড সফলভাবে আপডেট করা হয়েছে!"
+            : "✅ নতুন সুস্থতা গাইড সফলভাবে তৈরি করা হয়েছে!"
+        );
+        handleResetWellnessForm();
+        await fetchWellnessFromGo();
+      } else {
+        setWellnessSaveStatus(`❌ ${data?.error || "সংরক্ষণ করা যায়নি"}`);
+      }
+    } catch {
+      setWellnessSaveStatus("❌ সার্ভার সংযোগ ত্রুটি! আবার চেষ্টা করুন।");
+    } finally {
+      setIsSavingWellness(false);
+      setTimeout(() => setWellnessSaveStatus(""), 4000);
+    }
+  };
+
+  const handleToggleWellnessActive = async (tip: AdminWellnessTip) => {
+    try {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/admin/wellness/${encodeURIComponent(tip.id)}`,
+        {
+          method: "PUT",
+          headers: {
+            ...getAdminAuthHeaders(),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ isActive: !tip.isActive }),
+        }
+      );
+      if (res.ok) {
+        await fetchWellnessFromGo();
+      }
+    } catch {
+      // offline
+    }
+  };
+
+  const handleDeleteWellness = async (id: string) => {
+    if (!confirm("আপনি কি নিশ্চিতভাবে এই সুস্থতা গাইডটি মুছে ফেলতে চান?")) return;
+    try {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/admin/wellness/${encodeURIComponent(id)}`,
+        {
+          method: "DELETE",
+          headers: getAdminAuthHeaders(),
+        }
+      );
+      if (res.ok) {
+        await fetchWellnessFromGo();
+      }
+    } catch {
+      // offline
+    }
+  };
+
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
     const weekAgoDate = new Date();
@@ -353,6 +555,7 @@ export default function AdminDashboardPage() {
         fetchDashboardFromGo();
         fetchAnalytics("7d");
         fetchAdsFromGo();
+        fetchWellnessFromGo();
       }
 
       const savedPending = localStorage.getItem("onuvuti_pending_stories");
@@ -366,7 +569,7 @@ export default function AdminDashboardPage() {
     } catch {
       // Ignore storage errors
     }
-  }, [fetchDashboardFromGo, fetchAnalytics, fetchAdsFromGo]);
+  }, [fetchDashboardFromGo, fetchAnalytics, fetchAdsFromGo, fetchWellnessFromGo]);
 
   const handlePeriodSwitch = (
     p: "daily" | "7d" | "monthly" | "yearly" | "custom"
@@ -428,6 +631,7 @@ export default function AdminDashboardPage() {
       await fetchDashboardFromGo();
       await fetchAnalytics("7d");
       await fetchAdsFromGo();
+      await fetchWellnessFromGo();
     } catch {
       setAuthError("সার্ভারের সাথে সংযোগ করা যায়নি।");
     } finally {
@@ -875,6 +1079,19 @@ export default function AdminDashboardPage() {
           >
             <Megaphone className="w-4 h-4" />
             <span>বিজ্ঞাপন ও ব্যানার কন্ট্রোল</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("wellness")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "wellness"
+                ? "bg-[#80131E] text-white"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+            }`}
+          >
+            <HeartPulse className="w-4 h-4" />
+            <span>🌿 সুস্থতা গাইড কন্ট্রোল ({wellnessTips.length})</span>
           </button>
         </div>
 
