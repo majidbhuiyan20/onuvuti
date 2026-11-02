@@ -20,17 +20,27 @@ export default function ThemeToggle({
     setMounted(true);
   }, []);
 
-  const isDark = mounted ? theme === "dark" : false;
+  // When not yet mounted, read directly from DOM if available to prevent flash
+  const isDark = mounted
+    ? theme === "dark"
+    : typeof document !== "undefined"
+    ? document.documentElement.classList.contains("dark") ||
+      document.documentElement.getAttribute("data-theme") === "dark"
+    : false;
 
   return (
     <button
       type="button"
-      onClick={toggleTheme}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleTheme();
+      }}
       aria-label={isDark ? "লাইট মোড চালু করুন" : "ডার্ক মোড চালু করুন"}
       title={isDark ? "লাইট মোড চালু করুন" : "ডার্ক মোড চালু করুন"}
       className={`relative inline-flex items-center justify-center gap-1.5 w-9 h-9 rounded-full border transition-all duration-200 cursor-pointer text-xs font-bold ${
         isDark
-          ? "bg-stone-900 hover:bg-stone-800 text-amber-300 border-stone-700 shadow-inner"
+          ? "bg-[#111827] hover:bg-stone-800 text-amber-300 border-stone-700 shadow-inner"
           : "bg-white hover:bg-stone-100 text-stone-700 border-stone-200 shadow-xs"
       } ${className}`}
     >

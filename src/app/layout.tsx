@@ -26,12 +26,15 @@ export default function RootLayout({
               try {
                 const saved = localStorage.getItem("onuvuti_theme");
                 const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-                if (saved === "dark" || (!saved && prefersDark)) {
+                const isDark = saved === "dark" || (!saved && prefersDark);
+                if (isDark) {
                   document.documentElement.classList.add("dark");
                   document.documentElement.setAttribute("data-theme", "dark");
+                  document.documentElement.style.colorScheme = "dark";
                 } else {
                   document.documentElement.classList.remove("dark");
                   document.documentElement.setAttribute("data-theme", "light");
+                  document.documentElement.style.colorScheme = "light";
                 }
               } catch (e) {}
             `,
