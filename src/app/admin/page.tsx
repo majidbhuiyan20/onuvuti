@@ -2128,6 +2128,323 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* TAB 6: WELLNESS & HEALTH GUIDES MANAGEMENT (PostgreSQL Go API Single Source) */}
+        {activeTab === "wellness" && (
+          <div className="space-y-6">
+            {/* Header / Intro Card */}
+            <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-400 text-xs font-bold">
+                  <HeartPulse className="w-3.5 h-3.5 animate-pulse" />
+                  <span>দৈনিক সুস্থতা ও মনস্তত্ত্ব গাইড সেন্টার</span>
+                </div>
+                <h2 className="text-lg sm:text-xl font-extrabold text-[#142230] dark:text-white">
+                  ওয়েবসাইটে প্রদর্শিত স্বাস্থ্য ও মানসিক প্রশান্তি গাইডসমূহ পরিচালনা
+                </h2>
+                <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 max-w-2xl">
+                  এখানে আপনি নতুন স্বাস্থ্য ও মানসিক সুস্থতার গাইড তৈরি করতে পারবেন, পূর্বের গাইড এডিট করতে পারবেন, অথবা সাময়িকভাবে নিষ্ক্রিয় করে রাখতে পারবেন। এগুলো সরাসরি হোমপেজের বিশেষ মডিউল এবং রিডিং মডালে লাইভ শো করবে।
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={fetchWellnessFromGo}
+                className="px-4 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-bold inline-flex items-center gap-2 cursor-pointer transition shrink-0"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>রিফ্রেশ ডেটা</span>
+              </button>
+            </div>
+
+            {/* CREATE / EDIT FORM */}
+            <form
+              onSubmit={handleSaveWellness}
+              className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-6 space-y-5 shadow-xs"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-stone-800">
+                <h3 className="text-base font-extrabold text-[#142230] dark:text-white flex items-center gap-2">
+                  <Edit3 className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
+                  <span>
+                    {editingTipId
+                      ? "সুস্থতা গাইড সম্পাদনা করুন"
+                      : "নতুন সুস্থতা গাইড যুক্ত করুন"}
+                  </span>
+                </h3>
+
+                {editingTipId && (
+                  <button
+                    type="button"
+                    onClick={handleResetWellnessForm}
+                    className="px-3 py-1 text-xs font-bold rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-rose-50 hover:text-rose-600 cursor-pointer transition"
+                  >
+                    সম্পাদনা বাতিল করুন
+                  </button>
+                )}
+              </div>
+
+              {/* Form Grid */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    ক্যাটাগরি
+                  </label>
+                  <select
+                    value={tipCategory}
+                    onChange={(e) => setTipCategory(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white"
+                  >
+                    <option value="মানসিক স্বাস্থ্য">মানসিক স্বাস্থ্য</option>
+                    <option value="সম্পর্কের যত্ন">সম্পর্কের যত্ন</option>
+                    <option value="ঘুম ও মানসিক প্রশান্তি">
+                      ঘুম ও মানসিক প্রশান্তি
+                    </option>
+                    <option value="শারীরিক সুস্থতা">শারীরিক সুস্থতা</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    পড়ার সময় (Read Time)
+                  </label>
+                  <input
+                    type="text"
+                    value={tipReadTime}
+                    onChange={(e) => setTipReadTime(e.target.value)}
+                    placeholder="যেমন: ৩ মিনিট পাঠ"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  গাইডের মূল শিরোনাম
+                </label>
+                <input
+                  type="text"
+                  value={tipTitle}
+                  onChange={(e) => setTipTitle(e.target.value)}
+                  placeholder="যেমন: উদ্বেগ, অতিরিক্ত চিন্তা (Overthinking) ও প্যানিক দূর করার বিজ্ঞানসম্মত উপায়"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  সংক্ষিপ্ত সারসংক্ষেপ (Summary / Punchline)
+                </label>
+                <textarea
+                  rows={2}
+                  value={tipSummary}
+                  onChange={(e) => setTipSummary(e.target.value)}
+                  placeholder="হোমপেজে কার্ডে প্রদর্শিত হবে এমন ২-৩ লাইনের সংক্ষিপ্ত সারসংক্ষেপ..."
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    লক্ষণসমূহ (Symptoms)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={tipSymptoms}
+                    onChange={(e) => setTipSymptoms(e.target.value)}
+                    placeholder="কী কী শারীরিক বা মানসিক লক্ষণ অনুভূত হয়..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    কেন এটি ঘটে (Why it happens)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={tipWhyItHappens}
+                    onChange={(e) => setTipWhyItHappens(e.target.value)}
+                    placeholder="মস্তিষ্ক, হরমোন বা অভ্যাসের বৈজ্ঞানিক কারণ..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                  ধাপে ধাপে সমাধানের পদক্ষেপ (Action Steps — প্রতি লাইনে ১টি করে লিখুন)
+                </label>
+                <textarea
+                  rows={4}
+                  value={tipActionStepsText}
+                  onChange={(e) => setTipActionStepsText(e.target.value)}
+                  placeholder={"৫টি জিনিস দেখুন...\n৪টি জিনিস স্পর্শ করুন...\n৩টি শব্দ শুনুন..."}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white font-mono"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    মনস্তাত্ত্বিক ব্যাখ্যা
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={tipPsychInsight}
+                    onChange={(e) => setTipPsychInsight(e.target.value)}
+                    placeholder="মনস্তাত্ত্বিক গভীর তথ্য..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    নিয়মিত জীবনচর্চা (Daily Routine)
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={tipDailyHabit}
+                    onChange={(e) => setTipDailyHabit(e.target.value)}
+                    placeholder="প্রতিদিন পালনের সহজ অভ্যাস..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    বিশেষজ্ঞ চিকিৎসকের পরামর্শ
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={tipExpertAdvice}
+                    onChange={(e) => setTipExpertAdvice(e.target.value)}
+                    placeholder="ডাক্তার বা সাইকোলজিস্টের মতামত..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={tipIsActive}
+                    onChange={(e) => setTipIsActive(e.target.checked)}
+                    className="w-4 h-4 text-[#80131E] rounded focus:ring-rose-500 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                    ওয়েবসাইটে সক্রিয় রাখুন (Active on site)
+                  </span>
+                </label>
+
+                {wellnessSaveStatus && (
+                  <p className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                    {wellnessSaveStatus}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingWellness}
+                className="w-full py-3 rounded-xl bg-[#80131E] hover:bg-[#630d16] disabled:opacity-50 text-white font-bold text-xs sm:text-sm cursor-pointer transition shadow-xs flex items-center justify-center gap-2"
+              >
+                {isSavingWellness ? (
+                  <>
+                    <Sparkles className="w-4 h-4 animate-spin" />
+                    <span>সংরক্ষণ করা হচ্ছে...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>
+                      {editingTipId
+                        ? "সম্পাদিত গাইড সেভ করুন"
+                        : "নতুন গাইড ডাটাবেজে যুক্ত করুন"}
+                    </span>
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* LIST OF GUIDES FROM POSTGRESQL */}
+            <div className="space-y-4">
+              <h3 className="text-base font-extrabold text-[#142230] dark:text-white">
+                ডাটাবেজে সংরক্ষিত স্বাস্থ্য ও মানসিক গাইডসমূহ ({wellnessTips.length})
+              </h3>
+
+              {wellnessTips.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-500 text-xs">
+                  কোনো গাইড পাওয়া যায়নি। উপরের ফর্ম পূরণ করে নতুন গাইড তৈরি করুন।
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {wellnessTips.map((tip) => (
+                    <div
+                      key={tip.id}
+                      className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs hover:border-[#80131E]/40 transition"
+                    >
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300">
+                            {tip.category}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              tip.isActive
+                                ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300"
+                                : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                            }`}
+                          >
+                            {tip.isActive ? "সক্রিয়" : "নিষ্ক্রিয়"}
+                          </span>
+                          <span className="text-xs text-stone-400">
+                            {tip.readTime}
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm sm:text-base font-extrabold text-[#142230] dark:text-white">
+                          {tip.title}
+                        </h4>
+                        <p className="text-xs text-stone-600 dark:text-stone-300 line-clamp-2">
+                          {tip.summary}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleWellnessActive(tip)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 text-stone-700 dark:text-stone-300 cursor-pointer transition"
+                        >
+                          {tip.isActive ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleEditWellnessClick(tip)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#80131E] text-white hover:bg-[#630d16] cursor-pointer transition"
+                        >
+                          সম্পাদনা
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteWellness(tip.id)}
+                          className="p-1.5 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 cursor-pointer transition"
+                          title="মুছে ফেলুন"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

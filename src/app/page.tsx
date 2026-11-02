@@ -969,6 +969,44 @@ export default function OnuvutiBlogHomePage() {
             </div>
           </div>
 
+          {/* Interactive Mood Selector Bar ("আজ আপনার মনের অবস্থা কেমন?") */}
+          <div className="pt-2 space-y-2 border-t border-stone-100 dark:border-stone-800/80">
+            <span className="text-[11px] sm:text-xs font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
+              <span>আজ আপনার মনের অনুভূতি কেমন? এক ক্লিকে মনের মতো লেখা পড়ুন:</span>
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { label: "🌸 মিষ্টি প্রেম ও ভালোবাসা", cat: "রোমান্টিক গল্প" },
+                { label: "🤫 গোপন ক্রাশ ও কনফেশন", cat: "ক্রাশ ও কনফেশন" },
+                { label: "💔 না বলা অভিমান ও স্মৃতি", cat: "না বলা কথা" },
+                { label: "🌿 মানসিক শান্তি ও সুস্থতা", cat: "স্বাস্থ্য ও সুস্থতা" },
+                { label: "☕ জীবনের গল্প ও অনুভূতি", cat: "জীবনের গল্প" },
+                { label: "📖 সকল গল্প দেখুন", cat: "সকল গল্প" },
+              ].map((mood) => {
+                const isSelected = activeCategory === mood.cat && !showSavedOnly;
+                return (
+                  <button
+                    key={mood.cat}
+                    type="button"
+                    onClick={() => {
+                      setShowSavedOnly(false);
+                      setActiveCategory(mood.cat);
+                      setCurrentPage(1);
+                    }}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? "bg-[#80131E] text-white shadow-2xs scale-102"
+                        : "bg-[#FAF4E6]/80 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-[#C59B27]/40 dark:border-stone-700 hover:border-[#80131E] dark:hover:border-rose-400"
+                    }`}
+                  >
+                    <span>{mood.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Integrated Daily Quote Bar ("আজকের অনুভূতি") */}
           <div className="pt-4 border-t border-stone-200/80 dark:border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#FAF4E6]/50 dark:bg-[#161E2E]/50 -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 px-6 sm:px-8 py-3.5 rounded-b-3xl">
             <div className="flex items-start sm:items-center gap-2.5 text-xs sm:text-sm text-[#142230] dark:text-stone-200">
