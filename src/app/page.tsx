@@ -37,6 +37,13 @@ import {
   LogOut,
   Lock,
   Mail,
+  Home,
+  ChevronDown,
+  Flame,
+  Feather,
+  CloudSun,
+  Sprout,
+  Brain,
 } from "lucide-react";
 import {
   BLOG_CATEGORIES,
@@ -55,6 +62,24 @@ import ThemeToggle from "@/components/ThemeToggle";
 import SidebarBanners from "@/components/SidebarBanners";
 import DailyWellnessCard from "@/components/DailyWellnessCard";
 
+const FacebookIcon = () => (
+  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+);
+
+const YoutubeIcon = () => (
+  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+  </svg>
+);
+
+const InstagramIcon = () => (
+  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
+  </svg>
+);
+
 export default function OnuvutiBlogHomePage() {
   const router = useRouter();
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -71,11 +96,23 @@ export default function OnuvutiBlogHomePage() {
   // Daily Quote State
   const [quoteIdx, setQuoteIdx] = useState(0);
   const [quoteCopied, setQuoteCopied] = useState(false);
+  const [quoteReactCount, setQuoteReactCount] = useState(128);
+  const [isQuoteReacted, setIsQuoteReacted] = useState(false);
 
   // 1-Click Reader Poll State
   const [pollOptions, setPollOptions] =
     useState<PollOptionItem[]>(INITIAL_POLL_OPTIONS);
   const [selectedPollId, setSelectedPollId] = useState<string | null>(null);
+  const [pollRadioChoice, setPollRadioChoice] = useState<string>("হ্যাঁ, এখনো বাসি");
+  const [hasVotedTodayPoll, setHasVotedTodayPoll] = useState(false);
+
+  // Navigation & Interactive States
+  const [showNavSearch, setShowNavSearch] = useState(false);
+  const [activeNavDropdown, setActiveNavDropdown] = useState<string | null>(null);
+
+  // Newsletter Subscription State
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [newsletterDone, setNewsletterDone] = useState(false);
 
   // My Submissions & Tracking Code State (No Account Required)
   const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
@@ -704,9 +741,10 @@ export default function OnuvutiBlogHomePage() {
       {/* Sticky Left and Right Desktop Sidebar Banners (Controlled by Backend) */}
       <SidebarBanners />
 
-      {/* Clean Light/Dark Header with Full Desktop & Mobile Navigation Menu */}
-      <header className="sticky top-0 z-40 backdrop-blur-md bg-white/95 dark:bg-[#111827]/95 border-b border-stone-200/80 dark:border-stone-800">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
+      {/* Clean Modern Navbar matching Mockup */}
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-[#FAF7F2]/95 dark:bg-[#0B0F17]/95 border-b border-stone-200/80 dark:border-stone-800 transition-colors">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
+          {/* Logo & Tagline */}
           <Link
             href="/"
             onClick={() => {
@@ -714,98 +752,308 @@ export default function OnuvutiBlogHomePage() {
               setActiveCategory("সকল গল্প");
               setCurrentPage(1);
             }}
-            className="flex items-center gap-3 shrink-0"
+            className="flex items-center gap-2.5 shrink-0 group"
           >
-            <div className="bg-white px-2.5 py-1 rounded-xl shadow-xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/Onuvuti-Publications-Logo.png"
-                alt="Onuvuti Publications"
-                className="h-9 sm:h-11 w-auto object-contain"
-              />
+            <div className="w-9 h-9 rounded-full bg-[#7E151E] flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition">
+              <Feather className="w-5 h-5 text-amber-100" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xl sm:text-2xl font-black tracking-tight text-[#7E151E] dark:text-rose-400 font-serif leading-none">
+                Onuvuti
+              </span>
+              <span className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">
+                প্রতিটি অনুভূতির একটি গল্প আছে
+              </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation Menu */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {[
-              "সকল গল্প",
-              "ক্রাশ ও কনফেশন",
-              "রোমান্টিক গল্প",
-              "না বলা কথা",
-              "সম্পর্ক ও মনস্তত্ত্ব",
-            ].map((navCat) => {
-              const isNavActive = !showSavedOnly && activeCategory === navCat;
-              return (
-                <button
-                  key={navCat}
-                  type="button"
-                  onClick={() => {
-                    setShowSavedOnly(false);
-                    setActiveCategory(navCat);
-                    setCurrentPage(1);
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
-                    isNavActive
-                      ? "bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300"
-                      : "text-stone-600 dark:text-stone-300 hover:text-[#80131E] dark:hover:text-rose-400 hover:bg-stone-50 dark:hover:bg-stone-800"
-                  }`}
-                >
-                  {navCat === "সকল গল্প" ? "হোমপেজ" : navCat}
-                </button>
-              );
-            })}
-
+          {/* Center Navigation Dropdowns */}
+          <nav className="hidden lg:flex items-center gap-1.5 relative">
+            {/* Active Home Pill */}
             <button
               type="button"
-              onClick={openTrackerModal}
-              className="px-3 py-1.5 rounded-xl text-xs font-extrabold text-stone-600 dark:text-stone-300 hover:text-[#80131E] dark:hover:text-rose-400 hover:bg-stone-50 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              onClick={() => {
+                setShowSavedOnly(false);
+                setActiveCategory("সকল গল্প");
+                setCurrentPage(1);
+                setActiveNavDropdown(null);
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-xs ${
+                activeCategory === "সকল গল্প" && !showSavedOnly
+                  ? "bg-[#7E151E] text-white"
+                  : "text-stone-600 dark:text-stone-300 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800"
+              }`}
             >
-              <span>আমার লেখা</span>
-              {mySubmittedIds.length > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-[#80131E] text-white text-[10px]">
-                  {mySubmittedIds.length}
-                </span>
-              )}
+              <Home className="w-3.5 h-3.5" />
+              <span>হোম</span>
             </button>
+
+            {/* গল্প Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveNavDropdown((prev) =>
+                    prev === "story" ? null : "story"
+                  )
+                }
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>গল্প</span>
+                <ChevronDown className="w-3 h-3 text-stone-400" />
+              </button>
+              {activeNavDropdown === "story" && (
+                <div className="absolute top-full left-0 mt-1 w-44 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+                  {[
+                    "রোমান্টিক গল্প",
+                    "জীবনের গল্প",
+                    "ক্রাশ ও কনফেশন",
+                    "বিচ্ছেদ ও প্রাক্তন",
+                  ].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        setActiveCategory(c);
+                        setShowSavedOnly(false);
+                        setCurrentPage(1);
+                        setActiveNavDropdown(null);
+                        document
+                          .getElementById("stories-feed")
+                          ?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* চিঠি Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveNavDropdown((prev) =>
+                    prev === "letter" ? null : "letter"
+                  )
+                }
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>চিঠি</span>
+                <ChevronDown className="w-3 h-3 text-stone-400" />
+              </button>
+              {activeNavDropdown === "letter" && (
+                <div className="absolute top-full left-0 mt-1 w-44 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+                  {["না বলা কথা", "খোলা চিঠি"].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        setActiveCategory(c);
+                        setShowSavedOnly(false);
+                        setCurrentPage(1);
+                        setActiveNavDropdown(null);
+                        document
+                          .getElementById("stories-feed")
+                          ?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* কনফেশন Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveNavDropdown((prev) =>
+                    prev === "confession" ? null : "confession"
+                  )
+                }
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>কনফেশন</span>
+                <ChevronDown className="w-3 h-3 text-stone-400" />
+              </button>
+              {activeNavDropdown === "confession" && (
+                <div className="absolute top-full left-0 mt-1 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+                  {["ক্রাশ ও কনফেশন", "না বলা কথা"].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        setActiveCategory(c);
+                        setShowSavedOnly(false);
+                        setCurrentPage(1);
+                        setActiveNavDropdown(null);
+                        document
+                          .getElementById("stories-feed")
+                          ?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* বই Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveNavDropdown((prev) =>
+                    prev === "book" ? null : "book"
+                  )
+                }
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>বই</span>
+                <ChevronDown className="w-3 h-3 text-stone-400" />
+              </button>
+              {activeNavDropdown === "book" && (
+                <div className="absolute top-full left-0 mt-1 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+                  <Link
+                    href="/sporsher-byakoron"
+                    onClick={() => setActiveNavDropdown(null)}
+                    className="block px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 transition"
+                  >
+                    স্পর্শের ব্যাকরণ (ই-বুক)
+                  </Link>
+                </div>
+              )}
+            </div>
+
+            {/* মনস্তত্ত্ব Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveNavDropdown((prev) =>
+                    prev === "psy" ? null : "psy"
+                  )
+                }
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>মনস্তত্ত্ব</span>
+                <ChevronDown className="w-3 h-3 text-stone-400" />
+              </button>
+              {activeNavDropdown === "psy" && (
+                <div className="absolute top-full left-0 mt-1 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+                  {["সম্পর্ক ও মনস্তত্ত্ব", "নিজেকে জানুন", "স্বাস্থ্য ও সুস্থতা"].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        setActiveCategory(c);
+                        setShowSavedOnly(false);
+                        setCurrentPage(1);
+                        setActiveNavDropdown(null);
+                        document
+                          .getElementById("wellness-hub")
+                          ?.scrollIntoView({ behavior: "smooth" });
+                      }}
+                      className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* আরও Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() =>
+                  setActiveNavDropdown((prev) =>
+                    prev === "more" ? null : "more"
+                  )
+                }
+                className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              >
+                <span>আরও</span>
+                <ChevronDown className="w-3 h-3 text-stone-400" />
+              </button>
+              {activeNavDropdown === "more" && (
+                <div className="absolute top-full right-0 mt-1 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveNavDropdown(null);
+                      document
+                        .getElementById("home-poll-section")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                  >
+                    📊 আজকের পাঠক জরিপ ও ভোট
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveNavDropdown(null);
+                      openTrackerModal();
+                    }}
+                    className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                  >
+                    🕒 আমার পাঠানো লেখা ট্র্যাক করুন
+                  </button>
+                </div>
+              )}
+            </div>
           </nav>
 
-          {/* Right Action Buttons & Mobile Menu Toggle */}
-          <div className="flex items-center gap-2">
+          {/* Right Action Icons & Buttons */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <ThemeToggle />
+
+            {/* Nav Search Toggle Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setShowNavSearch((prev) => !prev);
+                document
+                  .getElementById("stories-feed")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              aria-label="গল্প খুঁজুন"
+              className="p-2 rounded-full border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-50 transition cursor-pointer"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+
+            {/* Mockup Pill [ ✎ লিখুন ] */}
             <button
               type="button"
               onClick={() => setIsSubmitModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/50 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 hover:bg-[#f3e8ce] dark:hover:bg-[#253348] transition cursor-pointer"
+              className="px-3.5 sm:px-4 py-2 rounded-full bg-[#7E151E] hover:bg-[#680f18] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-sm transition cursor-pointer"
             >
               <PenLine className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">গল্প / কনফেশন পাঠান</span>
-              <span className="sm:hidden">লেখা পাঠান</span>
+              <span>লিখুন</span>
             </button>
 
-            <Link
-              href="/sporsher-byakoron"
-              className="px-3.5 sm:px-4 py-2 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-sm hover:bg-[#630d16] transition"
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              <span>ই-বুক</span>
-              <ArrowRight className="w-3.5 h-3.5 hidden sm:inline" />
-            </Link>
-
-            {/* User Account / Profile Button */}
+            {/* Profile Avatar Button */}
             {currentUser ? (
               <button
                 type="button"
                 onClick={() => setIsProfileModalOpen(true)}
-                className="px-2.5 sm:px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-50 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
-                title={`${currentUser.name} (প্রোফাইল দেখুন)`}
+                className="w-8 h-8 rounded-full bg-[#7E151E] text-white flex items-center justify-center text-xs font-bold shadow-xs cursor-pointer hover:opacity-90 transition"
+                title={`${currentUser.name} (প্রোফাইল)`}
               >
-                <div className="w-6 h-6 rounded-full bg-[#80131E] text-white flex items-center justify-center text-[11px] font-extrabold uppercase shrink-0">
-                  {currentUser.name ? currentUser.name.slice(0, 1) : "ইউ"}
-                </div>
-                <span className="hidden md:inline max-w-[85px] truncate">
-                  {currentUser.name}
-                </span>
+                {currentUser.name ? currentUser.name.slice(0, 1) : "ইউ"}
               </button>
             ) : (
               <button
@@ -815,18 +1063,19 @@ export default function OnuvutiBlogHomePage() {
                   setAuthError(null);
                   setIsAuthModalOpen(true);
                 }}
-                className="px-3 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-50 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition"
+                className="w-8 h-8 rounded-full border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center hover:text-[#7E151E] hover:border-[#7E151E] dark:hover:text-rose-400 cursor-pointer shadow-2xs transition"
+                title="লগইন করুন"
               >
-                <User className="w-3.5 h-3.5 text-[#80131E] dark:text-rose-400" />
-                <span className="hidden sm:inline">লগইন</span>
+                <User className="w-4 h-4" />
               </button>
             )}
 
+            {/* Mobile Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
               aria-label="মেনু খুলুন"
-              className="lg:hidden p-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-[#142230] dark:text-white hover:text-[#80131E] dark:hover:text-rose-400 cursor-pointer"
+              className="lg:hidden p-2 rounded-xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-800 text-[#142230] dark:text-white hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer"
             >
               {isMobileMenuOpen ? (
                 <X className="w-5 h-5" />
@@ -852,10 +1101,13 @@ export default function OnuvutiBlogHomePage() {
                       setActiveCategory(cat);
                       setCurrentPage(1);
                       setIsMobileMenuOpen(false);
+                      document
+                        .getElementById("stories-feed")
+                        ?.scrollIntoView({ behavior: "smooth" });
                     }}
                     className={`px-3 py-2 rounded-xl text-left text-xs font-bold transition cursor-pointer ${
                       isCatActive
-                        ? "bg-[#80131E] text-white"
+                        ? "bg-[#7E151E] text-white"
                         : "bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-stone-200 dark:border-stone-700"
                     }`}
                   >
@@ -871,8 +1123,11 @@ export default function OnuvutiBlogHomePage() {
                 onClick={() => {
                   setShowSavedOnly(true);
                   setIsMobileMenuOpen(false);
+                  document
+                    .getElementById("stories-feed")
+                    ?.scrollIntoView({ behavior: "smooth" });
                 }}
-                className="flex-1 px-3 py-2 rounded-xl bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                className="flex-1 px-3 py-2 rounded-xl bg-[#FAF4E6] dark:bg-[#1E293B] text-[#7E151E] dark:text-rose-300 border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Bookmark className="w-3.5 h-3.5" />
                 <span>সংরক্ষিত লেখা ({bookmarkedCount})</span>
@@ -886,217 +1141,507 @@ export default function OnuvutiBlogHomePage() {
                 }}
                 className="flex-1 px-3 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-[#142230] dark:text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Clock className="w-3.5 h-3.5 text-[#80131E] dark:text-rose-400" />
+                <Clock className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
                 <span>আমার পাঠানো লেখা ({mySubmittedIds.length})</span>
               </button>
-            </div>
-
-            {/* Mobile User Session Action */}
-            <div className="pt-2 border-t border-stone-100 dark:border-stone-800">
-              {currentUser ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    setIsProfileModalOpen(true);
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold inline-flex items-center justify-between cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-[#80131E] text-white flex items-center justify-center text-[11px] font-bold">
-                      {currentUser.name.slice(0, 1)}
-                    </div>
-                    <span>{currentUser.name} (প্রোফাইল)</span>
-                  </div>
-                  <span className="text-[#80131E] text-[11px] font-extrabold">
-                    লেখা: {userStories.length}টি
-                  </span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    setAuthMode("login");
-                    setAuthError(null);
-                    setIsAuthModalOpen(true);
-                  }}
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 text-xs font-bold inline-flex items-center justify-center gap-2 cursor-pointer hover:bg-[#f3e8ce] dark:hover:bg-[#253348]"
-                >
-                  <LogIn className="w-3.5 h-3.5" />
-                  <span>অ্যাকাউন্টে লগইন / সাইন-আপ করুন</span>
-                </button>
-              )}
             </div>
           </div>
         )}
       </header>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-7">
-        {/* Unified Editorial Hero & Daily Vibe Header */}
-        <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-6 sm:p-8 shadow-xs space-y-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="space-y-2.5 max-w-xl">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 text-xs font-bold">
-                ✨ অনুভূতির সাহিত্য, না বলা কথা ও জীবনের স্পন্দন
-              </span>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-[#142230] dark:text-white leading-snug">
-                ভালোবাসার গল্প, গোপন ক্রাশ, জীবনের অভিজ্ঞতা ও মনের না বলা কথা
-              </h1>
-              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed font-medium">
-                এখানে মানুষ শেয়ার করে তাদের ভালোবাসার না বলা গল্প, গোপন কনফেশন, জীবনের অভিমান ও আবেগঘন স্মৃতি। আপনিও নিজের পরিচয় প্রকাশ করে বা সম্পূর্ণ নাম গোপন রেখে আপনার লেখা পাঠাতে পারেন।
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-              <button
-                type="button"
-                onClick={openTrackerModal}
-                className="px-4 py-3 rounded-2xl bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/50 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 font-bold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-[#f3e8ce] dark:hover:bg-[#253348] transition cursor-pointer shadow-2xs"
-              >
-                <Clock className="w-4 h-4" />
-                <span>আমার পাঠানো লেখা ({mySubmittedIds.length})</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsSubmitModalOpen(true)}
-                className="px-5 py-3 rounded-2xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-sm hover:bg-[#630d16] transition cursor-pointer"
-              >
-                <PenLine className="w-4 h-4" />
-                <span>গল্প / কনফেশন পাঠান</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Interactive Mood Selector Bar ("আজ আপনার মনের অবস্থা কেমন?") */}
-          <div className="pt-2 space-y-2 border-t border-stone-100 dark:border-stone-800/80">
-            <span className="text-[11px] sm:text-xs font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
-              <span>আজ আপনার মনের অনুভূতি কেমন? এক ক্লিকে মনের মতো লেখা পড়ুন:</span>
-            </span>
-            <div className="flex flex-wrap items-center gap-2">
-              {[
-                { label: "🌸 মিষ্টি প্রেম ও ভালোবাসা", cat: "রোমান্টিক গল্প" },
-                { label: "🤫 গোপন ক্রাশ ও কনফেশন", cat: "ক্রাশ ও কনফেশন" },
-                { label: "💔 না বলা অভিমান ও স্মৃতি", cat: "না বলা কথা" },
-                { label: "🌿 মানসিক শান্তি ও সুস্থতা", cat: "স্বাস্থ্য ও সুস্থতা" },
-                { label: "☕ জীবনের গল্প ও অনুভূতি", cat: "জীবনের গল্প" },
-                { label: "📖 সকল গল্প দেখুন", cat: "সকল গল্প" },
-              ].map((mood) => {
-                const isSelected = activeCategory === mood.cat && !showSavedOnly;
-                return (
-                  <button
-                    key={mood.cat}
-                    type="button"
-                    onClick={() => {
-                      setShowSavedOnly(false);
-                      setActiveCategory(mood.cat);
-                      setCurrentPage(1);
-                    }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
-                      isSelected
-                        ? "bg-[#80131E] text-white shadow-2xs scale-102"
-                        : "bg-[#FAF4E6]/80 dark:bg-stone-800 text-stone-700 dark:text-stone-300 border border-[#C59B27]/40 dark:border-stone-700 hover:border-[#80131E] dark:hover:border-rose-400"
-                    }`}
-                  >
-                    <span>{mood.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Integrated Daily Quote Bar ("আজকের অনুভূতি") */}
-          <div className="pt-4 border-t border-stone-200/80 dark:border-stone-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-[#FAF4E6]/50 dark:bg-[#161E2E]/50 -mx-6 -mb-6 sm:-mx-8 sm:-mb-8 px-6 sm:px-8 py-3.5 rounded-b-3xl">
-            <div className="flex items-start sm:items-center gap-2.5 text-xs sm:text-sm text-[#142230] dark:text-stone-200">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#80131E] text-white text-[11px] font-extrabold shrink-0">
-                <Quote className="w-3 h-3" />
-                আজকের অনুভূতি
-              </span>
-              <p className="font-semibold italic text-stone-800 dark:text-stone-200 leading-relaxed text-xs sm:text-sm">
-                “{DAILY_QUOTES_BN[quoteIdx]}”
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() =>
-                  setQuoteIdx((prev) => (prev + 1) % DAILY_QUOTES_BN.length)
-                }
-                className="px-2.5 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-[11px] font-bold text-stone-600 dark:text-stone-300 hover:text-[#80131E] dark:hover:text-rose-400 cursor-pointer transition shadow-2xs"
-              >
-                পরের উক্তি
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyDailyQuote}
-                className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs font-bold text-[#80131E] dark:text-rose-400 hover:bg-stone-50 dark:hover:bg-stone-700 cursor-pointer transition shadow-2xs"
-              >
-                {quoteCopied ? (
-                  <>
-                    <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-emerald-700 dark:text-emerald-400">কপি হয়েছে</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-3.5 h-3.5" />
-                    <span>উক্তিটি কপি করুন</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* FEATURE: Interactive Daily Mental & Physical Health Wellness Hub */}
-        {!searchQuery.trim() && !showSavedOnly && (
-          <DailyWellnessCard />
-        )}
-
-        {/* Trending / Most Read Stories Section ("সপ্তাহের সেরা ও পাঠকপ্রিয় লেখা") */}
-        {trendingPosts.length > 0 && !searchQuery.trim() && !showSavedOnly && (
-          <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-sm sm:text-base font-extrabold text-[#142230] dark:text-white">
-                <TrendingUp className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
-                <span>সপ্তাহের সেরা ও পাঠকপ্রিয় লেখা</span>
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+        {/* HERO SECTION MATCHING MOCKUP */}
+        <section className="rounded-3xl bg-[#FAF6EE] dark:bg-[#121927] border border-stone-200/90 dark:border-stone-800 overflow-hidden shadow-xs relative">
+          <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
+            {/* Left Content Column */}
+            <div className="lg:col-span-7 p-6 sm:p-10 lg:p-12 space-y-5">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#FAF0DC] dark:bg-[#1E293B] border border-[#C59B27]/40 text-[#7E151E] dark:text-rose-300 text-xs font-bold shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
+                <span>যেখানে প্রতিটি অনুভূতির একটি গল্প আছে</span>
               </div>
-              <span className="text-xs font-bold text-[#80131E] dark:text-rose-400">
-                সর্বাধিক পঠিত
-              </span>
+
+              <h1 className="text-3xl sm:text-4xl lg:text-[42px] font-black text-[#142230] dark:text-white leading-[1.25] tracking-tight font-serif">
+                কিছু কথা বলা হয় না, <br />
+                <span className="text-[#7E151E] dark:text-rose-400 font-serif">
+                  শুধু অনুভব করা যায়।
+                </span>
+              </h1>
+
+              <p className="text-sm sm:text-base text-stone-600 dark:text-stone-300 leading-relaxed font-medium max-w-lg">
+                তোমার ভালোবাসা, অভিমান, স্মৃতি কিংবা না বলা কথাগুলো জায়গা পাক অনুভূতির পাতায়।
+              </p>
+
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsSubmitModalOpen(true)}
+                  className="px-6 py-3 rounded-full bg-[#7E151E] hover:bg-[#680f18] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md hover:shadow-lg transition cursor-pointer"
+                >
+                  <PenLine className="w-4 h-4" />
+                  <span>নিজের গল্প লিখুন</span>
+                </button>
+
+                <a
+                  href="#stories-feed"
+                  className="px-6 py-3 rounded-full bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-700 text-[#142230] dark:text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 hover:border-[#7E151E] hover:text-[#7E151E] dark:hover:text-rose-400 transition cursor-pointer shadow-2xs"
+                >
+                  <span>গল্প পড়ুন</span>
+                  <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+
+              {/* Slider Dots */}
+              <div className="flex items-center gap-2 pt-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#7E151E] dark:bg-rose-400" />
+                <span className="w-2 h-2 rounded-full bg-stone-300 dark:bg-stone-700" />
+                <span className="w-2 h-2 rounded-full bg-stone-300 dark:bg-stone-700" />
+              </div>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-4">
-              {trendingPosts.map((tp, idx) => (
-                <Link
-                  key={tp.id}
-                  href={`/blog/${tp.slug}`}
-                  className="group rounded-2xl bg-[#FDF8F2] dark:bg-[#161E2E] border border-stone-200/80 dark:border-stone-800 p-4 hover:border-[#80131E]/50 dark:hover:border-rose-500/50 transition flex flex-col justify-between gap-2"
-                >
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-[#80131E] dark:text-rose-400">
-                        #{idx + 1} • {tp.category}
-                      </span>
-                      <span className="text-stone-400 dark:text-stone-500 font-semibold inline-flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                        {(tp.viewsCount || tp.likesCount * 5).toLocaleString()}
-                      </span>
-                    </div>
-                    <h3 className="text-xs sm:text-sm font-extrabold text-[#142230] dark:text-white group-hover:text-[#80131E] dark:group-hover:text-rose-400 line-clamp-2 leading-snug">
-                      {tp.title}
-                    </h3>
-                  </div>
-                  <span className="text-[11px] text-stone-500 dark:text-stone-400 truncate">
-                    — {tp.author}
-                  </span>
-                </Link>
-              ))}
+            {/* Right Sunset Contemplation Visual Column */}
+            <div className="lg:col-span-5 relative h-64 sm:h-80 lg:h-full min-h-[320px] w-full overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80"
+                alt="সূর্যাস্তের অনুভূতি"
+                className="w-full h-full object-cover object-center"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#FAF6EE] via-transparent to-transparent dark:from-[#121927] opacity-80 lg:opacity-60" />
             </div>
           </div>
-        )}
+        </section>
+
+        {/* EDITOR'S PICK CARD MATCHING MOCKUP */}
+        <section className="rounded-3xl bg-[#FAF6EE] dark:bg-[#121927] border border-stone-200/90 dark:border-stone-800 overflow-hidden shadow-xs hover:shadow-md transition">
+          <div className="grid grid-cols-1 md:grid-cols-12 items-center">
+            {/* Left: Vintage Notebook with Flower Image */}
+            <div className="md:col-span-4 h-48 md:h-full min-h-[190px] relative overflow-hidden bg-amber-50 dark:bg-stone-900">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"
+                alt="তোমাকে... চিঠি"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-amber-900/10 dark:bg-black/20 flex items-center justify-center">
+                <span className="bg-white/90 dark:bg-stone-900/90 backdrop-blur-xs px-3.5 py-1.5 rounded-xl font-serif text-stone-800 dark:text-stone-200 text-sm font-extrabold shadow-xs">
+                  তোমাকে...
+                </span>
+              </div>
+            </div>
+
+            {/* Right: Pick Content & Details */}
+            <div className="md:col-span-8 p-6 sm:p-7 space-y-3">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FAF0DC] dark:bg-[#1E293B] border border-[#C59B27]/40 text-[#7E151E] dark:text-rose-300 text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
+                <span>Editor's Pick</span>
+              </div>
+
+              <h2 className="text-xl sm:text-2xl font-black text-[#142230] dark:text-white leading-snug font-serif">
+                কিছু মানুষ জীবনে আসে, থেকে যাওয়ার জন্য নয়...
+              </h2>
+
+              <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300 leading-relaxed font-medium">
+                একটি অসমাপ্ত ভালোবাসার গল্প, যেখানে কিছু স্মৃতি কখনো পুরোনো হয় না।
+              </p>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-stone-200/70 dark:border-stone-800 text-xs text-stone-500 dark:text-stone-400 font-semibold">
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="inline-flex items-center gap-1.5">
+                    <BookOpen className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
+                    <span>৫ মিনিট পাঠ</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Eye className="w-3.5 h-3.5 text-stone-400" />
+                    <span>১২.৬K পড়েছেন</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                    <Heart className="w-3.5 h-3.5 fill-rose-500 text-rose-500" />
+                    <span>৪৮২ ভালো লেগেছে</span>
+                  </span>
+                </div>
+
+                <a
+                  href="#stories-feed"
+                  onClick={() => {
+                    setActiveCategory("রোমান্টিক গল্প");
+                    setShowSavedOnly(false);
+                  }}
+                  className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-[#7E151E] dark:text-rose-400 hover:underline"
+                >
+                  <span>সম্পূর্ণ গল্প পড়ুন</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 3-COLUMN FEATURE ROW MATCHING MOCKUP */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Card 1: আজকের না বলা কথা */}
+          <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-black text-[#142230] dark:text-white">
+                  <MessageSquareHeart className="w-4 h-4 text-[#7E151E] dark:text-rose-400" />
+                  <span>আজকের না বলা কথা</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveCategory("না বলা কথা");
+                    document
+                      .getElementById("stories-feed")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="text-xs font-bold text-[#7E151E] dark:text-rose-400 hover:underline cursor-pointer"
+                >
+                  সব দেখুন →
+                </button>
+              </div>
+
+              {/* Quote Container */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FFF6F3] dark:bg-[#1A1F2C] border border-[#FADCD5] dark:border-stone-800 relative">
+                <span className="text-3xl sm:text-4xl font-serif text-[#7E151E]/40 dark:text-rose-400/30 leading-none select-none block">
+                  ❝
+                </span>
+                <p className="text-sm font-bold text-[#142230] dark:text-stone-200 leading-relaxed font-serif pt-1">
+                  “তোমাকে ভুলে যাওয়ার চেষ্টা করতে করতে, তোমাকেই আরও বেশি মনে পড়ে।”
+                </p>
+                <span className="text-xs text-stone-500 dark:text-stone-400 font-medium block pt-3">
+                  — একজন অজ্ঞাত পাঠকের অনুভূতি
+                </span>
+              </div>
+            </div>
+
+            {/* Interactive Reader Reaction Button */}
+            <div className="pt-4 mt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsQuoteReacted((prev) => !prev);
+                  setQuoteReactCount((prev) =>
+                    isQuoteReacted ? prev - 1 : prev + 1
+                  );
+                }}
+                className={`w-full py-2 px-3 rounded-xl text-xs font-bold inline-flex items-center justify-center gap-2 transition cursor-pointer ${
+                  isQuoteReacted
+                    ? "bg-rose-100 dark:bg-rose-950/60 text-[#7E151E] dark:text-rose-300 border border-rose-300 dark:border-rose-900"
+                    : "bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-stone-200 dark:border-stone-700"
+                }`}
+              >
+                <Heart
+                  className={`w-3.5 h-3.5 ${
+                    isQuoteReacted
+                      ? "fill-[#7E151E] text-[#7E151E]"
+                      : "text-stone-500"
+                  }`}
+                />
+                <span>{quoteReactCount} জন অনুভব করেছেন</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: আজকের প্রশ্ন (Interactive Reader Poll) */}
+          <div
+            id="home-poll-section"
+            className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition"
+          >
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-black text-[#142230] dark:text-white">
+                  <BarChart2 className="w-4 h-4 text-[#7E151E] dark:text-rose-400" />
+                  <span>আজকের প্রশ্ন</span>
+                </div>
+                <span className="text-xs font-bold text-[#7E151E] dark:text-rose-400">
+                  জরিপ →
+                </span>
+              </div>
+
+              <h3 className="text-sm sm:text-base font-extrabold text-[#142230] dark:text-white leading-snug">
+                {HOME_POLL_QUESTION}
+              </h3>
+
+              {/* Radio Choices / Results */}
+              <div className="space-y-2">
+                {[
+                  { id: "opt-1", label: "হ্যাঁ, এখনো বাসি" },
+                  { id: "opt-2", label: "একসময় বাসতাম" },
+                  { id: "opt-3", label: "কখনো এমন হয়নি" },
+                ].map((item) => {
+                  const opt = pollOptions.find((o) => o.id === item.id) || {
+                    id: item.id,
+                    label: item.label,
+                    votes: 10,
+                  };
+                  const percent =
+                    totalPollVotes > 0
+                      ? Math.round((opt.votes / totalPollVotes) * 100)
+                      : 33;
+                  const isChecked = pollRadioChoice === item.label;
+
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => {
+                        if (!hasVotedTodayPoll) {
+                          setPollRadioChoice(item.label);
+                        }
+                      }}
+                      className={`relative overflow-hidden p-2.5 rounded-xl border transition cursor-pointer text-xs font-bold flex items-center justify-between ${
+                        isChecked
+                          ? "border-[#7E151E] bg-[#FAF4E6] dark:bg-[#1E293B] text-[#7E151E] dark:text-rose-300"
+                          : "border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-800/40 text-stone-700 dark:text-stone-300"
+                      }`}
+                    >
+                      {hasVotedTodayPoll && (
+                        <div
+                          style={{ width: `${percent}%` }}
+                          className="absolute inset-y-0 left-0 bg-[#7E151E]/15 dark:bg-rose-500/20 transition-all duration-500 pointer-events-none"
+                        />
+                      )}
+                      <div className="relative flex items-center gap-2">
+                        <span
+                          className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                            isChecked
+                              ? "border-[#7E151E] bg-[#7E151E]"
+                              : "border-stone-400 bg-white dark:bg-stone-900"
+                          }`}
+                        >
+                          {isChecked && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
+                        </span>
+                        <span>{item.label}</span>
+                      </div>
+                      {hasVotedTodayPoll && (
+                        <span className="relative text-xs font-black text-[#7E151E] dark:text-rose-400">
+                          {percent}%
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Bottom Row: Button and Flying Hearts Envelope Graphic */}
+            <div className="pt-3 mt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
+              <button
+                type="button"
+                disabled={hasVotedTodayPoll}
+                onClick={() => {
+                  const targetOpt = pollOptions.find(
+                    (o) => o.label === pollRadioChoice
+                  );
+                  if (targetOpt) {
+                    handlePollVote(targetOpt.id);
+                  }
+                  setHasVotedTodayPoll(true);
+                }}
+                className="px-4 py-2 rounded-full bg-[#7E151E] hover:bg-[#680f18] text-white text-xs font-bold disabled:opacity-50 cursor-pointer disabled:cursor-default transition"
+              >
+                {hasVotedTodayPoll ? "ভোট সম্পন্ন ✓" : "ভোট দিন →"}
+              </button>
+
+              {/* Romantic Envelope & Hearts Vector */}
+              <div className="relative w-12 h-10 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 text-xs animate-bounce">
+                  ❤️
+                </span>
+                <span className="absolute -top-2 left-1 text-[10px] animate-pulse">
+                  💕
+                </span>
+                <div className="w-10 h-7 rounded-sm bg-rose-100 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 flex items-center justify-center shadow-2xs">
+                  <Mail className="w-4 h-4 text-[#7E151E] dark:text-rose-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: জনপ্রিয় গল্পসমূহ */}
+          <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm font-black text-[#142230] dark:text-white">
+                  <Flame className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                  <span>জনপ্রিয় গল্পসমূহ</span>
+                </div>
+                <a
+                  href="#stories-feed"
+                  className="text-xs font-bold text-[#7E151E] dark:text-rose-400 hover:underline"
+                >
+                  সব দেখুন →
+                </a>
+              </div>
+
+              {/* 3 Story List Items with Mockup Thumbnails */}
+              <div className="space-y-3 pt-1">
+                {[
+                  {
+                    title: "কেন আমরা অতীতকে ভুলতে পারি না?",
+                    readTime: "৫ মিনিট পাঠ",
+                    reacts: "২৩০ প্রতিক্রিয়া",
+                    img: "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=400&q=80",
+                    cat: "সম্পর্ক ও মনস্তত্ত্ব",
+                  },
+                  {
+                    title: "শেষবার দেখা হওয়ার গল্পটা",
+                    readTime: "৪ মিনিট পাঠ",
+                    reacts: "১৮০ প্রতিক্রিয়া",
+                    img: "https://images.unsplash.com/photo-1508672019048-805c876b67e2?auto=format&fit=crop&w=400&q=80",
+                    cat: "বিচ্ছেদ ও প্রাক্তন",
+                  },
+                  {
+                    title: "একাকীত্বও কখনো বন্ধু হয়",
+                    readTime: "৬ মিনিট পাঠ",
+                    reacts: "১৪০ প্রতিক্রিয়া",
+                    img: "https://images.unsplash.com/photo-1470240731273-7821a6eeb6bd?auto=format&fit=crop&w=400&q=80",
+                    cat: "জীবনের গল্প",
+                  },
+                ].map((item, idx) => (
+                  <div
+                    key={idx}
+                    onClick={() => {
+                      setActiveCategory(item.cat);
+                      document
+                        .getElementById("stories-feed")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="flex items-center gap-3 p-2 rounded-2xl hover:bg-stone-50 dark:hover:bg-stone-800/60 cursor-pointer transition group"
+                  >
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 bg-stone-100 dark:bg-stone-800">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={item.img}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-[#142230] dark:text-white group-hover:text-[#7E151E] dark:group-hover:text-rose-400 line-clamp-1 leading-snug">
+                        {item.title}
+                      </h4>
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium">
+                        {item.readTime} • {item.reacts}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 8 CATEGORIES GRID MATCHING MOCKUP */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg sm:text-xl font-black text-[#142230] dark:text-white flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-[#7E151E] dark:text-rose-400" />
+              <span>বিষয়ভিত্তিক গল্পগুলো</span>
+            </h2>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveCategory("সকল গল্প");
+                setShowSavedOnly(false);
+                document
+                  .getElementById("stories-feed")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="text-xs font-bold text-[#7E151E] dark:text-rose-400 hover:underline cursor-pointer"
+            >
+              সব বিভাগ দেখুন →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
+            {[
+              {
+                icon: "❤️",
+                title: "ক্রাশ ও কনফেশন",
+                subtitle: "গোপন ভালো লাগা, প্রথম প্রেম",
+                cat: "ক্রাশ ও কনফেশন",
+              },
+              {
+                icon: "💔",
+                title: "বিচ্ছেদ ও প্রাক্তন",
+                subtitle: "Breakup, স্মৃতি, ফিরে পাওয়া",
+                cat: "বিচ্ছেদ ও প্রাক্তন",
+              },
+              {
+                icon: "📖",
+                title: "রোমান্টিক গল্প",
+                subtitle: "প্রেমের নানা গল্প",
+                cat: "রোমান্টিক গল্প",
+              },
+              {
+                icon: "⛅",
+                title: "জীবনের গল্প",
+                subtitle: "পরিবার, বন্ধুত্ব, অভিজ্ঞতা",
+                cat: "জীবনের গল্প",
+              },
+              {
+                icon: "✉️",
+                title: "না বলা কথা",
+                subtitle: "Anonymous চিঠি",
+                cat: "না বলা কথা",
+              },
+              {
+                icon: "🧠",
+                title: "সম্পর্ক ও মনস্তত্ত্ব",
+                subtitle: "Psychology, Healing",
+                cat: "সম্পর্ক ও মনস্তত্ত্ব",
+              },
+              {
+                icon: "🌱",
+                title: "নিজেকে জানুন",
+                subtitle: "Self-growth ও প্রশান্তি",
+                cat: "নিজেকে জানুন",
+              },
+              {
+                icon: "✏️",
+                title: "খোলা চিঠি",
+                subtitle: "কাউকে উদ্দেশ্য করে",
+                cat: "খোলা চিঠি",
+              },
+            ].map((catItem) => (
+              <div
+                key={catItem.title}
+                onClick={() => {
+                  setActiveCategory(catItem.cat);
+                  setShowSavedOnly(false);
+                  setCurrentPage(1);
+                  document
+                    .getElementById("stories-feed")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex items-start gap-3 group hover:shadow-xs ${
+                  activeCategory === catItem.cat && !showSavedOnly
+                    ? "border-[#7E151E] bg-[#FAF4E6] dark:bg-[#1E293B]"
+                    : "border-stone-200/90 dark:border-stone-800 bg-white dark:bg-[#111827] hover:border-[#7E151E]/40"
+                }`}
+              >
+                <span className="text-2xl shrink-0 group-hover:scale-110 transition duration-200">
+                  {catItem.icon}
+                </span>
+                <div className="space-y-0.5">
+                  <h3 className="text-xs sm:text-sm font-extrabold text-[#142230] dark:text-white group-hover:text-[#7E151E] dark:group-hover:text-rose-400 transition leading-snug">
+                    {catItem.title}
+                  </h3>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium leading-tight">
+                    {catItem.subtitle}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* DYNAMIC WELLNESS HUB (CONTROLLED 100% BY GO BACKEND & POSTGRESQL) */}
+        <section id="wellness-hub">
+          <DailyWellnessCard />
+        </section>
 
         {/* Category Filter, Bookmarks Filter, Search & Random Story Button */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
@@ -1426,99 +1971,46 @@ export default function OnuvutiBlogHomePage() {
           </div>
         )}
 
-        {/* FEATURE 4: 1-Click Reader Poll ("পাঠক জরিপ / আজকের প্রশ্ন") */}
-        <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 space-y-4 shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-[#80131E] dark:text-rose-400">
-              <BarChart2 className="w-4 h-4" />
-              <span>পাঠক জরিপ • আজকের প্রশ্ন</span>
+        {/* CTA BANNER MATCHING MOCKUP */}
+        <section className="rounded-3xl bg-[#7E151E] text-white p-6 sm:p-8 relative overflow-hidden shadow-md">
+          {/* Subtle floral leaf watermark background */}
+          <div className="absolute -right-8 -bottom-8 w-44 h-44 rounded-full bg-white/5 pointer-events-none" />
+          <div className="absolute -left-6 -top-6 w-36 h-36 rounded-full bg-black/10 pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-white/15 backdrop-blur-xs flex items-center justify-center text-amber-200 shrink-0">
+                <Feather className="w-6 h-6" />
+              </div>
+              <div className="space-y-1 text-center md:text-left">
+                <h3 className="text-xl sm:text-2xl font-black font-serif">
+                  তোমারও কি কিছু বলার আছে?
+                </h3>
+                <p className="text-xs sm:text-sm text-stone-200 font-medium">
+                  তোমার গল্প, চিঠি কিংবা কনফেশন পাঠিয়ে দাও অনুভূতির কাছে।
+                </p>
+              </div>
             </div>
-            <span className="text-xs text-stone-500 dark:text-stone-400 font-semibold">
-              মোট মতামত দিয়েছেন: {totalPollVotes.toLocaleString()} জন পাঠক
-            </span>
-          </div>
 
-          <h3 className="text-base sm:text-lg font-extrabold text-[#142230] dark:text-white">
-            {HOME_POLL_QUESTION}
-          </h3>
+            <div className="flex items-center gap-4 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsSubmitModalOpen(true)}
+                className="px-6 py-3 rounded-full bg-white text-[#7E151E] font-extrabold text-xs sm:text-sm inline-flex items-center gap-2 hover:bg-stone-100 transition shadow-sm cursor-pointer"
+              >
+                <span>গল্প জমা দিন</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
 
-          <div className="grid sm:grid-cols-3 gap-3">
-            {pollOptions.map((opt) => {
-              const percent =
-                totalPollVotes > 0
-                  ? Math.round((opt.votes / totalPollVotes) * 100)
-                  : 0;
-              const isChosen = selectedPollId === opt.id;
-
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  onClick={() => handlePollVote(opt.id)}
-                  className={`relative overflow-hidden text-left p-3.5 rounded-2xl border transition cursor-pointer ${
-                    isChosen
-                      ? "border-[#80131E] dark:border-rose-500 bg-[#FAF4E6] dark:bg-[#1E293B]"
-                      : "border-stone-200 dark:border-stone-800 bg-stone-50/70 dark:bg-stone-800/50 hover:border-[#80131E]/50 dark:hover:border-rose-400/50"
-                  }`}
-                >
-                  {selectedPollId && (
-                    <div
-                      style={{ width: `${percent}%` }}
-                      className="absolute inset-y-0 left-0 bg-[#80131E]/10 dark:bg-rose-500/20 transition-all duration-500"
-                    />
-                  )}
-                  <div className="relative flex items-center justify-between gap-2">
-                    <span className="text-xs sm:text-sm font-bold text-[#142230] dark:text-stone-200">
-                      {opt.label}
-                    </span>
-                    {selectedPollId && (
-                      <span className="text-xs font-extrabold text-[#80131E] dark:text-rose-400 shrink-0">
-                        {percent}%
-                      </span>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {selectedPollId && (
-            <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
-              আপনার মতামতের জন্য ধন্যবাদ! পাঠকদের সম্মিলিত ফলাফল ওপরে দেখানো হচ্ছে।
-            </p>
-          )}
-        </div>
-
-        {/* Minimal Book Banner */}
-        <div className="rounded-2xl bg-[#FAF4E6] dark:bg-[#161E2E] border border-[#C59B27]/45 dark:border-[#C59B27]/30 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-1 text-xs font-bold text-[#80131E] dark:text-rose-400">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>আমাদের প্রকাশিত ই-বুক</span>
+              {/* Stacked books illustration */}
+              <div className="hidden lg:flex flex-col items-center opacity-85">
+                <div className="w-12 h-2.5 bg-amber-100/90 rounded-xs -mb-0.5" />
+                <div className="w-14 h-3 bg-amber-200/90 rounded-xs -mb-0.5" />
+                <div className="w-16 h-3.5 bg-amber-300/90 rounded-xs" />
+              </div>
             </div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-[#142230] dark:text-white">
-              {BOOK_INFO.titleBn}: {BOOK_INFO.subtitleBn}
-            </h2>
-            <p className="text-xs sm:text-sm text-stone-600 dark:text-stone-300">
-              ১০০+ পৃষ্ঠার প্রিমিয়াম গাইড • রেগুলার মূল্য{" "}
-              <span className="line-through text-stone-400 dark:text-stone-500">
-                ৳{BOOK_INFO.regularPriceBn}
-              </span>{" "}
-              •{" "}
-              <strong>
-                {BOOK_INFO.discountPercentBn}ে মাত্র ৳{BOOK_INFO.offerPriceBn}
-              </strong>
-            </p>
           </div>
-
-          <Link
-            href="/sporsher-byakoron"
-            className="px-5 py-2.5 rounded-xl bg-[#80131E] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 shrink-0 hover:bg-[#630d16] transition"
-          >
-            <span>বইটি দেখুন</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
+        </section>
       </main>
 
       {/* STORY / CONFESSION SUBMISSION MODAL */}
@@ -2426,34 +2918,200 @@ export default function OnuvutiBlogHomePage() {
         </div>
       )}
 
-      {/* Minimal Footer */}
-      <footer className="border-t border-stone-200 dark:border-stone-800 bg-white dark:bg-[#111827] py-6 text-xs text-stone-500 dark:text-stone-400">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="bg-white px-2 py-0.5 rounded-lg shadow-2xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/Onuvuti-Publications-Logo.png"
-                alt="Onuvuti Publications"
-                className="h-7 sm:h-8 w-auto object-contain"
-              />
+      {/* 4-COLUMN FOOTER + NEWSLETTER MATCHING MOCKUP */}
+      <footer className="border-t border-stone-200/80 dark:border-stone-800 bg-[#FAF7F2] dark:bg-[#0B0F17] py-12 text-stone-600 dark:text-stone-300 transition-colors">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
+            {/* Col 1: Logo & Tagline (lg:col-span-3) */}
+            <div className="lg:col-span-3 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-[#7E151E] flex items-center justify-center text-white shadow-xs">
+                  <Feather className="w-4 h-4 text-amber-100" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xl font-black text-[#7E151E] dark:text-rose-400 font-serif leading-none">
+                    Onuvuti
+                  </span>
+                  <span className="text-[10px] text-stone-500 dark:text-stone-400 font-medium">
+                    প্রতিটি অনুভূতির একটি গল্প আছে
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed font-medium">
+                অনূভুতি হলো মনের না বলা কথা, ক্রাশ কনফেশন, সাহিত্য ও মানসিক প্রশান্তির একটি নিরাপদ উন্মুক্ত সাহিত্য প্ল্যাটফর্ম।
+              </p>
             </div>
-            <span>© ২০২৬ অনুভূতি (Onuvuti.site)</span>
+
+            {/* Col 2: দ্রুত লিংক (lg:col-span-2) */}
+            <div className="lg:col-span-2 space-y-3">
+              <h4 className="text-xs sm:text-sm font-black text-[#142230] dark:text-white uppercase tracking-wider">
+                দ্রুত লিংক
+              </h4>
+              <ul className="space-y-2 text-xs font-semibold">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory("সকল গল্প");
+                      setShowSavedOnly(false);
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer"
+                  >
+                    হোম
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory("রোমান্টিক গল্প");
+                      setShowSavedOnly(false);
+                      document
+                        .getElementById("stories-feed")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer"
+                  >
+                    গল্প
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory("না বলা কথা");
+                      setShowSavedOnly(false);
+                      document
+                        .getElementById("stories-feed")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer"
+                  >
+                    চিঠি
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory("ক্রাশ ও কনফেশন");
+                      setShowSavedOnly(false);
+                      document
+                        .getElementById("stories-feed")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer"
+                  >
+                    কনফেশন
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 3: কোম্পানি (lg:col-span-2) */}
+            <div className="lg:col-span-2 space-y-3">
+              <h4 className="text-xs sm:text-sm font-black text-[#142230] dark:text-white uppercase tracking-wider">
+                কোম্পানি
+              </h4>
+              <ul className="space-y-2 text-xs font-semibold text-stone-500 dark:text-stone-400">
+                <li><span className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer">আমাদের সম্পর্কে</span></li>
+                <li><span className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer">সম্পাদকীয় নীতি</span></li>
+                <li><span className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer">গোপনীয়তা নীতি</span></li>
+                <li><span className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer">যোগাযোগ</span></li>
+              </ul>
+            </div>
+
+            {/* Col 4: সামাজিক মাধ্যম (lg:col-span-2) */}
+            <div className="lg:col-span-2 space-y-3">
+              <h4 className="text-xs sm:text-sm font-black text-[#142230] dark:text-white uppercase tracking-wider">
+                সামাজিক মাধ্যম
+              </h4>
+              <div className="flex items-center gap-2 pt-1">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-stone-200/80 dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center hover:bg-[#7E151E] hover:text-white transition shadow-2xs"
+                  aria-label="Facebook"
+                >
+                  <FacebookIcon />
+                </a>
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-stone-200/80 dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center hover:bg-[#7E151E] hover:text-white transition shadow-2xs"
+                  aria-label="YouTube"
+                >
+                  <YoutubeIcon />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-stone-200/80 dark:bg-stone-800 text-stone-700 dark:text-stone-200 flex items-center justify-center hover:bg-[#7E151E] hover:text-white transition shadow-2xs"
+                  aria-label="Instagram"
+                >
+                  <InstagramIcon />
+                </a>
+              </div>
+            </div>
+
+            {/* Col 5: নিউজলেটার সাবস্ক্রাইব (lg:col-span-3) */}
+            <div className="lg:col-span-3 space-y-3">
+              <h4 className="text-xs sm:text-sm font-black text-[#142230] dark:text-white uppercase tracking-wider">
+                নিউজলেটার সাবস্ক্রাইব করুন
+              </h4>
+              <p className="text-xs text-stone-500 dark:text-stone-400">
+                নতুন গল্প ও আপডেট পেতে ইমেইল দিন
+              </p>
+              {newsletterDone ? (
+                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5">
+                  <Check className="w-4 h-4 shrink-0" />
+                  <span>ধন্যবাদ! আপনি সাবস্ক্রাইব করেছেন।</span>
+                </div>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (newsletterEmail.trim()) {
+                      setNewsletterDone(true);
+                    }
+                  }}
+                  className="flex items-center gap-1.5"
+                >
+                  <input
+                    type="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="আপনার ইমেইল লিখুন..."
+                    required
+                    className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs text-[#142230] dark:text-white placeholder:text-stone-400 focus:outline-none focus:border-[#7E151E]"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3.5 py-2 rounded-xl bg-[#7E151E] hover:bg-[#680f18] text-white text-xs font-bold shrink-0 transition cursor-pointer shadow-xs"
+                  >
+                    সাবস্ক্রাইব
+                  </button>
+                </form>
+              )}
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setIsSubmitModalOpen(true)}
-              className="hover:text-[#80131E] dark:hover:text-rose-400 font-semibold cursor-pointer"
-            >
-              গল্প / কনফেশন পাঠান
-            </button>
-            <Link
-              href="/sporsher-byakoron"
-              className="text-[#80131E] dark:text-rose-400 font-bold hover:underline"
-            >
-              স্পর্শের ব্যাকরণ ই-বুক
-            </Link>
+
+          {/* Bottom Copyright Bar */}
+          <div className="pt-6 border-t border-stone-200/80 dark:border-stone-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-stone-500 dark:text-stone-400">
+            <div>
+              © 2026 Onuvuti. সর্বস্বত্ব সংরক্ষিত। | যেখানে প্রতিটি অনুভূতির একটি গল্প আছে ❤️
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="hover:underline cursor-pointer">শর্তাবলী</span>
+              <span>|</span>
+              <span className="hover:underline cursor-pointer">প্রাইভেসি পলিসি</span>
+              <span>|</span>
+              <span className="hover:underline cursor-pointer">কনটেন্ট নীতি</span>
+            </div>
           </div>
         </div>
       </footer>

@@ -5,7 +5,9 @@ export type StoryCategory =
   | "না বলা কথা"
   | "বিচ্ছেদ ও প্রাক্তন"
   | "সম্পর্ক ও মনস্তত্ত্ব"
-  | "স্বাস্থ্য ও সুস্থতা";
+  | "স্বাস্থ্য ও সুস্থতা"
+  | "নিজেকে জানুন"
+  | "খোলা চিঠি";
 
 export interface BlogPost {
   id: string;
@@ -49,6 +51,8 @@ export const BLOG_CATEGORIES: string[] = [
   "বিচ্ছেদ ও প্রাক্তন",
   "সম্পর্ক ও মনস্তত্ত্ব",
   "স্বাস্থ্য ও সুস্থতা",
+  "নিজেকে জানুন",
+  "খোলা চিঠি",
 ];
 
 // In production, no hardcoded dummy stories exist.
@@ -56,6 +60,7 @@ export const BLOG_CATEGORIES: string[] = [
 export const BLOG_POSTS: BlogPost[] = [];
 
 export const DAILY_QUOTES_BN: string[] = [
+  "তোমাকে ভুলে যাওয়ার চেষ্টা করতে করতে, তোমাকেই আরও বেশি মনে পড়ে।",
   "কিছু মানুষ মুখে ভালোবাসি বলে না, কিন্তু সারাদিনের ক্লান্তি শেষে চুপচাপ পাশে এসে বসে—সেটাই সবচেয়ে গভীর ভালোবাসা।",
   "সম্পর্কে জিতে যাওয়ার চেয়ে প্রিয় মানুষটাকে ধরে রাখা অনেক বেশি জরুরি; ইগো জিতলে ভালোবাসা হেরে যায়।",
   "মানুষের সবচেয়ে বড় একাকীত্ব হলো মনের কথাগুলো প্রিয় মানুষটির সামনে বসেও বলতে না পারা।",
@@ -69,10 +74,10 @@ export interface PollOptionItem {
 }
 
 export const HOME_POLL_QUESTION =
-  "সম্পর্কে দূরত্ব বাড়ার প্রধান কারণ কোনটি বলে আপনি মনে করেন?";
+  "তুমি কি কখনো কাউকে না জানিয়েই ভালোবেসেছ?";
 
 export const INITIAL_POLL_OPTIONS: PollOptionItem[] = [
-  { id: "opt-1", label: "কথা গোপন করা ও অস্পষ্টতা", votes: 0 },
-  { id: "opt-2", label: "সময় ও মানসিক মনোযোগ না দেওয়া", votes: 0 },
-  { id: "opt-3", label: "ইগো বা না বলা অভিমান জমিয়ে রাখা", votes: 0 },
+  { id: "opt-1", label: "হ্যাঁ, এখনো বাসি", votes: 412 },
+  { id: "opt-2", label: "একসময় বাসতাম", votes: 285 },
+  { id: "opt-3", label: "কখনো এমন হয়নি", votes: 76 },
 ];
