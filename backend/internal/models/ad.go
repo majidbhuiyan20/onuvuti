@@ -17,3 +17,4 @@ type UpdateAdRequest struct {
 	LinkURL  string `json:"linkUrl"`
 	IsActive bool   `json:"isActive"`
 }
+

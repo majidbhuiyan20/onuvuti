@@ -54,3 +54,4 @@ func (h *AdHandler) UpdateAd(w http.ResponseWriter, r *http.Request) {
 		"msg": "বিজ্ঞাপন সফলভাবে আপডেট করা হয়েছে",
 	})
 }
+

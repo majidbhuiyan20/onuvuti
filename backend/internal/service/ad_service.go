@@ -66,3 +66,4 @@ func (s *AdService) UpdateAd(slot string, req models.UpdateAdRequest) (*models.A
 
 	return updated, nil
 }
+

@@ -145,3 +145,4 @@ func (r *Repository) defaultAds() []models.AdBanner {
 		},
 	}
 }
+
