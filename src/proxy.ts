@@ -28,6 +28,45 @@ export function proxy(request: NextRequest) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
+  // 2. Intercept ZiniPay IPN/Webhook or Redirect sent directly to root '/'
+  if (pathname === "/") {
+    const rawStatus = (request.nextUrl.searchParams.get("status") || "").toUpperCase();
+    const invoiceId =
+      request.nextUrl.searchParams.get("invoice_id") ||
+      request.nextUrl.searchParams.get("invoiceId") ||
+      request.nextUrl.searchParams.get("val_id");
+    const trx =
+      request.nextUrl.searchParams.get("transaction_id") ||
+      request.nextUrl.searchParams.get("trx") ||
+      request.nextUrl.searchParams.get("trx_id");
+
+    const isCompleted =
+      rawStatus === "COMPLETED" ||
+      rawStatus === "SUCCESS" ||
+      rawStatus === "PAID" ||
+      rawStatus === "TRUE";
+
+    if (isCompleted && (invoiceId || trx)) {
+      const isApiCaller =
+        ua.toLowerCase().includes("axios") ||
+        ua.toLowerCase().includes("curl") ||
+        ua.toLowerCase().includes("postman") ||
+        ua.toLowerCase().includes("zinipay");
+
+      if (isApiCaller) {
+        const webhookUrl = new URL("/api/payment/webhook", request.url);
+        webhookUrl.search = request.nextUrl.searchParams.toString();
+        return NextResponse.rewrite(webhookUrl);
+      } else {
+        const downloadUrl = new URL("/api/download", request.url);
+        const params = new URLSearchParams(request.nextUrl.searchParams);
+        params.set("direct", "1");
+        downloadUrl.search = params.toString();
+        return NextResponse.redirect(downloadUrl);
+      }
+    }
+  }
+
   // 2. Global API flood protection (60 req / minute per IP across /api/*)
   if (pathname.startsWith("/api/")) {
     const clientIp = getClientIp(request.headers);

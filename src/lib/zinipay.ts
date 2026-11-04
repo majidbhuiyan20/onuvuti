@@ -92,6 +92,42 @@ export function getBookPriceBdt(): number {
 }
 
 /**
+ * Returns canonical site origin, preventing reverse-proxy localhost leaks.
+ */
+export function resolveSiteOrigin(req?: { headers: { get(name: string): string | null } }): string {
+  const envUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    ""
+  ).trim();
+  if (envUrl && !envUrl.includes("localhost")) {
+    return envUrl.replace(/\/+$/, "");
+  }
+
+  if (req?.headers) {
+    const forwardedHost = req.headers.get("x-forwarded-host");
+    const forwardedProto = req.headers.get("x-forwarded-proto") || "https";
+    if (forwardedHost && !forwardedHost.includes("localhost")) {
+      return `${forwardedProto}://${forwardedHost}`.replace(/\/+$/, "");
+    }
+
+    const host = req.headers.get("host");
+    if (host && !host.includes("localhost")) {
+      return `https://${host}`.replace(/\/+$/, "");
+    }
+  }
+
+  const isProd =
+    process.env.NODE_ENV === "production" ||
+    process.env.APP_ENV === "production";
+  if (isProd) {
+    return "https://onuvuti.site";
+  }
+
+  return "http://localhost:3000";
+}
+
+/**
  * @deprecated Legacy JSON file reader. All production orders are stored and queried in PostgreSQL.
  */
 export function readOrders(): BookOrder[] {

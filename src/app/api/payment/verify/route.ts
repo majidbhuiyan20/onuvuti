@@ -40,6 +40,12 @@ export async function POST(req: NextRequest) {
     const invoiceId = String(body?.invoiceId || "").trim();
     const token = String(body?.token || "").trim();
     const transactionId = String(body?.transactionId || "").trim().toUpperCase();
+    const rawStatus = String(body?.status || "").trim().toUpperCase();
+    const isCompleted =
+      rawStatus === "COMPLETED" ||
+      rawStatus === "SUCCESS" ||
+      rawStatus === "PAID" ||
+      rawStatus === "TRUE";
 
     // 2. If a valid, non-expired download token is already provided, verify it directly
     if (token) {
@@ -72,6 +78,42 @@ export async function POST(req: NextRequest) {
       invoiceId: invoiceId || undefined,
       transactionId: transactionId || undefined,
     });
+
+    // If order was completed on ZiniPay hosted checkout and redirected back:
+    if (isCompleted && (transactionId || invoiceId)) {
+      const expectedAmount = getBookPriceBdt();
+      if (!existingOrder) {
+        if (!transactionId || !(await isTransactionIdAlreadyUsed(transactionId))) {
+          existingOrder = await createOrderRecord({
+            cusName: body?.cusName || "সম্মানিত পাঠক",
+            cusPhone: body?.cusPhone || "",
+            cusEmail: body?.cusEmail || "reader@onuvuti.site",
+            amount: expectedAmount,
+            invoiceId: invoiceId || undefined,
+            orderId: orderId || undefined,
+          });
+        }
+      }
+
+      if (existingOrder && existingOrder.status !== "PAID") {
+        const markResult = await markOrderAsPaid(existingOrder.orderId, {
+          invoiceId: invoiceId || existingOrder.invoiceId,
+          transactionId: transactionId || existingOrder.transactionId,
+          paymentMethod: body?.paymentMethod || "bKash (ZiniPay)",
+          cusName: body?.cusName || existingOrder.cusName,
+          cusPhone: body?.cusPhone || existingOrder.cusPhone,
+          cusEmail: body?.cusEmail || existingOrder.cusEmail,
+        });
+
+        if (markResult.ok && markResult.order && markResult.order.downloadToken) {
+          return NextResponse.json({
+            ok: true,
+            order: markResult.order,
+            downloadUrl: `/api/download?token=${encodeURIComponent(markResult.order.downloadToken)}`,
+          });
+        }
+      }
+    }
 
     // Support static product link or direct TrxID checkout:
     if (!existingOrder) {

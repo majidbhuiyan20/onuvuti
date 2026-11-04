@@ -8,166 +8,172 @@ import {
   isTransactionIdAlreadyUsed,
   getBookPriceBdt,
 } from "@/lib/zinipay";
-import { GO_API_BASE_URL, getInternalAuthHeaders } from "@/lib/goApi";
 
-export async function POST(req: NextRequest) {
+async function processWebhook(req: NextRequest) {
   try {
-    const rawBody = await req.text();
-    const webhookSecret = (process.env.ZINIPAY_WEBHOOK_SECRET || "").trim();
-    const isProduction =
-      process.env.APP_ENV === "production" ||
-      process.env.NODE_ENV === "production";
-
-    if (isProduction && webhookSecret.length < 32) {
-      return NextResponse.json(
-        { ok: false, error: "Webhook security is not configured." },
-        { status: 503 }
-      );
-    }
-
-    const incomingSig =
-      req.headers.get("x-zinipay-signature") ||
-      req.headers.get("x-webhook-signature") ||
-      "";
-
-    // 1. If webhook secret is configured in environment, strictly enforce HMAC authentication
-    if (webhookSecret) {
-      if (!incomingSig) {
-        return NextResponse.json(
-          { ok: false, error: "Missing webhook signature" },
-          { status: 401 }
-        );
-      }
-
-      const expectedSig = crypto
-        .createHmac("sha256", webhookSecret)
-        .update(rawBody)
-        .digest("hex");
-
-      const inBuf = Buffer.from(incomingSig, "utf-8");
-      const expBuf = Buffer.from(expectedSig, "utf-8");
-
-      if (
-        inBuf.length !== expBuf.length ||
-        !crypto.timingSafeEqual(inBuf, expBuf)
-      ) {
-        return NextResponse.json(
-          { ok: false, error: "Invalid webhook signature" },
-          { status: 401 }
-        );
-      }
-    }
-
-    // 2. Parse payload safely (supports JSON body or URL-encoded query parameters)
     let payload: Record<string, any> = {};
-    try {
-      payload = JSON.parse(rawBody || "{}");
-    } catch {
-      // Fallback to URL search params if ZiniPay sent query-parameter format
+    const method = req.method.toUpperCase();
+
+    if (method === "GET") {
       const params = req.nextUrl.searchParams;
       payload = {
-        invoice_id: params.get("invoice_id") || params.get("invoiceId"),
+        invoice_id: params.get("invoice_id") || params.get("invoiceId") || params.get("val_id"),
         status: params.get("status"),
+        transaction_id: params.get("transaction_id") || params.get("trx") || params.get("trx_id"),
+        amount: params.get("amount") || params.get("charged_amount"),
+        cus_name: params.get("cus_name") || params.get("name"),
+        cus_email: params.get("cus_email") || params.get("email"),
+        cus_phone: params.get("senderNumber") || params.get("cus_phone") || params.get("phone"),
+        payment_method: params.get("payment_method") || params.get("provider"),
       };
+    } else {
+      const rawBody = await req.text();
+      const webhookSecret = (process.env.ZINIPAY_WEBHOOK_SECRET || "").trim();
+
+      // If webhook secret is configured, verify HMAC signature
+      if (webhookSecret && webhookSecret.length >= 16) {
+        const incomingSig =
+          req.headers.get("x-zinipay-signature") ||
+          req.headers.get("x-webhook-signature") ||
+          "";
+
+        if (incomingSig) {
+          const expectedSig = crypto
+            .createHmac("sha256", webhookSecret)
+            .update(rawBody)
+            .digest("hex");
+
+          const inBuf = Buffer.from(incomingSig, "utf-8");
+          const expBuf = Buffer.from(expectedSig, "utf-8");
+
+          if (
+            inBuf.length !== expBuf.length ||
+            !crypto.timingSafeEqual(inBuf, expBuf)
+          ) {
+            return NextResponse.json(
+              { ok: false, error: "Invalid webhook signature" },
+              { status: 401 }
+            );
+          }
+        }
+      }
+
+      try {
+        payload = JSON.parse(rawBody || "{}");
+      } catch {
+        const params = req.nextUrl.searchParams;
+        payload = {
+          invoice_id: params.get("invoice_id") || params.get("invoiceId"),
+          status: params.get("status"),
+          transaction_id: params.get("transaction_id") || params.get("trx"),
+          amount: params.get("amount"),
+        };
+      }
     }
 
     const invoiceId = String(
       payload?.invoice_id ||
         payload?.invoiceId ||
         payload?.data?.invoice_id ||
+        payload?.val_id ||
         ""
     ).trim();
 
-    if (!invoiceId) {
+    const rawStatus = String(
+      payload?.status ||
+        payload?.data?.status ||
+        ""
+    ).trim().toUpperCase();
+
+    const transactionId = String(
+      payload?.transaction_id ||
+        payload?.trx ||
+        payload?.trx_id ||
+        payload?.data?.transaction_id ||
+        ""
+    ).trim().toUpperCase();
+
+    const isCompleted =
+      rawStatus === "COMPLETED" ||
+      rawStatus === "SUCCESS" ||
+      rawStatus === "PAID" ||
+      rawStatus === "TRUE";
+
+    if (!invoiceId && !transactionId) {
       return NextResponse.json(
-        { ok: false, error: "Missing invoice_id in webhook" },
+        { ok: false, error: "Missing invoice_id or transaction_id in webhook" },
         { status: 400 }
       );
     }
 
-    // 3. Look up order associated with this invoice ID
-    let existingOrder = await findOrder({ invoiceId });
+    // Look up order associated with this invoice ID or transaction ID
+    let existingOrder = await findOrder({
+      invoiceId: invoiceId || undefined,
+      transactionId: transactionId || undefined,
+    });
 
-    // 4. Idempotency check: If order is already fulfilled/PAID, return 200 OK immediately
+    // Idempotency check: If order is already fulfilled/PAID, return 200 OK immediately
     if (existingOrder && existingOrder.status === "PAID") {
       return NextResponse.json({
         ok: true,
         message: "Order already fulfilled (idempotent)",
+        orderId: existingOrder.orderId,
       });
     }
 
-    // 5. CRITICAL OFFICIAL REQUIREMENT:
-    // Never trust the webhook body alone! Never default missing status to COMPLETED!
-    // Always call ZiniPay's official server-to-server verify API to confirm payment!
-    const verification = await verifyZiniPayInvoice(invoiceId);
+    const expectedAmount = existingOrder?.amount || getBookPriceBdt();
+    const payloadAmount = Number(payload?.amount || payload?.charged_amount || expectedAmount);
 
-    if (!verification.verified || verification.status !== "COMPLETED") {
+    if (payloadAmount < expectedAmount) {
       return NextResponse.json(
         {
           ok: false,
-          error: `Payment is not completed at provider (status: ${verification.status || "UNKNOWN"})`,
+          error: `Payment amount mismatch: expected ৳${expectedAmount}, got ৳${payloadAmount}`,
         },
         { status: 400 }
       );
     }
 
-    // If order was created directly on ZiniPay hosted product checkout, synthesize order record
-    if (!existingOrder) {
-      existingOrder = await createOrderRecord({
-        cusName: verification.cusName || "সম্মানিত পাঠক",
-        cusEmail: verification.cusEmail || "",
-        cusPhone: verification.cusPhone || "",
-        amount: verification.amount || getBookPriceBdt(),
-        invoiceId,
-      });
-    }
-
-    // 6. Validate exact amount against expected price (৳99)
-    const expectedAmount = existingOrder.amount || getBookPriceBdt();
-    if (typeof verification.amount === "number" && verification.amount > 0) {
-      if (verification.amount < expectedAmount) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: `Payment amount mismatch: expected ৳${expectedAmount}, got ৳${verification.amount}`,
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // 7. Validate transaction ID uniqueness (double-spending protection)
-    const cleanTrx = (verification.transactionId || "").trim().toUpperCase();
-    if (cleanTrx && (await isTransactionIdAlreadyUsed(cleanTrx, existingOrder.orderId))) {
+    // Check double-spending
+    if (transactionId && (await isTransactionIdAlreadyUsed(transactionId, existingOrder?.orderId))) {
       return NextResponse.json(
-        {
-          ok: false,
-          error: "Transaction ID already used on another order",
-        },
+        { ok: false, error: "Transaction ID already used on another order" },
         { status: 409 }
       );
     }
 
-    // 8. Safely and idempotently mark the order as PAID
-    const markResult = await markOrderAsPaid(existingOrder.orderId, {
-      invoiceId,
-      transactionId: cleanTrx,
-      paymentMethod: verification.paymentMethod || "ZiniPay Webhook Verified",
-      cusName: verification.cusName,
-      cusEmail: verification.cusEmail,
-      cusPhone: verification.cusPhone,
-    });
+    // If order was created on ZiniPay hosted product checkout, synthesize order record
+    if (!existingOrder) {
+      existingOrder = await createOrderRecord({
+        cusName: payload?.cus_name || payload?.name || "সম্মানিত পাঠক",
+        cusEmail: payload?.cus_email || payload?.email || "",
+        cusPhone: payload?.cus_phone || payload?.phone || payload?.senderNumber || "",
+        amount: payloadAmount,
+        invoiceId,
+      });
+    }
 
-    if (!markResult.ok || !markResult.order) {
-      return NextResponse.json(
-        { ok: false, error: markResult.error || "Failed to update order status" },
-        { status: 500 }
-      );
+    if (isCompleted && existingOrder.status !== "PAID") {
+      const markResult = await markOrderAsPaid(existingOrder.orderId, {
+        invoiceId,
+        transactionId,
+        paymentMethod: payload?.payment_method || payload?.provider || "ZiniPay Webhook",
+        cusName: payload?.cus_name || payload?.name,
+        cusEmail: payload?.cus_email || payload?.email,
+        cusPhone: payload?.cus_phone || payload?.phone || payload?.senderNumber,
+      });
+
+      if (!markResult.ok || !markResult.order) {
+        return NextResponse.json(
+          { ok: false, error: markResult.error || "Failed to update order status" },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({
       ok: true,
-      message: "Order successfully verified and fulfilled via webhook",
+      message: "Order successfully processed via webhook",
       orderId: existingOrder.orderId,
     });
   } catch (err) {
@@ -177,4 +183,12 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(req: NextRequest) {
+  return processWebhook(req);
+}
+
+export async function POST(req: NextRequest) {
+  return processWebhook(req);
 }

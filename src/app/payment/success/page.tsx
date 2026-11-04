@@ -27,7 +27,7 @@ function SuccessContent() {
   const orderId =
     searchParams.get("order_id") || searchParams.get("orderId") || "";
   const invoiceId =
-    searchParams.get("invoice_id") || searchParams.get("invoiceId") || "";
+    searchParams.get("invoice_id") || searchParams.get("invoiceId") || searchParams.get("val_id") || "";
   const tokenParam = searchParams.get("token") || "";
   const transactionId =
     searchParams.get("transaction_id") ||
@@ -35,6 +35,16 @@ function SuccessContent() {
     searchParams.get("trx_id") ||
     searchParams.get("txId") ||
     "";
+  const status =
+    searchParams.get("status") || "";
+  const cusName =
+    searchParams.get("cus_name") || searchParams.get("name") || "";
+  const cusPhone =
+    searchParams.get("senderNumber") || searchParams.get("cus_phone") || searchParams.get("phone") || "";
+  const cusEmail =
+    searchParams.get("cus_email") || searchParams.get("email") || "";
+  const paymentMethod =
+    searchParams.get("payment_method") || searchParams.get("provider") || "";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,6 +75,11 @@ function SuccessContent() {
             invoiceId,
             token: tokenParam,
             transactionId,
+            status,
+            cusName,
+            cusPhone,
+            cusEmail,
+            paymentMethod,
           }),
         });
 
@@ -91,7 +106,7 @@ function SuccessContent() {
     }
 
     verifyPayment();
-  }, [orderId, invoiceId, tokenParam]);
+  }, [orderId, invoiceId, tokenParam, transactionId, status]);
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] flex flex-col items-center justify-center p-4 relative">
