@@ -111,3 +111,4 @@ export async function deleteSecretMessage(
   );
   return parseResponse<{ ok: boolean; msg: string }>(res);
 }
+

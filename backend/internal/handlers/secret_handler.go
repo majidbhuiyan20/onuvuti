@@ -220,3 +220,4 @@ func (h *SecretHandler) AdminStats(w http.ResponseWriter, r *http.Request) {
 		"totalMessages": messages,
 	})
 }
+

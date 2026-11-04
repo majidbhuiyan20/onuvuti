@@ -75,3 +75,4 @@ export interface StoryTheme {
   badgeText: string;
   footerColor: string;
 }
+

@@ -49,3 +49,4 @@ export function removeMySavedInbox(username: string): void {
     console.error("Failed to remove saved inbox:", err);
   }
 }
+

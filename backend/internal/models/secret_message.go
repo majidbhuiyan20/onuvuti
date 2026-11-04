@@ -76,3 +76,4 @@ type PrivateInboxView struct {
 	Inbox    SecretInboxPublic `json:"inbox"`
 	Messages []SecretMessage   `json:"messages"`
 }
+

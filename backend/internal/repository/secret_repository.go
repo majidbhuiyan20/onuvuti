@@ -206,3 +206,4 @@ func (r *Repository) GetSecretStats() (int, int, error) {
 	_ = r.db.QueryRow(`SELECT COUNT(1) FROM secret_messages`).Scan(&messages)
 	return inboxes, messages, nil
 }
+
