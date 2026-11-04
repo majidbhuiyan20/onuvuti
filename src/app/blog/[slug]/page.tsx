@@ -20,6 +20,7 @@ async function fetchStory(slug: string): Promise<StoryFetchResult | null> {
     const baseUrl = getGoApiBaseUrl();
     const res = await fetch(`${baseUrl}/stories/${encodeURIComponent(slug)}`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(2500),
     });
     if (res.ok) {
       const data = await res.json();
@@ -75,6 +76,7 @@ async function fetchRelatedStories(currentSlug: string): Promise<BlogPost[]> {
     const baseUrl = getGoApiBaseUrl();
     const res = await fetch(`${baseUrl}/stories?limit=6`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(2500),
     });
     if (res.ok) {
       const data = await res.json();
@@ -101,6 +103,7 @@ async function fetchAdjacentStories(
     const baseUrl = getGoApiBaseUrl();
     const res = await fetch(`${baseUrl}/stories?limit=100`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(2500),
     });
     if (res.ok) {
       const data = await res.json();
@@ -134,24 +137,30 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const result = await fetchStory(slug);
-  if (!result || !result.post) {
+  try {
+    const { slug } = await params;
+    const result = await fetchStory(slug);
+    if (!result || !result.post) {
+      return {
+        title: "লেখাটি খুঁজে পাওয়া যায়নি | অনুভূতি",
+      };
+    }
+    const post = result.post;
+
     return {
-      title: "লেখাটি খুঁজে পাওয়া যায়নি | অনুভূতি",
+      title: `${post.title} | অনুভূতি`,
+      description: post.excerpt,
+      openGraph: {
+        title: post.title,
+        description: post.excerpt,
+        images: post.imageUrl ? [{ url: post.imageUrl }] : [],
+      },
+    };
+  } catch {
+    return {
+      title: "অনুভূতি — মনের না বলা কথা",
     };
   }
-  const post = result.post;
-
-  return {
-    title: `${post.title} | অনুভূতি`,
-    description: post.excerpt,
-    openGraph: {
-      title: post.title,
-      description: post.excerpt,
-      images: post.imageUrl ? [{ url: post.imageUrl }] : [],
-    },
-  };
 }
 
 export default async function BlogPostPage({
