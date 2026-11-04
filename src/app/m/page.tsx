@@ -19,6 +19,7 @@ import { createSecretInbox } from "@/features/secret/api";
 import { getMySavedInboxes, saveMyInbox, removeMySavedInbox } from "@/features/secret/storage";
 import { CreateInboxResponse, SavedInboxMeta, StoryThemeId } from "@/features/secret/types";
 import { STORY_THEMES } from "@/features/secret/storyGenerator";
+import LiveStoryShowcase from "@/features/secret/LiveStoryShowcase";
 import HomeNavbar from "@/components/home/HomeNavbar";
 import SecretFooter from "@/features/secret/SecretFooter";
 
@@ -171,6 +172,11 @@ export default function CreateSecretInboxPage() {
           </p>
         </div>
 
+        {/* Live Story Preview Showcase */}
+        {!createdData && (
+          <LiveStoryShowcase onSelectTheme={(t) => setSelectedTheme(t)} />
+        )}
+
         {/* Created Success Screen */}
         {createdData ? (
           <div className="bg-white dark:bg-[#111827] rounded-3xl border-2 border-rose-200 dark:border-rose-900/60 p-6 sm:p-8 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
@@ -262,6 +268,7 @@ export default function CreateSecretInboxPage() {
         ) : (
           /* Create Form */
           <form
+            id="create-inbox-form"
             onSubmit={handleCreate}
             className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-6 sm:p-8 shadow-sm space-y-6"
           >

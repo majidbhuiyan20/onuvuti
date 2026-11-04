@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { getPublicInbox, sendSecretMessage } from "@/features/secret/api";
 import { SecretInboxPublic } from "@/features/secret/types";
+import LiveStoryShowcase from "@/features/secret/LiveStoryShowcase";
 import SecretFooter from "@/features/secret/SecretFooter";
 
 const MOOD_EMOJIS = [
@@ -290,6 +291,13 @@ function PublicSecretMessageContent() {
                 <span>১০০% পরিচয়হীন ও গোপনীয় • কোনো তথ্য সংরক্ষিত হয় না</span>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* Live Story Previews Showcase */}
+        {!loading && !loadError && (
+          <div className="mt-8">
+            <LiveStoryShowcase />
           </div>
         )}
       </main>
