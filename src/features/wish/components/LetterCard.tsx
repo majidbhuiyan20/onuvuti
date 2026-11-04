@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import type { WishTheme } from "@/data/birthdayTemplates";
 import { HANDWRITING_FONT } from "../share";
@@ -15,6 +15,31 @@ interface LetterCardProps {
 export default function LetterCard({ wish, content, theme }: LetterCardProps) {
   const handwritten = wish.fontStyle === "handwritten";
   const corner = "absolute text-xs opacity-30 select-none font-serif";
+
+  // Typewriter effect
+  const [displayedLength, setDisplayedLength] = useState(0);
+  const [isTyping, setIsTyping] = useState(true);
+
+  useEffect(() => {
+    setDisplayedLength(0);
+    setIsTyping(true);
+    let idx = 0;
+    const msgLength = content.message.length;
+    const timer = setInterval(() => {
+      idx += 1;
+      setDisplayedLength(idx);
+      if (idx >= msgLength) {
+        clearInterval(timer);
+        setIsTyping(false);
+      }
+    }, 28);
+    return () => clearInterval(timer);
+  }, [content.message]);
+
+  const handleSkipTyping = () => {
+    setDisplayedLength(content.message.length);
+    setIsTyping(false);
+  };
 
   return (
     <article
@@ -57,9 +82,29 @@ export default function LetterCard({ wish, content, theme }: LetterCardProps) {
         </figure>
       )}
 
-      <div className="text-base sm:text-lg leading-relaxed sm:leading-loose whitespace-pre-line font-medium opacity-90 my-4 pl-1">
-        {content.message}
+      {/* Typewriter message body */}
+      <div
+        onClick={handleSkipTyping}
+        className="text-base sm:text-lg leading-relaxed sm:leading-loose whitespace-pre-line font-medium opacity-90 my-4 pl-1 cursor-pointer select-text"
+        title={isTyping ? "সম্পূর্ণ পড়তে ক্লিক করুন" : undefined}
+      >
+        {content.message.slice(0, displayedLength)}
+        {isTyping && (
+          <span className="inline-block w-1.5 h-4 bg-current ml-1 animate-pulse align-middle" />
+        )}
       </div>
+
+      {isTyping && (
+        <div className="flex justify-end pt-1">
+          <button
+            type="button"
+            onClick={handleSkipTyping}
+            className="text-[11px] font-bold text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 underline cursor-pointer"
+          >
+            ⏩ একবারে সম্পূর্ণ পড়ুন
+          </button>
+        </div>
+      )}
 
       {content.voiceUrl && (
         <div className="mt-5 p-3 rounded-2xl border" style={{ borderColor: `${theme.accentColor}33`, backgroundColor: `${theme.accentColor}0d` }}>

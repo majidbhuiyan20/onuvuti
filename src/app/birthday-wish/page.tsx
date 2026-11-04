@@ -26,6 +26,7 @@ const RELATIONS = [
   { label: "প্রিয় বন্ধু", emoji: "🤝" },
   { label: "গোপন ক্রাশ", emoji: "💌" },
   { label: "ভাই-বোন", emoji: "🎁" },
+  { label: "পরিবার", emoji: "🌿" },
   { label: "বিশেষ কেউ", emoji: "✨" },
 ];
 

@@ -59,7 +59,11 @@ export type StoryThemeId =
   | "midnight"
   | "sunset"
   | "vintage"
-  | "emerald";
+  | "emerald"
+  | "birthday_cake"
+  | "birthday_royal"
+  | "aurora"
+  | "polaroid";
 
 export interface StoryTheme {
   id: StoryThemeId;
