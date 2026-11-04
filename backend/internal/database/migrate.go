@@ -194,6 +194,19 @@ VALUES (
     128,
     true
 ) ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS birthday_wishes (
+    id VARCHAR(64) PRIMARY KEY,
+    recipient_name VARCHAR(120) NOT NULL,
+    sender_name VARCHAR(120) NOT NULL,
+    relationship VARCHAR(60) NOT NULL DEFAULT 'বিশেষ কেউ',
+    message TEXT NOT NULL,
+    theme VARCHAR(32) NOT NULL DEFAULT 'vintage_rose',
+    views_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_birthday_wishes_created_at ON birthday_wishes(created_at DESC);
 `
 
 func RunMigrations(db *sql.DB) error {

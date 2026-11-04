@@ -57,6 +57,7 @@ func main() {
 	wellnessSvc := service.NewWellnessService(repo, memCache)
 	pollSvc := service.NewPollService(repo, memCache)
 	quoteSvc := service.NewQuoteService(repo, memCache)
+	wishSvc := service.NewWishService(repo)
 
 	// 4. Initialize Middleware & HTTP Handlers
 	rl := middleware.NewRateLimiter()
@@ -74,6 +75,7 @@ func main() {
 		WellnessHandler:  handlers.NewWellnessHandler(wellnessSvc),
 		PollHandler:      handlers.NewPollHandler(pollSvc),
 		QuoteHandler:     handlers.NewQuoteHandler(quoteSvc),
+		WishHandler:      handlers.NewWishHandler(wishSvc),
 	})
 
 	// 5. Hardened HTTP Server for Production

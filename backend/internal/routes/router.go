@@ -22,6 +22,7 @@ type RouterDeps struct {
 	WellnessHandler  *handlers.WellnessHandler
 	PollHandler      *handlers.PollHandler
 	QuoteHandler     *handlers.QuoteHandler
+	WishHandler      *handlers.WishHandler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -102,6 +103,12 @@ func NewRouter(deps RouterDeps) http.Handler {
 		mux.HandleFunc("POST /api/v1/admin/quotes", middleware.RequireAdmin(cfg, deps.QuoteHandler.CreateQuote))
 		mux.HandleFunc("PUT /api/v1/admin/quotes/{id}", middleware.RequireAdmin(cfg, deps.QuoteHandler.UpdateQuote))
 		mux.HandleFunc("DELETE /api/v1/admin/quotes/{id}", middleware.RequireAdmin(cfg, deps.QuoteHandler.DeleteQuote))
+	}
+
+	// 10. Birthday Wish Routes (Interactive 3D Letter & Envelope Wish Generator)
+	if deps.WishHandler != nil {
+		mux.HandleFunc("POST /api/v1/wishes", deps.WishHandler.Create)
+		mux.HandleFunc("GET /api/v1/wishes/{id}", deps.WishHandler.GetSingle)
 	}
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain
