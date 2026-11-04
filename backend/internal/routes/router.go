@@ -109,6 +109,9 @@ func NewRouter(deps RouterDeps) http.Handler {
 	if deps.WishHandler != nil {
 		mux.HandleFunc("POST /api/v1/wishes", deps.WishHandler.Create)
 		mux.HandleFunc("GET /api/v1/wishes/{id}", deps.WishHandler.GetSingle)
+		mux.HandleFunc("POST /api/v1/wishes/{id}/open", deps.WishHandler.Open)
+		mux.HandleFunc("POST /api/v1/wishes/{id}/replies", deps.WishHandler.AddReply)
+		mux.HandleFunc("GET /api/v1/wishes/{id}/replies", deps.WishHandler.ListReplies)
 		mux.HandleFunc("GET /api/v1/admin/wishes", middleware.RequireInternalOrAdmin(cfg, deps.WishHandler.ListAdmin))
 		mux.HandleFunc("DELETE /api/v1/admin/wishes/{id}", middleware.RequireInternalOrAdmin(cfg, deps.WishHandler.Delete))
 	}

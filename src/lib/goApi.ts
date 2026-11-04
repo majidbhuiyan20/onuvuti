@@ -92,7 +92,26 @@ export interface BackendWish {
   relationship: string;
   message: string;
   theme: string;
+  fontStyle?: string;
+  music?: string;
+  unlockAt?: string;
+  hasPasscode?: boolean;
+  selfDestruct?: boolean;
+  destroyed?: boolean;
+  hasPhoto?: boolean;
+  hasVoice?: boolean;
   viewsCount: number;
+  replyCount?: number;
   createdAt: string;
+}
+
+export interface BackendWishStats {
+  total: number;
+  totalViews: number;
+  totalReplies: number;
+  scheduled: number;
+  protected: number;
+  selfDestruct: number;
+  byTheme: Record<string, number>;
 }
 

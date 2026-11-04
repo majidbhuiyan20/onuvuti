@@ -207,6 +207,29 @@ CREATE TABLE IF NOT EXISTS birthday_wishes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_birthday_wishes_created_at ON birthday_wishes(created_at DESC);
+
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS font_style VARCHAR(16) NOT NULL DEFAULT 'classic';
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS music VARCHAR(24) NOT NULL DEFAULT 'none';
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS photo_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS voice_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS unlock_at TIMESTAMPTZ;
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS passcode_salt VARCHAR(64) NOT NULL DEFAULT '';
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS passcode_hash VARCHAR(128) NOT NULL DEFAULT '';
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS self_destruct BOOLEAN NOT NULL DEFAULT FALSE;
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS destroyed_at TIMESTAMPTZ;
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS manage_key_hash VARCHAR(128) NOT NULL DEFAULT '';
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS failed_attempts INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE birthday_wishes ADD COLUMN IF NOT EXISTS last_failed_at TIMESTAMPTZ;
+
+CREATE TABLE IF NOT EXISTS wish_replies (
+    id VARCHAR(40) PRIMARY KEY,
+    wish_id VARCHAR(64) NOT NULL REFERENCES birthday_wishes(id) ON DELETE CASCADE,
+    emoji VARCHAR(16) NOT NULL DEFAULT '❤️',
+    text TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_wish_replies_wish_id ON wish_replies(wish_id, created_at DESC);
 `
 
 func RunMigrations(db *sql.DB) error {

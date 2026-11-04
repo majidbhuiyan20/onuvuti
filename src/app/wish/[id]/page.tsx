@@ -1,34 +1,21 @@
 import React from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import WishViewerClient from "./WishViewerClient";
+import WishViewer from "@/features/wish/components/WishViewer";
+import type { WishPublic } from "@/features/wish/types";
 import { getGoApiBaseUrl } from "@/lib/goApi";
 
 export const instant = false;
 
-interface WishData {
-  id: string;
-  recipientName: string;
-  senderName: string;
-  relationship: string;
-  message: string;
-  theme?: string;
-  viewsCount?: number;
-  createdAt?: string;
-}
-
-async function fetchWish(id: string): Promise<WishData | null> {
+/** Public metadata only: no content, and fetching it never counts as a "view". */
+async function fetchWish(id: string): Promise<WishPublic | null> {
   try {
-    const baseUrl = getGoApiBaseUrl();
-    const res = await fetch(`${baseUrl}/wishes/${encodeURIComponent(id)}`, {
+    const res = await fetch(`${getGoApiBaseUrl()}/wishes/${encodeURIComponent(id)}`, {
       cache: "no-store",
     });
-
     if (res.ok) {
       const data = await res.json();
-      if (data?.ok && data.wish) {
-        return data.wish;
-      }
+      if (data?.ok && data.wish) return data.wish as WishPublic;
     }
   } catch (err) {
     console.error("Failed to fetch wish from Go backend:", err);
@@ -74,5 +61,5 @@ export default async function WishPage({
     return notFound();
   }
 
-  return <WishViewerClient initialWish={wish} />;
+  return <WishViewer initialWish={wish} />;
 }

@@ -1,0 +1,82 @@
+"use client";
+
+import React from "react";
+import { Heart } from "lucide-react";
+import type { WishTheme } from "@/data/birthdayTemplates";
+import { HANDWRITING_FONT } from "../share";
+import type { WishContent, WishPublic } from "../types";
+
+interface LetterCardProps {
+  wish: WishPublic;
+  content: WishContent;
+  theme: WishTheme;
+}
+
+export default function LetterCard({ wish, content, theme }: LetterCardProps) {
+  const handwritten = wish.fontStyle === "handwritten";
+  const corner = "absolute text-xs opacity-30 select-none font-serif";
+
+  return (
+    <article
+      className="w-full rounded-3xl p-6 sm:p-10 shadow-2xl relative border overflow-hidden transition-all duration-500"
+      style={{
+        backgroundColor: theme.letterBg,
+        color: theme.textColor,
+        borderColor: `${theme.accentColor}33`,
+        boxShadow: `0 25px 60px -15px rgba(0,0,0,0.6), 0 0 30px ${theme.accentColor}22`,
+        fontFamily: handwritten ? HANDWRITING_FONT : undefined,
+      }}
+    >
+      {["top-2 left-2", "top-2 right-2", "bottom-2 left-2", "bottom-2 right-2"].map((pos) => (
+        <div key={pos} className={`${corner} ${pos}`} style={{ color: theme.accentColor }}>
+          ❦
+        </div>
+      ))}
+
+      <div className="text-center pb-5 mb-6 border-b border-stone-200/80">
+        <div
+          className="inline-flex items-center justify-center w-10 h-10 rounded-full mb-2"
+          style={{ backgroundColor: `${theme.accentColor}18`, color: theme.accentColor }}
+        >
+          <Heart className="w-5 h-5 fill-current" />
+        </div>
+        <h2 className="text-xl sm:text-2xl font-black tracking-wide" style={{ color: theme.accentColor }}>
+          শুভ জন্মদিন
+        </h2>
+        <p className="text-xs text-stone-500 mt-0.5">
+          {wish.relationship ? `(${wish.relationship} এর জন্য বিশেষ চিঠি)` : "একটি পবিত্র অনুভূতির উপহার"}
+        </p>
+      </div>
+
+      <p className="text-lg font-bold mb-4">প্রিয় {wish.recipientName},</p>
+
+      {content.photoUrl && (
+        <figure className="my-5 mx-auto max-w-sm rotate-[-1.5deg] bg-white p-2.5 pb-7 rounded-md shadow-lg border border-stone-200">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={content.photoUrl} alt="স্মৃতির ছবি" className="w-full h-auto rounded-sm" />
+        </figure>
+      )}
+
+      <div className="text-base sm:text-lg leading-relaxed sm:leading-loose whitespace-pre-line font-medium opacity-90 my-4 pl-1">
+        {content.message}
+      </div>
+
+      {content.voiceUrl && (
+        <div className="mt-5 p-3 rounded-2xl border" style={{ borderColor: `${theme.accentColor}33`, backgroundColor: `${theme.accentColor}0d` }}>
+          <span className="block text-xs font-bold mb-1.5" style={{ color: theme.accentColor }}>
+            🎙️ {wish.senderName}-এর কণ্ঠে একটি বার্তা
+          </span>
+          <audio src={content.voiceUrl} controls className="w-full h-10" />
+        </div>
+      )}
+
+      <div className="mt-8 pt-4 border-t border-stone-200/80 text-right">
+        <span className="text-xs text-stone-500 block">ভালোবাসা ও শুভকামনায়,</span>
+        <span className="text-lg font-bold block mt-1" style={{ color: theme.accentColor }}>
+          — {wish.senderName}
+        </span>
+      </div>
+    </article>
+  );
+}
+

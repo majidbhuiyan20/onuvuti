@@ -42,6 +42,7 @@ import {
   BackendPoll,
   BackendQuote,
   BackendWish,
+  BackendWishStats,
 } from "@/lib/goApi";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -138,6 +139,7 @@ export default function AdminDashboardPage() {
 
   // Birthday Wishes Management State (PostgreSQL Controlled)
   const [adminWishes, setAdminWishes] = useState<BackendWish[]>([]);
+  const [wishStats, setWishStats] = useState<BackendWishStats | null>(null);
   const [isLoadingWishes, setIsLoadingWishes] = useState(false);
   const [wishSearch, setWishSearch] = useState("");
   const [wishActionMsg, setWishActionMsg] = useState("");
@@ -744,6 +746,7 @@ export default function AdminDashboardPage() {
         const data = await res.json();
         if (data?.ok && Array.isArray(data.wishes)) {
           setAdminWishes(data.wishes);
+          setWishStats(data.stats ?? null);
         }
       }
     } catch {
@@ -3036,6 +3039,28 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
+            {wishStats && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {[
+                  { label: "মোট চিঠি", value: wishStats.total, icon: "💌" },
+                  { label: "মোট ভিউ", value: wishStats.totalViews, icon: "👁️" },
+                  { label: "রিঅ্যাকশন", value: wishStats.totalReplies, icon: "😍" },
+                  { label: "টাইমার সেট", value: wishStats.scheduled, icon: "⏰" },
+                  { label: "সিক্রেট কোড", value: wishStats.protected, icon: "🔑" },
+                  { label: "গোপন চিঠি", value: wishStats.selfDestruct, icon: "🔥" },
+                ].map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-3.5 text-center shadow-xs"
+                  >
+                    <div className="text-lg">{stat.icon}</div>
+                    <div className="text-xl font-black text-[#142230] dark:text-white">{stat.value}</div>
+                    <div className="text-[10px] font-semibold text-stone-500 dark:text-stone-400">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Search Box */}
             <div className="flex items-center gap-3">
               <input
@@ -3112,9 +3137,27 @@ export default function AdminDashboardPage() {
                           “{w.message}”
                         </p>
 
+                        <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+                          {w.unlockAt && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                              ⏰ {new Date(w.unlockAt).toLocaleString("bn-BD", { dateStyle: "medium", timeStyle: "short" })}
+                            </span>
+                          )}
+                          {w.hasPasscode && <span className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300">🔑 কোড</span>}
+                          {w.selfDestruct && (
+                            <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300">
+                              🔥 {w.destroyed ? "মুছে গেছে" : "গোপন"}
+                            </span>
+                          )}
+                          {w.hasPhoto && <span className="px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800">📸</span>}
+                          {w.hasVoice && <span className="px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800">🎙️</span>}
+                          {w.music && w.music !== "none" && <span className="px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800">🎵</span>}
+                        </div>
+
                         <div className="flex items-center justify-between text-[11px] text-stone-400 pt-1">
                           <span>
                             👁️ {w.viewsCount || 0} বার খোলা হয়েছে
+                            {(w.replyCount ?? 0) > 0 && ` • 😍 ${w.replyCount}`}
                           </span>
                           <span>
                             {w.createdAt
@@ -3126,14 +3169,23 @@ export default function AdminDashboardPage() {
 
                       <div className="pt-4 mt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5">
-                          <Link
-                            href={`/wish/${w.id}`}
-                            target="_blank"
-                            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FAF4E6] dark:bg-[#1E293B] hover:bg-[#F2E8D2] text-[#80131E] dark:text-rose-300 transition flex items-center gap-1"
-                          >
-                            <ExternalLink className="w-3 h-3" />
-                            <span>চিঠি দেখুন</span>
-                          </Link>
+                          {w.selfDestruct && !w.destroyed ? (
+                            <span
+                              className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300"
+                              title="খুললে চিঠিটি চিরতরে মুছে যাবে"
+                            >
+                              🔥 গোপন চিঠি
+                            </span>
+                          ) : (
+                            <Link
+                              href={`/wish/${w.id}`}
+                              target="_blank"
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FAF4E6] dark:bg-[#1E293B] hover:bg-[#F2E8D2] text-[#80131E] dark:text-rose-300 transition flex items-center gap-1"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              <span>চিঠি দেখুন</span>
+                            </Link>
+                          )}
 
                           <button
                             type="button"
