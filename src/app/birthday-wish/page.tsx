@@ -45,6 +45,13 @@ const EMPTY_SPECIAL: SpecialOptionsValue = {
   selfDestruct: false,
 };
 
+interface MyWishItem {
+  id: string;
+  recipientName: string;
+  manageKey: string;
+  createdAt: string;
+}
+
 export default function BirthdayWishCreatorPage() {
   const [recipientName, setRecipientName] = useState("");
   const [senderName, setSenderName] = useState("");
@@ -59,6 +66,7 @@ export default function BirthdayWishCreatorPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [myWishes, setMyWishes] = useState<MyWishItem[]>([]);
   const [created, setCreated] = useState<{
     wish: CreatedWish;
     recipient: string;
@@ -68,6 +76,13 @@ export default function BirthdayWishCreatorPage() {
   } | null>(null);
 
   useGoogleFont(fontStyle === "handwritten");
+
+  React.useEffect(() => {
+    try {
+      const raw = localStorage.getItem("onuvuti_my_wishes");
+      if (raw) setMyWishes(JSON.parse(raw));
+    } catch {}
+  }, []);
 
   const selectedTheme: WishTheme =
     WISH_THEMES.find((t) => t.id === selectedThemeId) || WISH_THEMES[0];
@@ -110,6 +125,18 @@ export default function BirthdayWishCreatorPage() {
     setLoading(false);
 
     if (!result.ok) return setErrorMsg(result.error);
+
+    try {
+      const item: MyWishItem = {
+        id: result.data.id,
+        recipientName: recipientName.trim(),
+        manageKey: result.data.manageKey,
+        createdAt: new Date().toISOString(),
+      };
+      const next = [item, ...myWishes.filter((w) => w.id !== item.id)].slice(0, 20);
+      setMyWishes(next);
+      localStorage.setItem("onuvuti_my_wishes", JSON.stringify(next));
+    } catch {}
 
     setCreated({
       wish: result.data,
@@ -168,6 +195,43 @@ export default function BirthdayWishCreatorPage() {
             সিক্রেট কোডে তালা দেওয়া থাকবে অথবা একবার পড়ার পর মুছে যাবে!
           </p>
         </div>
+
+        {myWishes.length > 0 && !created && (
+          <div className="mb-8 p-4 rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-sm">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="text-xs font-bold text-stone-800 dark:text-stone-100 flex items-center gap-1.5">
+                <span>💌 আপনার পাঠানো চিঠিসমূহ</span>
+                <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 text-[10px]">
+                  {myWishes.length}টি
+                </span>
+              </span>
+              <span className="text-[11px] text-stone-400 hidden sm:inline">প্রাপকের রিঅ্যাকশন দেখতে ক্লিক করুন</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {myWishes.map((w) => (
+                <div
+                  key={w.id}
+                  className="flex items-center justify-between p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/80 dark:border-stone-700/60"
+                >
+                  <div className="min-w-0 pr-2">
+                    <p className="text-xs font-bold text-stone-900 dark:text-white truncate">
+                      To: {w.recipientName}
+                    </p>
+                    <span className="text-[10px] text-stone-400">
+                      #{w.id}
+                    </span>
+                  </div>
+                  <Link
+                    href={`/wish/${w.id}/replies?key=${encodeURIComponent(w.manageKey)}`}
+                    className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:opacity-95 text-white font-bold text-[11px] flex items-center gap-1 transition"
+                  >
+                    <span>রিঅ্যাকশন দেখুন →</span>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {created && (
           <CreatedCard

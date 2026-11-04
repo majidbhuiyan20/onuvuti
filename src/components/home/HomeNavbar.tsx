@@ -66,8 +66,13 @@ export default function HomeNavbar({
   };
 
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-[#FAF7F2]/95 dark:bg-[#0B0F17]/95 border-b border-stone-200/80 dark:border-stone-800 transition-colors">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-[#FAF7F2]/95 dark:bg-[#0B0F17]/95 border-b border-stone-200/80 dark:border-stone-800 transition-colors relative overflow-hidden">
+      {/* Subtle Romantic Header Background Glow */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.10] bg-cover bg-center"
+        style={{ backgroundImage: "url('/images/romantic1.png')" }}
+      />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3 relative z-10">
         {/* Previous Original Brand Logo in White Card */}
         <Link
           href="/"
