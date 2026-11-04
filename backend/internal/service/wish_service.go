@@ -69,3 +69,4 @@ func (s *WishService) GetWishByID(id string) (*models.BirthdayWish, error) {
 	}
 	return s.repo.GetWishByID(cleanID)
 }
+

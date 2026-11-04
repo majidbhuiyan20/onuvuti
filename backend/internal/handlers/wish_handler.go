@@ -52,3 +52,4 @@ func (h *WishHandler) GetSingle(w http.ResponseWriter, r *http.Request) {
 		"wish": wish,
 	})
 }
+

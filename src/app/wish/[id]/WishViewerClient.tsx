@@ -598,3 +598,4 @@ export default function WishViewerClient({ initialWish }: WishViewerClientProps)
     </div>
   );
 }
+

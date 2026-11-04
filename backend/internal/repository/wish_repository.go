@@ -44,3 +44,4 @@ func (r *Repository) GetWishByID(id string) (*models.BirthdayWish, error) {
 
 	return &w, nil
 }
+

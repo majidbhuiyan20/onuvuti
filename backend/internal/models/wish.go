@@ -20,3 +20,4 @@ type CreateWishRequest struct {
 	Message       string `json:"message"`
 	Theme         string `json:"theme"`
 }
+

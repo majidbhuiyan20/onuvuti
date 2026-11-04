@@ -152,3 +152,4 @@ export const BIRTHDAY_TEMPLATES: BirthdayTemplate[] = [
 শুভ জন্মদিন! 🌟`,
   },
 ];
+
