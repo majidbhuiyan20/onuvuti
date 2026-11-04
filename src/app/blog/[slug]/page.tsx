@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { CommentItem } from "@/components/StoryInteractions";
-import SidebarBanners from "@/components/SidebarBanners";
 import StoryReaderView from "@/components/story/StoryReaderView";
 import { getGoApiBaseUrl } from "@/lib/goApi";
 
@@ -132,6 +131,50 @@ async function fetchAdjacentStories(
   return { prev: null, next: null };
 }
 
+async function fetchTrendingConfessions(
+  currentSlug: string
+): Promise<BlogPost[]> {
+  try {
+    const baseUrl = getGoApiBaseUrl();
+    const res = await fetch(
+      `${baseUrl}/stories?category=${encodeURIComponent(
+        "ক্রাশ ও কনফেশন"
+      )}&limit=6`,
+      {
+        cache: "no-store",
+        signal: AbortSignal.timeout(2500),
+      }
+    );
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.ok && Array.isArray(data.stories) && data.stories.length > 0) {
+        return data.stories
+          .filter((s: { slug: string }) => s.slug !== currentSlug)
+          .slice(0, 3);
+      }
+    }
+  } catch {}
+
+  // Fallback: fetch any latest stories to display
+  try {
+    const baseUrl = getGoApiBaseUrl();
+    const res = await fetch(`${baseUrl}/stories?limit=6`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(2500),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.ok && Array.isArray(data.stories)) {
+        return data.stories
+          .filter((s: { slug: string }) => s.slug !== currentSlug)
+          .slice(0, 3);
+      }
+    }
+  } catch {}
+
+  return [];
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -178,17 +221,16 @@ export default async function BlogPostPage({
   const { post, comments } = result;
   const relatedPosts = await fetchRelatedStories(slug);
   const { prev: prevPost, next: nextPost } = await fetchAdjacentStories(slug);
+  const trendingConfessions = await fetchTrendingConfessions(slug);
 
   return (
-    <>
-      <SidebarBanners />
-      <StoryReaderView
-        post={post}
-        comments={comments}
-        relatedPosts={relatedPosts}
-        prevPost={prevPost}
-        nextPost={nextPost}
-      />
-    </>
+    <StoryReaderView
+      post={post}
+      comments={comments}
+      relatedPosts={relatedPosts}
+      prevPost={prevPost}
+      nextPost={nextPost}
+      confessions={trendingConfessions}
+    />
   );
 }
