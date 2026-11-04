@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   Home,
@@ -53,6 +53,40 @@ export default function HomeNavbar({
 }: HomeNavbarProps) {
   const [activeNavDropdown, setActiveNavDropdown] = useState<string | null>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const navRef = useRef<HTMLElement | null>(null);
+  const dropdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleOpenDropdown = (name: string) => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+      dropdownTimeoutRef.current = null;
+    }
+    setActiveNavDropdown(name);
+  };
+
+  const handleCloseDropdown = () => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+    }
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setActiveNavDropdown(null);
+    }, 150);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (navRef.current && !navRef.current.contains(event.target as Node)) {
+        setActiveNavDropdown(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      if (dropdownTimeoutRef.current) {
+        clearTimeout(dropdownTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleCategorySelect = (cat: string) => {
     setActiveCategory(cat);
@@ -66,10 +100,10 @@ export default function HomeNavbar({
   };
 
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-[#FAF7F2]/95 dark:bg-[#0B0F17]/95 border-b border-stone-200/80 dark:border-stone-800 transition-colors relative overflow-hidden">
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-[#FAF7F2]/95 dark:bg-[#0B0F17]/95 border-b border-stone-200/80 dark:border-stone-800 transition-colors relative">
       {/* Subtle Romantic Header Background Glow */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.10] bg-cover bg-center"
+        className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.10] bg-cover bg-center overflow-hidden"
         style={{ backgroundImage: "url('/images/romantic1.png')" }}
       />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3 relative z-10">
@@ -94,7 +128,7 @@ export default function HomeNavbar({
         </Link>
 
         {/* Desktop Navigation Menu */}
-        <nav className="hidden lg:flex items-center gap-1.5 relative">
+        <nav ref={navRef} className="hidden lg:flex items-center gap-1.5 relative">
           {/* Active Home Pill */}
           <button
             type="button"
@@ -116,7 +150,11 @@ export default function HomeNavbar({
           </button>
 
           {/* গল্প Dropdown */}
-          <div className="relative">
+          <div
+            className="relative"
+            onMouseEnter={() => handleOpenDropdown("story")}
+            onMouseLeave={handleCloseDropdown}
+          >
             <button
               type="button"
               onClick={() =>
@@ -124,13 +162,17 @@ export default function HomeNavbar({
                   prev === "story" ? null : "story"
                 )
               }
-              className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer inline-flex items-center gap-1 ${
+                activeNavDropdown === "story"
+                  ? "bg-stone-100 dark:bg-stone-800 text-[#7E151E] dark:text-rose-400"
+                  : "text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800"
+              }`}
             >
               <span>গল্প</span>
-              <ChevronDown className="w-3 h-3 text-stone-400" />
+              <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${activeNavDropdown === "story" ? "rotate-180" : ""}`} />
             </button>
             {activeNavDropdown === "story" && (
-              <div className="absolute top-full left-0 mt-1 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full left-0 mt-1.5 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 z-50 text-xs">
                 {[
                   "রোমান্টিক গল্প",
                   "জীবনের গল্প",
@@ -151,7 +193,11 @@ export default function HomeNavbar({
           </div>
 
           {/* চিঠি Dropdown */}
-          <div className="relative">
+          <div
+            className="relative"
+            onMouseEnter={() => handleOpenDropdown("letter")}
+            onMouseLeave={handleCloseDropdown}
+          >
             <button
               type="button"
               onClick={() =>
@@ -159,13 +205,17 @@ export default function HomeNavbar({
                   prev === "letter" ? null : "letter"
                 )
               }
-              className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer inline-flex items-center gap-1 ${
+                activeNavDropdown === "letter"
+                  ? "bg-stone-100 dark:bg-stone-800 text-[#7E151E] dark:text-rose-400"
+                  : "text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800"
+              }`}
             >
               <span>চিঠি</span>
-              <ChevronDown className="w-3 h-3 text-stone-400" />
+              <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${activeNavDropdown === "letter" ? "rotate-180" : ""}`} />
             </button>
             {activeNavDropdown === "letter" && (
-              <div className="absolute top-full left-0 mt-1 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full left-0 mt-1.5 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 z-50 text-xs">
                 <Link
                   href="/birthday-wish"
                   onClick={() => setActiveNavDropdown(null)}
@@ -188,7 +238,11 @@ export default function HomeNavbar({
           </div>
 
           {/* কনফেশন Dropdown */}
-          <div className="relative">
+          <div
+            className="relative"
+            onMouseEnter={() => handleOpenDropdown("confession")}
+            onMouseLeave={handleCloseDropdown}
+          >
             <button
               type="button"
               onClick={() =>
@@ -196,13 +250,17 @@ export default function HomeNavbar({
                   prev === "confession" ? null : "confession"
                 )
               }
-              className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer inline-flex items-center gap-1 ${
+                activeNavDropdown === "confession"
+                  ? "bg-stone-100 dark:bg-stone-800 text-[#7E151E] dark:text-rose-400"
+                  : "text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800"
+              }`}
             >
               <span>কনফেশন</span>
-              <ChevronDown className="w-3 h-3 text-stone-400" />
+              <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${activeNavDropdown === "confession" ? "rotate-180" : ""}`} />
             </button>
             {activeNavDropdown === "confession" && (
-              <div className="absolute top-full left-0 mt-1 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full left-0 mt-1.5 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 z-50 text-xs">
                 {["ক্রাশ ও কনফেশন", "না বলা কথা"].map((c) => (
                   <Link
                     key={c}
@@ -234,7 +292,11 @@ export default function HomeNavbar({
           </Link>
 
           {/* বই Dropdown */}
-          <div className="relative">
+          <div
+            className="relative"
+            onMouseEnter={() => handleOpenDropdown("book")}
+            onMouseLeave={handleCloseDropdown}
+          >
             <button
               type="button"
               onClick={() =>
@@ -242,13 +304,17 @@ export default function HomeNavbar({
                   prev === "book" ? null : "book"
                 )
               }
-              className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer inline-flex items-center gap-1 ${
+                activeNavDropdown === "book"
+                  ? "bg-stone-100 dark:bg-stone-800 text-[#7E151E] dark:text-rose-400"
+                  : "text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800"
+              }`}
             >
               <span>বই</span>
-              <ChevronDown className="w-3 h-3 text-stone-400" />
+              <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${activeNavDropdown === "book" ? "rotate-180" : ""}`} />
             </button>
             {activeNavDropdown === "book" && (
-              <div className="absolute top-full left-0 mt-1 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full left-0 mt-1.5 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 z-50 text-xs">
                 <Link
                   href="/sporsher-byakoron"
                   onClick={() => setActiveNavDropdown(null)}
@@ -261,7 +327,11 @@ export default function HomeNavbar({
           </div>
 
           {/* মনস্তত্ত্ব Dropdown */}
-          <div className="relative">
+          <div
+            className="relative"
+            onMouseEnter={() => handleOpenDropdown("psy")}
+            onMouseLeave={handleCloseDropdown}
+          >
             <button
               type="button"
               onClick={() =>
@@ -269,13 +339,17 @@ export default function HomeNavbar({
                   prev === "psy" ? null : "psy"
                 )
               }
-              className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer inline-flex items-center gap-1 ${
+                activeNavDropdown === "psy"
+                  ? "bg-stone-100 dark:bg-stone-800 text-[#7E151E] dark:text-rose-400"
+                  : "text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800"
+              }`}
             >
               <span>মনস্তত্ত্ব</span>
-              <ChevronDown className="w-3 h-3 text-stone-400" />
+              <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${activeNavDropdown === "psy" ? "rotate-180" : ""}`} />
             </button>
             {activeNavDropdown === "psy" && (
-              <div className="absolute top-full left-0 mt-1 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full left-0 mt-1.5 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 z-50 text-xs">
                 {["সম্পর্ক ও মনস্তত্ত্ব", "নিজেকে জানুন", "স্বাস্থ্য ও সুস্থতা"].map((c) => (
                   <Link
                     key={c}
@@ -291,7 +365,11 @@ export default function HomeNavbar({
           </div>
 
           {/* আরও Dropdown */}
-          <div className="relative">
+          <div
+            className="relative"
+            onMouseEnter={() => handleOpenDropdown("more")}
+            onMouseLeave={handleCloseDropdown}
+          >
             <button
               type="button"
               onClick={() =>
@@ -299,13 +377,17 @@ export default function HomeNavbar({
                   prev === "more" ? null : "more"
                 )
               }
-              className="px-3 py-1.5 rounded-full text-xs font-bold text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800 transition cursor-pointer inline-flex items-center gap-1"
+              className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer inline-flex items-center gap-1 ${
+                activeNavDropdown === "more"
+                  ? "bg-stone-100 dark:bg-stone-800 text-[#7E151E] dark:text-rose-400"
+                  : "text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-400 hover:bg-stone-100/70 dark:hover:bg-stone-800"
+              }`}
             >
               <span>আরও</span>
-              <ChevronDown className="w-3 h-3 text-stone-400" />
+              <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${activeNavDropdown === "more" ? "rotate-180" : ""}`} />
             </button>
             {activeNavDropdown === "more" && (
-              <div className="absolute top-full right-0 mt-1 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full right-0 mt-1.5 w-56 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 z-50 text-xs">
                 <button
                   type="button"
                   onClick={() => {
