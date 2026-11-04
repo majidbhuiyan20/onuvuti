@@ -35,6 +35,40 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token") || "";
 
   if (!token) {
+    // Check if the request arrived here from a payment gateway redirect (e.g. ZiniPay redirecting directly to /api/download)
+    const invoiceId =
+      req.nextUrl.searchParams.get("invoice_id") ||
+      req.nextUrl.searchParams.get("invoiceId") ||
+      "";
+    const orderId =
+      req.nextUrl.searchParams.get("order_id") ||
+      req.nextUrl.searchParams.get("orderId") ||
+      "";
+    const trx =
+      req.nextUrl.searchParams.get("transaction_id") ||
+      req.nextUrl.searchParams.get("trx") ||
+      req.nextUrl.searchParams.get("trx_id") ||
+      "";
+
+    if (invoiceId || orderId || trx) {
+      // Gateway redirected directly to /api/download! Auto-redirect to /payment/success to complete verification and token signing!
+      const targetParams = new URLSearchParams();
+      if (invoiceId) targetParams.set("invoice_id", invoiceId);
+      if (orderId) targetParams.set("order_id", orderId);
+      if (trx) targetParams.set("transaction_id", trx);
+      return NextResponse.redirect(
+        new URL(`/payment/success?${targetParams.toString()}`, req.url)
+      );
+    }
+
+    // If accessed via a browser directly without token, redirect to eBook recovery page instead of showing raw JSON error
+    const accept = req.headers.get("accept") || "";
+    if (accept.includes("text/html")) {
+      return NextResponse.redirect(
+        new URL("/sporsher-byakoron#recovery", req.url)
+      );
+    }
+
     return NextResponse.json(
       {
         ok: false,

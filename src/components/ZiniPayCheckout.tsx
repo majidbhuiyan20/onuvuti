@@ -72,31 +72,52 @@ export default function ZiniPayCheckout() {
     try {
       setRecovering(true);
       const isInvoice = cleanId.startsWith("ZP_") || cleanId.length > 20;
+      const isOrder = cleanId.startsWith("ONV-");
 
       const res = await fetch("/api/payment/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          orderId: !isInvoice ? cleanId : undefined,
+          orderId: isOrder ? cleanId : undefined,
           invoiceId: isInvoice ? cleanId : undefined,
+          transactionId: !isOrder && !isInvoice ? cleanId : undefined,
         }),
       });
 
       const data = await res.json().catch(() => ({}));
 
-      if (!res.ok || !data.ok || !data.downloadUrl) {
-        setRecoveryError(
-          data?.error || "এই আইডির জন্য কোনো পরিশোধিত অর্ডার পাওয়া যায়নি।"
-        );
+      if (res.ok && data.ok && data.downloadUrl) {
+        setVerifiedData({
+          downloadUrl: data.downloadUrl,
+          orderId: data.order?.orderId || cleanId,
+          transactionId: data.order?.transactionId,
+        });
         setRecovering(false);
         return;
       }
 
-      setVerifiedData({
-        downloadUrl: data.downloadUrl,
-        orderId: data.order?.orderId || cleanId,
-        transactionId: data.order?.transactionId,
-      });
+      // If not found yet and looks like a Transaction ID, try direct Trx verification
+      if (!isOrder && !isInvoice) {
+        const trxRes = await fetch("/api/payment/verify-trx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ transactionId: cleanId }),
+        });
+        const trxData = await trxRes.json().catch(() => ({}));
+        if (trxRes.ok && trxData.ok && trxData.downloadUrl) {
+          setVerifiedData({
+            downloadUrl: trxData.downloadUrl,
+            orderId: trxData.order?.orderId || cleanId,
+            transactionId: trxData.order?.transactionId || cleanId,
+          });
+          setRecovering(false);
+          return;
+        }
+      }
+
+      setRecoveryError(
+        data?.error || "এই আইডির জন্য কোনো পরিশোধিত অর্ডার পাওয়া যায়নি।"
+      );
       setRecovering(false);
     } catch {
       setRecoveryError("ভেরিফিকেশন সার্ভারের সাথে সংযোগ করা যায়নি।");

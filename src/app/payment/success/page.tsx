@@ -24,10 +24,17 @@ interface VerifiedOrder {
 
 function SuccessContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("order_id") || "";
+  const orderId =
+    searchParams.get("order_id") || searchParams.get("orderId") || "";
   const invoiceId =
     searchParams.get("invoice_id") || searchParams.get("invoiceId") || "";
   const tokenParam = searchParams.get("token") || "";
+  const transactionId =
+    searchParams.get("transaction_id") ||
+    searchParams.get("trx") ||
+    searchParams.get("trx_id") ||
+    searchParams.get("txId") ||
+    "";
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,9 +43,9 @@ function SuccessContent() {
   const [order, setOrder] = useState<VerifiedOrder | null>(null);
 
   useEffect(() => {
-    // If no order reference or invoice was provided at all, deny access immediately.
+    // If no order reference, invoice, transaction ID, or token was provided at all, deny access immediately.
     // Never show success without payment verification!
-    if (!orderId && !invoiceId && !tokenParam) {
+    if (!orderId && !invoiceId && !tokenParam && !transactionId) {
       setLoading(false);
       setError("কোনো পেমেন্ট তথ্য পাওয়া যায়নি। অনুগ্রহ করে বই কেনার প্রক্রিয়াটি সম্পন্ন করুন।");
       return;
@@ -53,7 +60,12 @@ function SuccessContent() {
         const res = await fetch("/api/payment/verify", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId, invoiceId, token: tokenParam }),
+          body: JSON.stringify({
+            orderId,
+            invoiceId,
+            token: tokenParam,
+            transactionId,
+          }),
         });
 
         const data = await res.json().catch(() => ({}));

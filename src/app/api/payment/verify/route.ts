@@ -4,6 +4,7 @@ import {
   createOrderRecord,
   markOrderAsPaid,
   verifyZiniPayInvoice,
+  verifyAndConfirmZiniPayTrx,
   isTransactionIdAlreadyUsed,
   verifyDownloadToken,
   signDownloadToken,
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
     const orderId = String(body?.orderId || "").trim();
     const invoiceId = String(body?.invoiceId || "").trim();
     const token = String(body?.token || "").trim();
+    const transactionId = String(body?.transactionId || "").trim().toUpperCase();
 
     // 2. If a valid, non-expired download token is already provided, verify it directly
     if (token) {
@@ -54,12 +56,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Look up order by orderId or invoiceId
-    if (!orderId && !invoiceId) {
+    // 3. Look up order by orderId, invoiceId, or transactionId
+    if (!orderId && !invoiceId && !transactionId) {
       return NextResponse.json(
         {
           ok: false,
-          error: "পেমেন্ট যাচাইয়ের জন্য অর্ডার আইডি বা ইনভয়েস আইডি প্রদান আবশ্যক।",
+          error: "পেমেন্ট যাচাইয়ের জন্য অর্ডার আইডি, ইনভয়েস আইডি বা ট্রানজেকশন আইডি প্রদান আবশ্যক।",
         },
         { status: 400 }
       );
@@ -68,12 +70,48 @@ export async function POST(req: NextRequest) {
     let existingOrder = await findOrder({
       orderId: orderId || undefined,
       invoiceId: invoiceId || undefined,
+      transactionId: transactionId || undefined,
     });
 
-    // Support static product link checkout: If no pending order exists but an invoiceId was passed,
-    // verify authoritatively with ZiniPay before synthesizing an order record.
+    // Support static product link or direct TrxID checkout:
     if (!existingOrder) {
-      if (!invoiceId) {
+      if (transactionId) {
+        const expectedAmount = getBookPriceBdt();
+        const trxCheck = await verifyAndConfirmZiniPayTrx({
+          transactionId,
+          amount: expectedAmount,
+        });
+
+        if (!trxCheck.verified) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error: trxCheck.message || "এই Transaction ID যাচাই করা সম্ভব হয়নি।",
+            },
+            { status: 400 }
+          );
+        }
+
+        existingOrder = await createOrderRecord({
+          cusName: "সম্মানিত পাঠক",
+          cusPhone: trxCheck.sender || "",
+          cusEmail: "reader@onuvuti.site",
+          amount: expectedAmount,
+        });
+
+        const markResult = await markOrderAsPaid(existingOrder.orderId, {
+          transactionId,
+          paymentMethod: trxCheck.provider || "ZiniPay TrxID",
+        });
+
+        if (markResult.ok && markResult.order && markResult.order.downloadToken) {
+          return NextResponse.json({
+            ok: true,
+            order: markResult.order,
+            downloadUrl: `/api/download?token=${encodeURIComponent(markResult.order.downloadToken)}`,
+          });
+        }
+      } else if (!invoiceId) {
         return NextResponse.json(
           {
             ok: false,
@@ -81,55 +119,55 @@ export async function POST(req: NextRequest) {
           },
           { status: 404 }
         );
-      }
+      } else {
+        const directVerification = await verifyZiniPayInvoice(invoiceId);
+        if (!directVerification.verified || directVerification.status !== "COMPLETED") {
+          return NextResponse.json(
+            {
+              ok: false,
+              status: directVerification.status || "PENDING",
+              error:
+                directVerification.message ||
+                "সিস্টেমে এই অর্ডারের কোনো প্রাথমিক তথ্য পাওয়া যায়নি অথবা পেমেন্ট এখনো সম্পন্ন হয়নি।",
+            },
+            { status: 404 }
+          );
+        }
 
-      const directVerification = await verifyZiniPayInvoice(invoiceId);
-      if (!directVerification.verified || directVerification.status !== "COMPLETED") {
-        return NextResponse.json(
-          {
-            ok: false,
-            status: directVerification.status || "PENDING",
-            error:
-              directVerification.message ||
-              "সিস্টেমে এই অর্ডারের কোনো প্রাথমিক তথ্য পাওয়া যায়নি অথবা পেমেন্ট এখনো সম্পন্ন হয়নি।",
-          },
-          { status: 404 }
-        );
-      }
+        const expectedAmount = getBookPriceBdt();
+        if (
+          typeof directVerification.amount === "number" &&
+          directVerification.amount < expectedAmount
+        ) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error: `টাকার পরিমাণ সঠিক নয়। আবশ্যক: ৳${expectedAmount}, পরিশোধিত: ৳${directVerification.amount}।`,
+            },
+            { status: 400 }
+          );
+        }
 
-      const expectedAmount = getBookPriceBdt();
-      if (
-        typeof directVerification.amount === "number" &&
-        directVerification.amount < expectedAmount
-      ) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: `টাকার পরিমাণ সঠিক নয়। আবশ্যক: ৳${expectedAmount}, পরিশোধিত: ৳${directVerification.amount}।`,
-          },
-          { status: 400 }
-        );
-      }
+        const directTrx = (directVerification.transactionId || "").trim().toUpperCase();
+        if (directTrx && (await isTransactionIdAlreadyUsed(directTrx))) {
+          return NextResponse.json(
+            {
+              ok: false,
+              error: "এই ট্রানজেকশন আইডি ইতোমধ্যে অন্য অর্ডারে ব্যবহৃত হয়েছে। ডুপ্লিকেট পেমেন্ট নিষিদ্ধ।",
+            },
+            { status: 409 }
+          );
+        }
 
-      const directTrx = (directVerification.transactionId || "").trim().toUpperCase();
-      if (directTrx && (await isTransactionIdAlreadyUsed(directTrx))) {
-        return NextResponse.json(
-          {
-            ok: false,
-            error: "এই ট্রানজেকশন আইডি ইতোমধ্যে অন্য অর্ডারে ব্যবহৃত হয়েছে। ডুপ্লিকেট পেমেন্ট নিষিদ্ধ।",
-          },
-          { status: 409 }
-        );
+        // Synthesize order record for the verified hosted checkout payment
+        existingOrder = await createOrderRecord({
+          cusName: directVerification.cusName || "সম্মানিত পাঠক",
+          cusEmail: directVerification.cusEmail || "",
+          cusPhone: directVerification.cusPhone || "",
+          amount: directVerification.amount || expectedAmount,
+          invoiceId,
+        });
       }
-
-      // Synthesize order record for the verified hosted checkout payment
-      existingOrder = await createOrderRecord({
-        cusName: directVerification.cusName || "সম্মানিত পাঠক",
-        cusEmail: directVerification.cusEmail || "",
-        cusPhone: directVerification.cusPhone || "",
-        amount: directVerification.amount || expectedAmount,
-        invoiceId,
-      });
     }
 
     // CRITICAL SECURITY CHECK: Prevent cross-order invoice hijacking
