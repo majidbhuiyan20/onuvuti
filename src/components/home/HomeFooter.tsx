@@ -36,7 +36,7 @@ export default function HomeFooter({
 
   return (
     <footer className="border-t border-stone-200/80 dark:border-stone-800 bg-[#FAF7F2] dark:bg-[#0B0F17] py-12 text-stone-600 dark:text-stone-300 transition-colors">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
+      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 space-y-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
           {/* Col 1: Original Brand Logo in White Card & Tagline */}
           <div className="lg:col-span-3 space-y-3">

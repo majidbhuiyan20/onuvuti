@@ -106,7 +106,7 @@ export default function HomeNavbar({
         className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.10] bg-cover bg-center overflow-hidden"
         style={{ backgroundImage: "url('/images/romantic1.png')" }}
       />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3 relative z-10">
+      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3 relative z-10">
         {/* Previous Original Brand Logo in White Card */}
         <Link
           href="/"

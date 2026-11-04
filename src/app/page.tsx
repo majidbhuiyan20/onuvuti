@@ -15,7 +15,7 @@ import {
   BackendPoll,
   BackendQuote,
 } from "@/lib/goApi";
-import SidebarBanners from "@/components/SidebarBanners";
+import { HomeLeftSidebar, HomeRightSidebar } from "@/components/home/HomeSidebars";
 import DailyWellnessCard from "@/components/DailyWellnessCard";
 
 // Modular Feature-First Components
@@ -385,6 +385,15 @@ export default function OnuvutiBlogHomePage() {
     )
     .slice(0, 3);
 
+  // Top Confessions / Untold Stories for Desktop Right Sidebar
+  const confessionPosts = posts
+    .filter(
+      (p) =>
+        p.category === "ক্রাশ ও কনফেশন" ||
+        p.category === "না বলা কথা"
+    )
+    .slice(0, 3);
+
   const totalPages = Math.max(
     1,
     Math.ceil(filteredPosts.length / ITEMS_PER_PAGE)
@@ -695,9 +704,6 @@ export default function OnuvutiBlogHomePage() {
 
   return (
     <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] flex flex-col transition-colors duration-200">
-      {/* Sticky Left and Right Desktop Sidebar Banners (Controlled by Backend) */}
-      <SidebarBanners />
-
       {/* Feature-First Smart Navbar with Previous Original Brand Logo */}
       <HomeNavbar
         activeCategory={activeCategory}
@@ -720,7 +726,7 @@ export default function OnuvutiBlogHomePage() {
         setShowNavSearch={setShowNavSearch}
       />
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
+      <main className="flex-1 max-w-7xl 2xl:max-w-[1440px] w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
         {/* Lake Sunset Hero Section */}
         <HomeHero onOpenSubmit={() => setIsSubmitModalOpen(true)} />
 
@@ -734,63 +740,89 @@ export default function OnuvutiBlogHomePage() {
           }}
         />
 
-        {/* 3-Column Feature Row (Dynamic Quote, Poll, Backend Trending Stories) */}
-        <HomeFeatureRow
-          posts={posts}
-          trendingPosts={trendingPosts}
-          onSelectCategory={(cat) => {
-            setActiveCategory(cat);
-            setShowSavedOnly(false);
-            setCurrentPage(1);
-          }}
-          activePoll={activePoll}
-          onVotePoll={handlePollVote}
-          activeQuote={activeQuote}
-          onReactQuote={handleQuoteReact}
-          onOpenSubmit={() => setIsSubmitModalOpen(true)}
-        />
+        {/* 3-Column Desktop Content Layout (Sidebars eliminate blank margins on wide screens) */}
+        <div className="flex flex-col xl:flex-row items-start justify-center gap-6 xl:gap-8">
+          {/* Left Desktop Sticky Sidebar (Chithi Box, Birthday Wish Card, Interactive Poll) */}
+          <div className="hidden xl:block">
+            <HomeLeftSidebar
+              activePoll={activePoll}
+              onVotePoll={handlePollVote}
+            />
+          </div>
 
-        {/* 8 Categories Grid */}
-        <CategoryGrid
-          activeCategory={activeCategory}
-          onSelectCategory={(cat) => {
-            setActiveCategory(cat);
-            setShowSavedOnly(false);
-            setCurrentPage(1);
-          }}
-        />
+          {/* Center Column: Feed, Features, Categories & Stories */}
+          <div className="flex-1 min-w-0 max-w-full xl:max-w-[760px] 2xl:max-w-[820px] w-full space-y-8">
+            {/* 3-Column Feature Row (Dynamic Quote, Poll, Backend Trending Stories) */}
+            <HomeFeatureRow
+              posts={posts}
+              trendingPosts={trendingPosts}
+              onSelectCategory={(cat) => {
+                setActiveCategory(cat);
+                setShowSavedOnly(false);
+                setCurrentPage(1);
+              }}
+              activePoll={activePoll}
+              onVotePoll={handlePollVote}
+              activeQuote={activeQuote}
+              onReactQuote={handleQuoteReact}
+              onOpenSubmit={() => setIsSubmitModalOpen(true)}
+            />
 
-        {/* Daily Wellness Hub (100% Backend Controlled via Go API & PostgreSQL) */}
-        <section id="wellness-hub">
-          <DailyWellnessCard />
-        </section>
+            {/* 8 Categories Grid */}
+            <CategoryGrid
+              activeCategory={activeCategory}
+              onSelectCategory={(cat) => {
+                setActiveCategory(cat);
+                setShowSavedOnly(false);
+                setCurrentPage(1);
+              }}
+            />
 
-        {/* Main Stories Feed with Search, Filter Pills & Pagination */}
-        <StoriesFeed
-          posts={posts}
-          filteredPosts={filteredPosts}
-          paginatedPosts={paginatedPosts}
-          activeCategory={activeCategory}
-          setActiveCategory={setActiveCategory}
-          showSavedOnly={showSavedOnly}
-          setShowSavedOnly={setShowSavedOnly}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          currentPage={currentPage}
-          setCurrentPage={setCurrentPage}
-          totalPages={totalPages}
-          safePage={safePage}
-          bookmarkedCount={bookmarkedCount}
-          likedIds={likedIds}
-          bookmarkedIds={bookmarkedIds}
-          toggleLike={toggleLike}
-          toggleBookmark={toggleBookmark}
-          onSurpriseRandom={handleSurpriseRandomStory}
-          onOpenSubmit={() => setIsSubmitModalOpen(true)}
-        />
+            {/* Main Stories Feed with Search, Filter Pills & Pagination */}
+            <StoriesFeed
+              posts={posts}
+              filteredPosts={filteredPosts}
+              paginatedPosts={paginatedPosts}
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
+              showSavedOnly={showSavedOnly}
+              setShowSavedOnly={setShowSavedOnly}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              currentPage={currentPage}
+              setCurrentPage={setCurrentPage}
+              totalPages={totalPages}
+              safePage={safePage}
+              bookmarkedCount={bookmarkedCount}
+              likedIds={likedIds}
+              bookmarkedIds={bookmarkedIds}
+              toggleLike={toggleLike}
+              toggleBookmark={toggleBookmark}
+              onSurpriseRandom={handleSurpriseRandomStory}
+              onOpenSubmit={() => setIsSubmitModalOpen(true)}
+            />
 
-        {/* Call to Action Banner */}
-        <CallToActionBanner onOpenSubmit={() => setIsSubmitModalOpen(true)} />
+            {/* Daily Wellness Hub (100% Backend Controlled via Go API & PostgreSQL) */}
+            <section id="wellness-hub">
+              <DailyWellnessCard />
+            </section>
+
+            {/* Call to Action Banner */}
+            <CallToActionBanner onOpenSubmit={() => setIsSubmitModalOpen(true)} />
+          </div>
+
+          {/* Right Desktop Sticky Sidebar (Confessions, Sporsher Byakoron eBook, Wellness, Categories) */}
+          <div className="hidden xl:block">
+            <HomeRightSidebar
+              confessions={
+                confessionPosts.length > 0
+                  ? confessionPosts
+                  : trendingPosts.slice(0, 3)
+              }
+              onOpenSubmit={() => setIsSubmitModalOpen(true)}
+            />
+          </div>
+        </div>
       </main>
 
       {/* 4-Column Footer with Original Brand Logo & Newsletter */}
