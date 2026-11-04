@@ -63,7 +63,7 @@ func (s *AdminService) ApproveAndUpdateStory(id string, req models.ApproveOrUpda
 
 	if req.ImageURL != nil && *req.ImageURL != "" {
 		if !sanitizer.ValidateOptionalImage(*req.ImageURL) {
-			return nil, errors.New("ছবিটি বৈধ নয় বা ২ মেগাবাইটের বেশি।")
+			return nil, errors.New("ছবিটি বৈধ নয় বা সাইজ অতিরিক্ত বড়।")
 		}
 	}
 
@@ -126,7 +126,7 @@ func (s *AdminService) CreateAdminStory(req models.AdminCreateStoryRequest) (*mo
 
 	imageURL := strings.TrimSpace(req.ImageURL)
 	if imageURL != "" && !sanitizer.ValidateOptionalImage(imageURL) {
-		return nil, errors.New("ছবিটি বৈধ নয় বা ২ মেগাবাইটের বেশি।")
+		return nil, errors.New("ছবিটি বৈধ নয় বা সাইজ অতিরিক্ত বড়।")
 	}
 
 	now := time.Now()

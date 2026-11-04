@@ -49,8 +49,8 @@ func Firewall(next http.Handler, rl *RateLimiter) http.Handler {
 			return
 		}
 
-		// 4. Cap request body at 3.5 MB to prevent memory exhaustion / DoS
-		r.Body = http.MaxBytesReader(w, r.Body, 3_670_016)
+		// 4. Cap request body at 10 MB to allow high-resolution admin story images
+		r.Body = http.MaxBytesReader(w, r.Body, 10_485_760)
 
 		next.ServeHTTP(w, r)
 	})

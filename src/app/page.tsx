@@ -8,6 +8,7 @@ import {
   StoryCategory,
 } from "@/data/blogData";
 import { validateImageUpload } from "@/lib/security";
+import { compressImageToDataUrl } from "@/lib/imageCompression";
 import {
   GO_API_BASE_URL,
   AppUser,
@@ -473,7 +474,7 @@ export default function OnuvutiBlogHomePage() {
     }
   };
 
-  const handleWriterImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleWriterImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
     const file = e.target.files?.[0];
     if (!file) return;
@@ -485,13 +486,14 @@ export default function OnuvutiBlogHomePage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setStoryImageDataUrl(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compressed = await compressImageToDataUrl(file, 1280, 0.82);
+      setStoryImageDataUrl(compressed);
+    } catch {
+      setImageError("ছবিটি প্রসেস করা সম্ভব হয়নি। অন্য ছবি চেষ্টা করুন।");
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handleStorySubmit = async (e: React.FormEvent) => {

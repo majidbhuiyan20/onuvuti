@@ -138,7 +138,7 @@ func (s *StoryService) SubmitPending(req models.SubmitStoryRequest) (*models.Sto
 
 	imageURL := strings.TrimSpace(req.ImageURL)
 	if imageURL != "" && !sanitizer.ValidateOptionalImage(imageURL) {
-		return nil, errors.New("ছবিটি বৈধ নয় বা ২ মেগাবাইটের বেশি। শুধুমাত্র JPG, PNG বা WEBP ছবি অনুমোদিত।")
+		return nil, errors.New("ছবিটি বৈধ নয় বা সাইজ অতিরিক্ত বড়। শুধুমাত্র JPG, PNG বা WEBP ছবি অনুমোদিত।")
 	}
 
 	author := "নাম প্রকাশে অনিচ্ছুক"

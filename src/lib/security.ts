@@ -136,7 +136,7 @@ export const ALLOWED_IMAGE_TYPES = [
   "image/png",
   "image/webp",
 ];
-export const MAX_IMAGE_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
+export const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB allowed before client compression
 
 export function validateImageUpload(file: {
   type: string;
@@ -162,7 +162,7 @@ export function validateImageUpload(file: {
   if (file.size > MAX_IMAGE_SIZE_BYTES) {
     return {
       valid: false,
-      errorBn: "ছবির সাইজ সর্বোচ্চ ২ মেগাবাইট (2 MB) হতে পারবে।",
+      errorBn: "ছবির সাইজ সর্বোচ্চ ১৫ মেগাবাইট (15 MB) হতে পারবে।",
     };
   }
 
@@ -175,10 +175,9 @@ export function validateImageUpload(file: {
 export function isValidImageDataUrl(dataUrl?: string): boolean {
   if (!dataUrl) return true; // Optional!
   if (dataUrl.startsWith("/images/")) return true; // Local public asset
-  const match = /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(
-    dataUrl
+  const match = /^data:image\/(jpeg|jpg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/i.test(
+    dataUrl.trim()
   );
-  // Ensure base64 length is under ~2.8MB (which corresponds to 2MB binary)
-  return match && dataUrl.length <= 2_900_000;
+  return match && dataUrl.length <= 10_000_000;
 }
 

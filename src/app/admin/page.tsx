@@ -33,9 +33,11 @@ import {
   Gift,
   Copy,
   Check,
+  Loader2,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
+import { compressImageToDataUrl } from "@/lib/imageCompression";
 import {
   GO_API_BASE_URL,
   getAdminAuthHeaders,
@@ -244,6 +246,8 @@ export default function AdminDashboardPage() {
     undefined
   );
   const [imageError, setImageError] = useState<string | null>(null);
+  const [isSubmittingStory, setIsSubmittingStory] = useState(false);
+  const [isCompressingImage, setIsCompressingImage] = useState(false);
 
   const fetchAnalytics = useCallback(
     async (
@@ -883,7 +887,7 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleImageFileSelect = (
+  const handleImageFileSelect = async (
     e: React.ChangeEvent<HTMLInputElement>,
     onValidDataUrl: (url: string) => void
   ) => {
@@ -898,13 +902,17 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        onValidDataUrl(reader.result);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      setIsCompressingImage(true);
+      const compressed = await compressImageToDataUrl(file, 1280, 0.82);
+      onValidDataUrl(compressed);
+    } catch (err: unknown) {
+      console.error("Image compression error:", err);
+      setImageError("ছবিটি প্রসেস করা সম্ভব হয়নি। অনুগ্রহ করে অন্য ছবি নির্বাচন করুন।");
+    } finally {
+      setIsCompressingImage(false);
+      e.target.value = "";
+    }
   };
 
   const startEditingPending = (item: PendingStory) => {
@@ -951,53 +959,35 @@ export default function AdminDashboardPage() {
       if (res.ok) {
         await fetchDashboardFromGo();
         setEditingPendingId(null);
-        return;
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error || data?.message || "অনুমোদন করতে ব্যর্থ হয়েছে।");
       }
-    } catch {
-      // Fallback to local state if Go server is offline
+    } catch (err) {
+      console.error("Approve error:", err);
+      alert("সার্ভারের সাথে সংযোগ করা যায়নি।");
     }
-
-    const confessionNum =
-      finalCategory === "ক্রাশ ও কনফেশন"
-        ? `#কনফেশন_${105 + publishedList.length}`
-        : undefined;
-
-    const newPost: BlogPost = {
-      id: String(Date.now()),
-      slug: `story-${Date.now()}`,
-      title: finalTitle,
-      excerpt: finalContent.slice(0, 125) + "...",
-      category: finalCategory,
-      confessionIdBn: confessionNum,
-      imageUrl: finalImage || undefined,
-      adminNote: finalAdminNote || undefined,
-      readTimeBn: "৩ মিনিট পাঠ",
-      dateBn: "আজ",
-      author: item.author,
-      likesCount: 1,
-      reactions: { love: 1, touched: 0, relatable: 0 },
-      content: finalContent.split(/\n+/).filter(Boolean),
-    };
-
-    const nextPublished = [newPost, ...publishedList];
-    syncPublishedToStorage(nextPublished);
-    setPendingStories((prev) => prev.filter((p) => p.id !== item.id));
-    setEditingPendingId(null);
   };
 
   const handleReject = async (id: string) => {
+    if (!confirm("আপনি কি নিশ্চিত যে এই পেন্ডিং লেখাটি বাতিল করতে চান?")) return;
     try {
-      await fetch(
+      const res = await fetch(
         `${GO_API_BASE_URL}/admin/stories/${encodeURIComponent(id)}`,
         {
           method: "DELETE",
           headers: getAdminAuthHeaders(),
         }
       );
+      if (res.ok) {
+        await fetchDashboardFromGo();
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error || data?.message || "বাতিল করতে ব্যর্থ হয়েছে।");
+      }
     } catch {
-      // Ignore if Go server offline
+      alert("সার্ভারের সাথে সংযোগ করা যায়নি।");
     }
-    setPendingStories((prev) => prev.filter((p) => p.id !== id));
   };
 
   const handleTogglePin = async (post: BlogPost) => {
@@ -1011,42 +1001,51 @@ export default function AdminDashboardPage() {
       );
       if (res.ok) {
         await fetchDashboardFromGo();
-        return;
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error || data?.message || "পিন স্ট্যাটাস পরিবর্তন করতে সমস্যা হয়েছে।");
       }
     } catch {
-      // Fallback to local state
+      alert("সার্ভারের সাথে সংযোগ করা যায়নি।");
     }
-
-    const updated = publishedList.map((p) =>
-      p.id === post.id ? { ...p, featured: !p.featured } : p
-    );
-    syncPublishedToStorage(updated);
   };
 
   const handleDeleteComment = async (commentId: string) => {
+    if (!confirm("আপনি কি এই মন্তব্যটি মুছে ফেলতে চান?")) return;
     try {
-      await fetch(
+      const res = await fetch(
         `${GO_API_BASE_URL}/admin/comments/${encodeURIComponent(commentId)}`,
         {
           method: "DELETE",
           headers: getAdminAuthHeaders(),
         }
       );
+      if (res.ok) {
+        setCommentsList((prev) => prev.filter((c) => c.id !== commentId));
+      } else {
+        const data = await res.json().catch(() => null);
+        alert(data?.error || "মন্তব্যটি মুছতে সমস্যা হয়েছে।");
+      }
     } catch {
-      // Ignore if offline
+      alert("সার্ভারের সাথে সংযোগ করা যায়নি।");
     }
-    setCommentsList((prev) => prev.filter((c) => c.id !== commentId));
   };
 
   const handleCreateStory = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingStory) return;
+
     const cleanTitle = sanitizeText(newTitle, 180);
     const cleanContent = sanitizeText(newContent, 10000);
     const cleanAuthor = sanitizeText(newAuthor, 80) || "অনুভূতি সম্পাদনা পর্ষদ";
     const cleanAdminNote = sanitizeText(newAdminNote, 1200);
 
-    if (!cleanTitle || !cleanContent) return;
+    if (!cleanTitle || !cleanContent) {
+      alert("অনুগ্রহ করে শিরোনাম ও মূল লেখা লিখুন।");
+      return;
+    }
 
+    setIsSubmittingStory(true);
     try {
       const res = await fetch(`${GO_API_BASE_URL}/admin/stories`, {
         method: "POST",
@@ -1062,49 +1061,30 @@ export default function AdminDashboardPage() {
         }),
       });
 
-      if (res.ok) {
-        await fetchDashboardFromGo();
-        setNewTitle("");
-        setNewContent("");
-        setNewAdminNote("");
-        setNewImageDataUrl(undefined);
-        setActiveTab("published");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const errMsg =
+          data?.error ||
+          data?.message ||
+          `পোস্টটি সংরক্ষণ করা সম্ভব হয়নি (স্ট্যাটাস: ${res.status})।`;
+        alert(errMsg);
         return;
       }
-    } catch {
-      // Fallback to local state if Go server is offline
+
+      // Success: reload single source of truth from PostgreSQL via Go backend
+      await fetchDashboardFromGo();
+      setNewTitle("");
+      setNewContent("");
+      setNewAdminNote("");
+      setNewImageDataUrl(undefined);
+      setActiveTab("published");
+      alert("লেখাটি সফলভাবে পোস্ট করা হয়েছে এবং ডাটাবেজে সংরক্ষিত হয়েছে।");
+    } catch (err) {
+      console.error("Story creation error:", err);
+      alert("সার্ভারের সাথে সংযোগ করা যায়নি। ইন্টারনেট সংযোগ চেক করে আবার চেষ্টা করুন।");
+    } finally {
+      setIsSubmittingStory(false);
     }
-
-    const confessionNum =
-      newCategory === "ক্রাশ ও কনফেশন"
-        ? `#কনফেশন_${105 + publishedList.length}`
-        : undefined;
-
-    const created: BlogPost = {
-      id: String(Date.now()),
-      slug: `story-${Date.now()}`,
-      title: cleanTitle,
-      excerpt: cleanContent.slice(0, 125) + "...",
-      category: newCategory,
-      confessionIdBn: confessionNum,
-      isAdminPost: isAdminBadge,
-      imageUrl: newImageDataUrl || undefined,
-      adminNote: cleanAdminNote || undefined,
-      readTimeBn: "৪ মিনিট পাঠ",
-      dateBn: "আজ",
-      author: cleanAuthor,
-      likesCount: 1,
-      reactions: { love: 1, touched: 0, relatable: 0 },
-      content: cleanContent.split(/\n+/).filter(Boolean),
-    };
-
-    const nextPublished = [created, ...publishedList];
-    syncPublishedToStorage(nextPublished);
-    setNewTitle("");
-    setNewContent("");
-    setNewAdminNote("");
-    setNewImageDataUrl(undefined);
-    setActiveTab("published");
   };
 
   if (!isAuthenticated) {
@@ -1941,8 +1921,10 @@ export default function AdminDashboardPage() {
                     <button
                       type="button"
                       onClick={async () => {
+                        if (!confirm("আপনি কি নিশ্চিত যে এই লেখাটি মুছে ফেলতে চান?"))
+                          return;
                         try {
-                          await fetch(
+                          const res = await fetch(
                             `${GO_API_BASE_URL}/admin/stories/${encodeURIComponent(
                               post.id
                             )}`,
@@ -1951,12 +1933,16 @@ export default function AdminDashboardPage() {
                               headers: getAdminAuthHeaders(),
                             }
                           );
+                          if (res.ok) {
+                            await fetchDashboardFromGo();
+                            return;
+                          } else {
+                            const data = await res.json().catch(() => null);
+                            alert(data?.error || "লেখাটি মুছতে ব্যর্থ হয়েছে।");
+                          }
                         } catch {
-                          // Ignore if offline
+                          alert("সার্ভারের সাথে সংযোগ করা যায়নি।");
                         }
-                        syncPublishedToStorage(
-                          publishedList.filter((p) => p.id !== post.id)
-                        );
                       }}
                       className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
                       title="মুছে ফেলুন"
@@ -2126,7 +2112,7 @@ export default function AdminDashboardPage() {
               {!newImageDataUrl ? (
                 <label className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-dashed border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/60 hover:bg-stone-100 dark:hover:bg-stone-800 text-xs font-bold text-stone-600 dark:text-stone-300 cursor-pointer transition">
                   <ImagePlus className="w-4 h-4 text-[#80131E] dark:text-rose-400" />
-                  <span>চাইলে ছবি আপলোড করুন (JPG/PNG/WEBP, সর্বোচ্চ 2MB)</span>
+                  <span>চাইলে ছবি আপলোড করুন (JPG/PNG/WEBP, সর্বোচ্চ 15MB — স্বয়ংক্রিয়ভাবে অপ্টিমাইজ হবে)</span>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -2166,9 +2152,22 @@ export default function AdminDashboardPage() {
 
             <button
               type="submit"
-              className="px-6 py-3 rounded-xl bg-[#80131E] text-white font-bold text-sm hover:bg-[#630d16] transition cursor-pointer"
+              disabled={isSubmittingStory || isCompressingImage}
+              className="px-6 py-3 rounded-xl bg-[#80131E] text-white font-bold text-sm hover:bg-[#630d16] disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer flex items-center justify-center gap-2"
             >
-              লেখাটি প্রকাশ করুন
+              {isSubmittingStory ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>পোস্ট হচ্ছে...</span>
+                </>
+              ) : isCompressingImage ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>ছবি অপ্টিমাইজ হচ্ছে...</span>
+                </>
+              ) : (
+                <span>লেখাটি প্রকাশ করুন</span>
+              )}
             </button>
           </form>
         )}
