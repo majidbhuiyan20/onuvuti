@@ -18,7 +18,12 @@ export default async function Image({ params }: { params: Promise<{ id: string }
   let sender = "একজন শুভাকাঙ্ক্ষী";
   let themeId = "rose";
   try {
-    const res = await fetch(`${getGoApiBaseUrl()}/wishes/${encodeURIComponent(id)}`, { cache: "no-store" });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 3500);
+    const res = await fetch(`${getGoApiBaseUrl()}/wishes/${encodeURIComponent(id)}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
     const data = await res.json();
     if (data?.ok && data.wish) {
       recipient = data.wish.recipientName;

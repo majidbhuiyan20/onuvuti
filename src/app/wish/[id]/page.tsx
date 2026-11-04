@@ -10,14 +10,21 @@ export const instant = false;
 /** Public metadata only: no content, and fetching it never counts as a "view". */
 async function fetchWish(id: string): Promise<WishPublic | null> {
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
     const res = await fetch(`${getGoApiBaseUrl()}/wishes/${encodeURIComponent(id)}`, {
       cache: "no-store",
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
+
     if (res.ok) {
       const data = await res.json();
       if (data?.ok && data.wish) return data.wish as WishPublic;
     }
-  } catch (err) {
+  } catch (err: unknown) {
+    if ((err as { digest?: string })?.digest === "NEXT_PRERENDER_INTERRUPTED") {
+      throw err;
+    }
     console.error("Failed to fetch wish from Go backend:", err);
   }
   return null;
