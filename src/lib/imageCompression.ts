@@ -52,3 +52,4 @@ export async function compressImageToDataUrl(
     reader.readAsDataURL(file);
   });
 }
+

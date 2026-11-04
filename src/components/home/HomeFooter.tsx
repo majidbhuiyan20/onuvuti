@@ -125,24 +125,36 @@ export default function HomeFooter({
             </h4>
             <ul className="space-y-2 text-xs font-semibold text-stone-500 dark:text-stone-400">
               <li>
-                <span className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer">
+                <Link
+                  href="/about"
+                  className="hover:text-[#7E151E] dark:hover:text-rose-400 transition"
+                >
                   আমাদের সম্পর্কে
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer">
-                  সম্পাদকীয় নীতি
-                </span>
+                <Link
+                  href="/terms"
+                  className="hover:text-[#7E151E] dark:hover:text-rose-400 transition"
+                >
+                  ব্যবহারের শর্তাবলী ও নীতি
+                </Link>
               </li>
               <li>
-                <span className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer">
-                  গোপনীয়তা নীতি
-                </span>
+                <Link
+                  href="/privacy"
+                  className="hover:text-[#7E151E] dark:hover:text-rose-400 transition"
+                >
+                  গোপনীয়তা নীতি (Privacy)
+                </Link>
               </li>
               <li>
-                <span className="hover:text-[#7E151E] dark:hover:text-rose-400 cursor-pointer">
-                  যোগাযোগ
-                </span>
+                <Link
+                  href="/contact"
+                  className="hover:text-[#7E151E] dark:hover:text-rose-400 transition"
+                >
+                  যোগাযোগ (Contact)
+                </Link>
               </li>
             </ul>
           </div>
