@@ -18,7 +18,7 @@ async function fetchStory(slug: string): Promise<StoryFetchResult | null> {
   try {
     const baseUrl = getGoApiBaseUrl();
     const res = await fetch(`${baseUrl}/stories/${encodeURIComponent(slug)}`, {
-      cache: "no-store",
+      next: { revalidate: 60 },
       signal: AbortSignal.timeout(2500),
     });
     if (res.ok) {
@@ -74,7 +74,7 @@ async function fetchRelatedStories(currentSlug: string): Promise<BlogPost[]> {
   try {
     const baseUrl = getGoApiBaseUrl();
     const res = await fetch(`${baseUrl}/stories?limit=6`, {
-      cache: "no-store",
+      next: { revalidate: 120 },
       signal: AbortSignal.timeout(2500),
     });
     if (res.ok) {
@@ -101,7 +101,7 @@ async function fetchAdjacentStories(
   try {
     const baseUrl = getGoApiBaseUrl();
     const res = await fetch(`${baseUrl}/stories?limit=100`, {
-      cache: "no-store",
+      next: { revalidate: 120 },
       signal: AbortSignal.timeout(2500),
     });
     if (res.ok) {
@@ -141,7 +141,7 @@ async function fetchTrendingConfessions(
         "ক্রাশ ও কনফেশন"
       )}&limit=6`,
       {
-        cache: "no-store",
+        next: { revalidate: 120 },
         signal: AbortSignal.timeout(2500),
       }
     );
