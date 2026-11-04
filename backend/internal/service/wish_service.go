@@ -70,3 +70,15 @@ func (s *WishService) GetWishByID(id string) (*models.BirthdayWish, error) {
 	return s.repo.GetWishByID(cleanID)
 }
 
+func (s *WishService) ListWishesAdmin() ([]models.BirthdayWish, error) {
+	return s.repo.ListWishesAdmin(100)
+}
+
+func (s *WishService) DeleteWish(id string) error {
+	cleanID := strings.TrimSpace(id)
+	if cleanID == "" {
+		return errors.New("চিঠির আইডি দেওয়া হয়নি")
+	}
+	return s.repo.DeleteWish(cleanID)
+}
+

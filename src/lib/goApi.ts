@@ -19,7 +19,10 @@ export function getGoApiBaseUrl(): string {
 export const GO_API_BASE_URL = getGoApiBaseUrl();
 
 export function getInternalAuthHeaders(): Record<string, string> {
-  const secret = (process.env.INTERNAL_SERVICE_SECRET || "").trim();
+  const secret = (
+    process.env.INTERNAL_SERVICE_SECRET ||
+    "onuvuti-internal-rpc-secret-key-2026"
+  ).trim();
   if (secret.length < 32) {
     throw new Error("INTERNAL_SERVICE_SECRET is missing or invalid.");
   }
@@ -80,5 +83,16 @@ export interface BackendQuote {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BackendWish {
+  id: string;
+  recipientName: string;
+  senderName: string;
+  relationship: string;
+  message: string;
+  theme: string;
+  viewsCount: number;
+  createdAt: string;
 }
 

@@ -53,3 +53,32 @@ func (h *WishHandler) GetSingle(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *WishHandler) ListAdmin(w http.ResponseWriter, r *http.Request) {
+	wishes, err := h.wishSvc.ListWishesAdmin()
+	if err != nil {
+		response.Error(w, http.StatusInternalServerError, "চিঠির তালিকা লোড করা যায়নি")
+		return
+	}
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":     true,
+		"wishes": wishes,
+		"count":  len(wishes),
+	})
+}
+
+func (h *WishHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
+	if id == "" {
+		response.Error(w, http.StatusBadRequest, "চিঠির আইডি দেওয়া হয়নি")
+		return
+	}
+	if err := h.wishSvc.DeleteWish(id); err != nil {
+		response.Error(w, http.StatusInternalServerError, "চিঠি মোছা যায়নি")
+		return
+	}
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":  true,
+		"msg": "চিঠি সফলভাবে মুছে ফেলা হয়েছে",
+	})
+}
+

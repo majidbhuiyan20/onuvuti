@@ -30,6 +30,9 @@ import {
   HeartPulse,
   BarChart2,
   MessageSquareHeart,
+  Gift,
+  Copy,
+  Check,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
@@ -38,6 +41,7 @@ import {
   getAdminAuthHeaders,
   BackendPoll,
   BackendQuote,
+  BackendWish,
 } from "@/lib/goApi";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -129,8 +133,15 @@ export default function AdminDashboardPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
-    "analytics" | "pending" | "published" | "comments" | "create" | "ads" | "wellness" | "polls" | "quotes"
+    "analytics" | "pending" | "published" | "comments" | "create" | "ads" | "wellness" | "polls" | "quotes" | "wishes"
   >("analytics");
+
+  // Birthday Wishes Management State (PostgreSQL Controlled)
+  const [adminWishes, setAdminWishes] = useState<BackendWish[]>([]);
+  const [isLoadingWishes, setIsLoadingWishes] = useState(false);
+  const [wishSearch, setWishSearch] = useState("");
+  const [wishActionMsg, setWishActionMsg] = useState("");
+  const [copiedWishId, setCopiedWishId] = useState<string | null>(null);
 
   // Polls Management State (PostgreSQL Controlled)
   const [adminPolls, setAdminPolls] = useState<BackendPoll[]>([]);
@@ -723,6 +734,42 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchWishesFromGo = async () => {
+    try {
+      setIsLoadingWishes(true);
+      const res = await fetch(`${GO_API_BASE_URL}/admin/wishes`, {
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && Array.isArray(data.wishes)) {
+          setAdminWishes(data.wishes);
+        }
+      }
+    } catch {
+      // offline
+    } finally {
+      setIsLoadingWishes(false);
+    }
+  };
+
+  const handleDeleteWish = async (id: string) => {
+    if (!confirm("আপনি কি নিশ্চিত এই জন্মদিনের চিঠিটি মুছে ফেলতে চান?")) return;
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/wishes/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        setWishActionMsg("চিঠিটি সফলভাবে মুছে ফেলা হয়েছে");
+        setTimeout(() => setWishActionMsg(""), 3000);
+        await fetchWishesFromGo();
+      }
+    } catch {
+      // offline
+    }
+  };
+
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
     const weekAgoDate = new Date();
@@ -740,6 +787,7 @@ export default function AdminDashboardPage() {
         fetchWellnessFromGo();
         fetchPollsFromGo();
         fetchQuotesFromGo();
+        fetchWishesFromGo();
       }
 
       const savedPending = localStorage.getItem("onuvuti_pending_stories");
@@ -1311,6 +1359,22 @@ export default function AdminDashboardPage() {
           >
             <MessageSquareHeart className="w-4 h-4" />
             <span>💬 না বলা কথা ({adminQuotes.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("wishes");
+              fetchWishesFromGo();
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "wishes"
+                ? "bg-[#80131E] text-white"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+            }`}
+          >
+            <Gift className="w-4 h-4" />
+            <span>🎂 জন্মদিনের চিঠি ({adminWishes.length})</span>
           </button>
         </div>
 
@@ -2926,6 +2990,183 @@ export default function AdminDashboardPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* TAB 9: BIRTHDAY WISHES MANAGEMENT (PostgreSQL 100% Single Source of Truth) */}
+        {activeTab === "wishes" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-stone-200 dark:border-stone-800">
+              <div>
+                <h2 className="text-xl font-black text-[#142230] dark:text-white flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
+                  <span>🎂 জন্মদিনের চিঠি ও খাম ব্যবস্থাপনা</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold">
+                    মোট: {adminWishes.length}টি
+                  </span>
+                </h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                  পাঠকদের তৈরি করা সমস্ত চিঠি ও খাম ডাটাবেজ (PostgreSQL) থেকে সরাসরি প্রদর্শিত হচ্ছে।
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={fetchWishesFromGo}
+                  disabled={isLoadingWishes}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 cursor-pointer transition flex items-center gap-1.5"
+                >
+                  <span>🔄 রিফ্রেশ</span>
+                </button>
+                <Link
+                  href="/birthday-wish"
+                  target="_blank"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#80131E] hover:bg-[#680f18] text-white transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>নতুন চিঠি তৈরি করুন</span>
+                </Link>
+              </div>
+            </div>
+
+            {wishActionMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+                {wishActionMsg}
+              </div>
+            )}
+
+            {/* Search Box */}
+            <div className="flex items-center gap-3">
+              <input
+                type="text"
+                value={wishSearch}
+                onChange={(e) => setWishSearch(e.target.value)}
+                placeholder="প্রাপক, প্রেরক, বা চিঠির আইডি দিয়ে খুঁজুন..."
+                className="w-full max-w-md px-4 py-2 rounded-xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-xs text-stone-900 dark:text-white outline-none focus:ring-2 focus:ring-[#80131E]"
+              />
+              {wishSearch && (
+                <button
+                  type="button"
+                  onClick={() => setWishSearch("")}
+                  className="text-xs text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 cursor-pointer"
+                >
+                  ক্লিয়ার
+                </button>
+              )}
+            </div>
+
+            {/* Wishes Grid */}
+            {isLoadingWishes ? (
+              <div className="py-16 text-center text-xs text-stone-500 dark:text-stone-400">
+                ডাটাবেজ থেকে চিঠিসমূহ লোড হচ্ছে...
+              </div>
+            ) : adminWishes.length === 0 ? (
+              <div className="py-16 text-center text-stone-500 dark:text-stone-400 rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-8">
+                <Gift className="w-12 h-12 text-stone-300 dark:text-stone-700 mx-auto mb-3" />
+                <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
+                  এখনো কোনো জন্মদিনের চিঠি তৈরি হয়নি
+                </p>
+                <p className="text-xs text-stone-400 mt-1">
+                  পাঠকরা /birthday-wish পেজ থেকে চিঠি তৈরি করলে এখানে প্রদর্শিত হবে।
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {adminWishes
+                  .filter((w) => {
+                    if (!wishSearch.trim()) return true;
+                    const q = wishSearch.toLowerCase();
+                    return (
+                      w.recipientName.toLowerCase().includes(q) ||
+                      w.senderName.toLowerCase().includes(q) ||
+                      w.relationship.toLowerCase().includes(q) ||
+                      w.id.toLowerCase().includes(q)
+                    );
+                  })
+                  .map((w) => (
+                    <div
+                      key={w.id}
+                      className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 shadow-xs flex flex-col justify-between hover:shadow-md transition"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[10px] font-bold text-stone-400 dark:text-stone-500">
+                            #{w.id}
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                            {w.relationship || "বিশেষ কেউ"}
+                          </span>
+                        </div>
+
+                        <div>
+                          <div className="text-sm font-black text-[#142230] dark:text-white">
+                            To: {w.recipientName}
+                          </div>
+                          <div className="text-xs text-stone-500 dark:text-stone-400 font-medium">
+                            From: {w.senderName}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-stone-600 dark:text-stone-300 line-clamp-3 leading-relaxed bg-stone-50 dark:bg-stone-800/60 p-2.5 rounded-xl border border-stone-100 dark:border-stone-700/60 font-serif">
+                          “{w.message}”
+                        </p>
+
+                        <div className="flex items-center justify-between text-[11px] text-stone-400 pt-1">
+                          <span>
+                            👁️ {w.viewsCount || 0} বার খোলা হয়েছে
+                          </span>
+                          <span>
+                            {w.createdAt
+                              ? new Date(w.createdAt).toLocaleDateString("bn-BD")
+                              : ""}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="pt-4 mt-4 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={`/wish/${w.id}`}
+                            target="_blank"
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#FAF4E6] dark:bg-[#1E293B] hover:bg-[#F2E8D2] text-[#80131E] dark:text-rose-300 transition flex items-center gap-1"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            <span>চিঠি দেখুন</span>
+                          </Link>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const fullUrl = `${window.location.origin}/wish/${w.id}`;
+                              navigator.clipboard.writeText(fullUrl);
+                              setCopiedWishId(w.id);
+                              setTimeout(() => setCopiedWishId(null), 2000);
+                            }}
+                            className="p-1.5 rounded-xl text-stone-500 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 cursor-pointer transition"
+                            title="লিংক কপি করুন"
+                          >
+                            {copiedWishId === w.id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteWish(w.id)}
+                          className="p-1.5 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 cursor-pointer transition"
+                          title="মুছে ফেলুন"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            )}
           </div>
         )}
       </main>

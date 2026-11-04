@@ -76,7 +76,15 @@ export default function BirthdayWishCreatorPage() {
         }),
       });
 
-      const data = await res.json();
+      const text = await res.text();
+      let data: any = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(
+          "সার্ভার থেকে সঠিক তথ্য পাওয়া যায়নি। অনুগ্রহ করে সার্ভার চালু আছে কিনা দেখে আবার চেষ্টা করুন।"
+        );
+      }
 
       if (!res.ok || !data.ok) {
         throw new Error(data?.error || "চিঠি তৈরি করতে সমস্যা হয়েছে");

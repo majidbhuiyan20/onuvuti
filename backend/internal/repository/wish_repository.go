@@ -45,3 +45,45 @@ func (r *Repository) GetWishByID(id string) (*models.BirthdayWish, error) {
 	return &w, nil
 }
 
+func (r *Repository) ListWishesAdmin(limit int) ([]models.BirthdayWish, error) {
+	if r.db == nil {
+		return []models.BirthdayWish{}, nil
+	}
+	if limit <= 0 || limit > 300 {
+		limit = 100
+	}
+	rows, err := r.db.Query(`
+		SELECT id, recipient_name, sender_name, relationship, message, theme, views_count, created_at
+		FROM birthday_wishes
+		ORDER BY created_at DESC
+		LIMIT $1
+	`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []models.BirthdayWish
+	for rows.Next() {
+		var w models.BirthdayWish
+		if err := rows.Scan(
+			&w.ID, &w.RecipientName, &w.SenderName, &w.Relationship, &w.Message, &w.Theme, &w.ViewsCount, &w.CreatedAt,
+		); err != nil {
+			continue
+		}
+		list = append(list, w)
+	}
+	if list == nil {
+		list = []models.BirthdayWish{}
+	}
+	return list, nil
+}
+
+func (r *Repository) DeleteWish(id string) error {
+	if r.db == nil {
+		return fmt.Errorf("ডাটাবেজ সংযোগ নেই")
+	}
+	_, err := r.db.Exec(`DELETE FROM birthday_wishes WHERE id = $1`, id)
+	return err
+}
+
