@@ -8,12 +8,14 @@ export async function DELETE(
   try {
     const { id } = await params;
     const authHeader = req.headers.get("authorization") || "";
+    const internalSecret = process.env.INTERNAL_SERVICE_SECRET || "onuvuti-internal-rpc-secret-key-2026";
     const baseUrl = getGoApiBaseUrl();
 
     const goRes = await fetch(`${baseUrl}/admin/wishes/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: {
         "Content-Type": "application/json",
+        "X-Internal-Secret": internalSecret,
         ...(authHeader ? { Authorization: authHeader } : {}),
       },
     });

@@ -109,8 +109,8 @@ func NewRouter(deps RouterDeps) http.Handler {
 	if deps.WishHandler != nil {
 		mux.HandleFunc("POST /api/v1/wishes", deps.WishHandler.Create)
 		mux.HandleFunc("GET /api/v1/wishes/{id}", deps.WishHandler.GetSingle)
-		mux.HandleFunc("GET /api/v1/admin/wishes", middleware.RequireAdmin(cfg, deps.WishHandler.ListAdmin))
-		mux.HandleFunc("DELETE /api/v1/admin/wishes/{id}", middleware.RequireAdmin(cfg, deps.WishHandler.Delete))
+		mux.HandleFunc("GET /api/v1/admin/wishes", middleware.RequireInternalOrAdmin(cfg, deps.WishHandler.ListAdmin))
+		mux.HandleFunc("DELETE /api/v1/admin/wishes/{id}", middleware.RequireInternalOrAdmin(cfg, deps.WishHandler.Delete))
 	}
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain
