@@ -28,10 +28,17 @@ import {
   Megaphone,
   ExternalLink,
   HeartPulse,
+  BarChart2,
+  MessageSquareHeart,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
-import { GO_API_BASE_URL, getAdminAuthHeaders } from "@/lib/goApi";
+import {
+  GO_API_BASE_URL,
+  getAdminAuthHeaders,
+  BackendPoll,
+  BackendQuote,
+} from "@/lib/goApi";
 import ThemeToggle from "@/components/ThemeToggle";
 
 interface PendingStory {
@@ -122,8 +129,24 @@ export default function AdminDashboardPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
-    "analytics" | "pending" | "published" | "comments" | "create" | "ads" | "wellness"
+    "analytics" | "pending" | "published" | "comments" | "create" | "ads" | "wellness" | "polls" | "quotes"
   >("analytics");
+
+  // Polls Management State (PostgreSQL Controlled)
+  const [adminPolls, setAdminPolls] = useState<BackendPoll[]>([]);
+  const [isLoadingPolls, setIsLoadingPolls] = useState(false);
+  const [newPollQuestion, setNewPollQuestion] = useState("");
+  const [newPollOptionsText, setNewPollOptionsText] = useState("হ্যাঁ, এখনো বাসি\nএকসময় বাসতাম\nকখনো এমন হয়নি");
+  const [isSavingPoll, setIsSavingPoll] = useState(false);
+  const [pollStatusMsg, setPollStatusMsg] = useState("");
+
+  // Quotes Management State (PostgreSQL Controlled)
+  const [adminQuotes, setAdminQuotes] = useState<BackendQuote[]>([]);
+  const [isLoadingQuotes, setIsLoadingQuotes] = useState(false);
+  const [newQuoteText, setNewQuoteText] = useState("");
+  const [newQuoteAuthor, setNewQuoteAuthor] = useState("একজন অজ্ঞাত পাঠক");
+  const [isSavingQuote, setIsSavingQuote] = useState(false);
+  const [quoteStatusMsg, setQuoteStatusMsg] = useState("");
 
   // Wellness Tips Management State (PostgreSQL Controlled)
   const [wellnessTips, setWellnessTips] = useState<AdminWellnessTip[]>([]);
@@ -541,6 +564,165 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchPollsFromGo = useCallback(async () => {
+    setIsLoadingPolls(true);
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/polls`, {
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && Array.isArray(data.polls)) {
+          setAdminPolls(data.polls);
+        }
+      }
+    } catch {
+      // offline
+    } finally {
+      setIsLoadingPolls(false);
+    }
+  }, []);
+
+  const handleCreatePoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPollQuestion.trim()) return;
+    const opts = newPollOptionsText
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (opts.length < 2) {
+      setPollStatusMsg("কমপক্ষে ২টি উত্তরের অপশন দিন");
+      return;
+    }
+
+    setIsSavingPoll(true);
+    setPollStatusMsg("");
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/polls`, {
+        method: "POST",
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ question: newPollQuestion, options: opts, isActive: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        setPollStatusMsg("জরিপ প্রশ্ন সফলভাবে তৈরি হয়েছে!");
+        setNewPollQuestion("");
+        await fetchPollsFromGo();
+      } else {
+        setPollStatusMsg(data.error || "সংরক্ষণ করা যায়নি");
+      }
+    } catch {
+      setPollStatusMsg("সার্ভার ত্রুটি হয়েছে");
+    } finally {
+      setIsSavingPoll(false);
+    }
+  };
+
+  const handleTogglePollActive = async (poll: BackendPoll) => {
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/polls/${encodeURIComponent(poll.id)}`, {
+        method: "PUT",
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ isActive: !poll.isActive }),
+      });
+      if (res.ok) {
+        await fetchPollsFromGo();
+      }
+    } catch {
+      // offline
+    }
+  };
+
+  const handleDeletePoll = async (id: string) => {
+    if (!confirm("আপনি কি নিশ্চিত এই জরিপ প্রশ্নটি ডিলিট করতে চান?")) return;
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/polls/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        await fetchPollsFromGo();
+      }
+    } catch {
+      // offline
+    }
+  };
+
+  const fetchQuotesFromGo = useCallback(async () => {
+    setIsLoadingQuotes(true);
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/quotes`, {
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && Array.isArray(data.quotes)) {
+          setAdminQuotes(data.quotes);
+        }
+      }
+    } catch {
+      // offline
+    } finally {
+      setIsLoadingQuotes(false);
+    }
+  }, []);
+
+  const handleCreateQuote = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newQuoteText.trim()) return;
+    setIsSavingQuote(true);
+    setQuoteStatusMsg("");
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/quotes`, {
+        method: "POST",
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ quote: newQuoteText, author: newQuoteAuthor, isActive: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.ok) {
+        setQuoteStatusMsg("না বলা কথা সফলভাবে তৈরি হয়েছে!");
+        setNewQuoteText("");
+        await fetchQuotesFromGo();
+      } else {
+        setQuoteStatusMsg(data.error || "সংরক্ষণ করা যায়নি");
+      }
+    } catch {
+      setQuoteStatusMsg("সার্ভার ত্রুটি হয়েছে");
+    } finally {
+      setIsSavingQuote(false);
+    }
+  };
+
+  const handleToggleQuoteActive = async (quote: BackendQuote) => {
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/quotes/${encodeURIComponent(quote.id)}`, {
+        method: "PUT",
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ isActive: !quote.isActive }),
+      });
+      if (res.ok) {
+        await fetchQuotesFromGo();
+      }
+    } catch {
+      // offline
+    }
+  };
+
+  const handleDeleteQuote = async (id: string) => {
+    if (!confirm("আপনি কি নিশ্চিত এই না বলা কথাটি ডিলিট করতে চান?")) return;
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/quotes/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        await fetchQuotesFromGo();
+      }
+    } catch {
+      // offline
+    }
+  };
+
   useEffect(() => {
     const today = new Date().toISOString().slice(0, 10);
     const weekAgoDate = new Date();
@@ -556,6 +738,8 @@ export default function AdminDashboardPage() {
         fetchAnalytics("7d");
         fetchAdsFromGo();
         fetchWellnessFromGo();
+        fetchPollsFromGo();
+        fetchQuotesFromGo();
       }
 
       const savedPending = localStorage.getItem("onuvuti_pending_stories");
@@ -569,7 +753,14 @@ export default function AdminDashboardPage() {
     } catch {
       // Ignore storage errors
     }
-  }, [fetchDashboardFromGo, fetchAnalytics, fetchAdsFromGo, fetchWellnessFromGo]);
+  }, [
+    fetchDashboardFromGo,
+    fetchAnalytics,
+    fetchAdsFromGo,
+    fetchWellnessFromGo,
+    fetchPollsFromGo,
+    fetchQuotesFromGo,
+  ]);
 
   const handlePeriodSwitch = (
     p: "daily" | "7d" | "monthly" | "yearly" | "custom"
@@ -632,6 +823,8 @@ export default function AdminDashboardPage() {
       await fetchAnalytics("7d");
       await fetchAdsFromGo();
       await fetchWellnessFromGo();
+      await fetchPollsFromGo();
+      await fetchQuotesFromGo();
     } catch {
       setAuthError("সার্ভারের সাথে সংযোগ করা যায়নি।");
     } finally {
@@ -1092,6 +1285,32 @@ export default function AdminDashboardPage() {
           >
             <HeartPulse className="w-4 h-4" />
             <span>🌿 সুস্থতা গাইড কন্ট্রোল ({wellnessTips.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("polls")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "polls"
+                ? "bg-[#80131E] text-white"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+            }`}
+          >
+            <BarChart2 className="w-4 h-4" />
+            <span>📊 আজকের প্রশ্ন ({adminPolls.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("quotes")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "quotes"
+                ? "bg-[#80131E] text-white"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+            }`}
+          >
+            <MessageSquareHeart className="w-4 h-4" />
+            <span>💬 না বলা কথা ({adminQuotes.length})</span>
           </button>
         </div>
 
@@ -2432,6 +2651,270 @@ export default function AdminDashboardPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteWellness(tip.id)}
+                          className="p-1.5 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 cursor-pointer transition"
+                          title="মুছে ফেলুন"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 7: DAILY POLLS / QUESTIONS */}
+        {activeTab === "polls" && (
+          <div className="space-y-6">
+            <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 shadow-xs space-y-4">
+              <div>
+                <h3 className="text-base sm:text-lg font-extrabold text-[#142230] dark:text-white flex items-center gap-2">
+                  <BarChart2 className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
+                  <span>আজকের প্রশ্ন ও পাঠক জরিপ কন্ট্রোল (Polls)</span>
+                </h3>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                  এখানে সক্রিয় প্রশ্নটি হোমপেজের 'আজকের প্রশ্ন' কার্ডে তাৎক্ষণিক প্রদর্শিত হবে। কোনো প্রশ্ন সক্রিয় না থাকলে হোমপেজে স্বয়ংক্রিয়ভাবে খালি (Empty) স্টেট প্রদর্শিত হবে।
+                </p>
+              </div>
+
+              {/* Form to Create New Poll */}
+              <form onSubmit={handleCreatePoll} className="space-y-4 pt-2 border-t border-stone-100 dark:border-stone-800">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    আজকের প্রশ্ন / জরিপ বিষয়
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newPollQuestion}
+                    onChange={(e) => setNewPollQuestion(e.target.value)}
+                    placeholder="যেমন: তুমি কি কখনো কাউকে না জানিয়েই ভালোবেসেছ?"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    উত্তরের অপশনসমূহ (প্রতি লাইনে ১টি করে লিখুন)
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={newPollOptionsText}
+                    onChange={(e) => setNewPollOptionsText(e.target.value)}
+                    placeholder={"হ্যাঁ, এখনো বাসি\nএকসময় বাসতাম\nকখনো এমন হয়নি"}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white font-mono"
+                  />
+                </div>
+
+                {pollStatusMsg && (
+                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    {pollStatusMsg}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSavingPoll}
+                  className="px-5 py-2.5 rounded-xl bg-[#80131E] hover:bg-[#630d16] disabled:opacity-50 text-white font-bold text-xs sm:text-sm cursor-pointer transition shadow-xs"
+                >
+                  {isSavingPoll ? "সংরক্ষণ করা হচ্ছে..." : "নতুন প্রশ্ন প্রকাশ করুন"}
+                </button>
+              </form>
+            </div>
+
+            {/* List of Polls in PostgreSQL */}
+            <div className="space-y-4">
+              <h3 className="text-base font-extrabold text-[#142230] dark:text-white">
+                ডাটাবেজে সংরক্ষিত প্রশ্নসমূহ ({adminPolls.length})
+              </h3>
+
+              {adminPolls.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-500 text-xs">
+                  কোনো জরিপ প্রশ্ন পাওয়া যায়নি। হোমপেজে খালি স্টেট প্রদর্শিত হচ্ছে।
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {adminPolls.map((poll) => {
+                    const totalVotes = poll.options.reduce((sum, o) => sum + o.votes, 0);
+                    return (
+                      <div
+                        key={poll.id}
+                        className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs"
+                      >
+                        <div className="space-y-2 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                poll.isActive
+                                  ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                                  : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                              }`}
+                            >
+                              {poll.isActive ? "হোমপেজে সক্রিয় (Active)" : "নিষ্ক্রিয়"}
+                            </span>
+                            <span className="text-xs text-stone-400 font-medium">
+                              মোট ভোট: {totalVotes}
+                            </span>
+                          </div>
+
+                          <h4 className="text-sm sm:text-base font-extrabold text-[#142230] dark:text-white">
+                            {poll.question}
+                          </h4>
+
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {poll.options.map((opt) => (
+                              <span
+                                key={opt.id}
+                                className="px-2.5 py-1 rounded-lg bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs text-stone-700 dark:text-stone-300 font-medium"
+                              >
+                                {opt.label} ({opt.votes})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleTogglePollActive(poll)}
+                            className="px-3 py-1.5 rounded-xl text-xs font-bold border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 text-stone-700 dark:text-stone-300 cursor-pointer transition"
+                          >
+                            {poll.isActive ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeletePoll(poll.id)}
+                            className="p-1.5 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 cursor-pointer transition"
+                            title="মুছে ফেলুন"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 8: DAILY UN SPOKEN WORDS / QUOTES */}
+        {activeTab === "quotes" && (
+          <div className="space-y-6">
+            <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 shadow-xs space-y-4">
+              <div>
+                <h3 className="text-base sm:text-lg font-extrabold text-[#142230] dark:text-white flex items-center gap-2">
+                  <MessageSquareHeart className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
+                  <span>আজকের না বলা কথা কন্ট্রোল (Daily Quotes)</span>
+                </h3>
+                <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                  এখানে সক্রিয় না বলা কথাটি হোমপেজের 'আজকের না বলা কথা' কার্ডে সরাসরি প্রদর্শিত হবে। কোনো উদ্ধৃতি সক্রিয় না থাকলে হোমপেজে স্বয়ংক্রিয়ভাবে খালি (Empty) স্টেট প্রদর্শিত হবে।
+                </p>
+              </div>
+
+              {/* Form to Create New Quote */}
+              <form onSubmit={handleCreateQuote} className="space-y-4 pt-2 border-t border-stone-100 dark:border-stone-800">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    না বলা কথার মূল উক্তি বা অনুভূতি
+                  </label>
+                  <textarea
+                    rows={3}
+                    required
+                    value={newQuoteText}
+                    onChange={(e) => setNewQuoteText(e.target.value)}
+                    placeholder="যেমন: তোমাকে ভুলে যাওয়ার চেষ্টা করতে করতে, তোমাকেই আরও বেশি মনে পড়ে..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white font-serif"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                    লেখকের নাম / পরিচয়
+                  </label>
+                  <input
+                    type="text"
+                    value={newQuoteAuthor}
+                    onChange={(e) => setNewQuoteAuthor(e.target.value)}
+                    placeholder="যেমন: একজন অজ্ঞাত পাঠক"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white font-medium"
+                  />
+                </div>
+
+                {quoteStatusMsg && (
+                  <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    {quoteStatusMsg}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isSavingQuote}
+                  className="px-5 py-2.5 rounded-xl bg-[#80131E] hover:bg-[#630d16] disabled:opacity-50 text-white font-bold text-xs sm:text-sm cursor-pointer transition shadow-xs"
+                >
+                  {isSavingQuote ? "সংরক্ষণ করা হচ্ছে..." : "নতুন না বলা কথা প্রকাশ করুন"}
+                </button>
+              </form>
+            </div>
+
+            {/* List of Quotes in PostgreSQL */}
+            <div className="space-y-4">
+              <h3 className="text-base font-extrabold text-[#142230] dark:text-white">
+                ডাটাবেজে সংরক্ষিত না বলা কথাগুলো ({adminQuotes.length})
+              </h3>
+
+              {adminQuotes.length === 0 ? (
+                <div className="p-8 text-center rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-500 text-xs">
+                  কোনো না বলা কথা পাওয়া যায়নি। হোমপেজে খালি স্টেট প্রদর্শিত হচ্ছে।
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {adminQuotes.map((q) => (
+                    <div
+                      key={q.id}
+                      className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-2xs"
+                    >
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              q.isActive
+                                ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                                : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                            }`}
+                          >
+                            {q.isActive ? "হোমপেজে সক্রিয় (Active)" : "নিষ্ক্রিয়"}
+                          </span>
+                          <span className="text-xs text-rose-500 font-bold">
+                            ❤️ {q.reactCount} জন পাঠক
+                          </span>
+                        </div>
+
+                        <p className="text-sm sm:text-base font-bold text-[#142230] dark:text-stone-100 font-serif">
+                          “{q.quote}”
+                        </p>
+                        <span className="text-xs text-stone-500 dark:text-stone-400 font-medium block">
+                          — {q.author}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleQuoteActive(q)}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 hover:bg-stone-100 text-stone-700 dark:text-stone-300 cursor-pointer transition"
+                        >
+                          {q.isActive ? "নিষ্ক্রিয় করুন" : "সক্রিয় করুন"}
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteQuote(q.id)}
                           className="p-1.5 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 cursor-pointer transition"
                           title="মুছে ফেলুন"
                         >

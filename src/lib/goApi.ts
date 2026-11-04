@@ -55,3 +55,30 @@ export interface AppUser {
   provider: "google" | "manual";
   createdAt?: string;
 }
+
+export interface BackendPollOption {
+  id: string;
+  label: string;
+  votes: number;
+}
+
+export interface BackendPoll {
+  id: string;
+  question: string;
+  options: BackendPollOption[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendQuote {
+  id: string;
+  quote: string;
+  author: string;
+  reactCount: number;
+  storyId?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+

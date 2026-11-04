@@ -6,11 +6,14 @@ import {
   BLOG_CATEGORIES,
   BlogPost,
   StoryCategory,
-  INITIAL_POLL_OPTIONS,
-  PollOptionItem,
 } from "@/data/blogData";
 import { validateImageUpload } from "@/lib/security";
-import { GO_API_BASE_URL, AppUser } from "@/lib/goApi";
+import {
+  GO_API_BASE_URL,
+  AppUser,
+  BackendPoll,
+  BackendQuote,
+} from "@/lib/goApi";
 import SidebarBanners from "@/components/SidebarBanners";
 import DailyWellnessCard from "@/components/DailyWellnessCard";
 
@@ -43,10 +46,9 @@ export default function OnuvutiBlogHomePage() {
   const [likedIds, setLikedIds] = useState<Record<string, boolean>>({});
   const [bookmarkedIds, setBookmarkedIds] = useState<Record<string, boolean>>({});
 
-  // 1-Click Reader Poll State
-  const [pollOptions, setPollOptions] =
-    useState<PollOptionItem[]>(INITIAL_POLL_OPTIONS);
-  const [selectedPollId, setSelectedPollId] = useState<string | null>(null);
+  // 100% Backend-Controlled Dynamic Poll & Daily Quote ("আজকের প্রশ্ন" এবং "আজকের না বলা কথা")
+  const [activePoll, setActivePoll] = useState<BackendPoll | null>(null);
+  const [activeQuote, setActiveQuote] = useState<BackendQuote | null>(null);
 
   // Navigation State
   const [showNavSearch, setShowNavSearch] = useState(false);
@@ -134,18 +136,6 @@ export default function OnuvutiBlogHomePage() {
         }
       }
 
-      const savedVote = localStorage.getItem("onuvuti_home_poll_vote");
-      const savedPollCounts = localStorage.getItem("onuvuti_home_poll_counts");
-      if (savedVote) {
-        setSelectedPollId(savedVote);
-      }
-      if (savedPollCounts) {
-        const parsedCounts = JSON.parse(savedPollCounts);
-        if (Array.isArray(parsedCounts) && parsedCounts.length > 0) {
-          setPollOptions(parsedCounts);
-        }
-      }
-
       // Restore user login session from PostgreSQL token
       const savedUserToken = localStorage.getItem("onuvuti_user_token");
       const savedUserData = localStorage.getItem("onuvuti_user_data");
@@ -188,7 +178,43 @@ export default function OnuvutiBlogHomePage() {
         // Offline / network failure
       }
     }
+    // Fetch active Reader Poll from Go Backend
+    async function loadActivePollFromGo() {
+      try {
+        const res = await fetch(`${GO_API_BASE_URL}/polls/active`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.ok && data.poll) {
+            setActivePoll(data.poll);
+            return;
+          }
+        }
+        setActivePoll(null);
+      } catch {
+        setActivePoll(null);
+      }
+    }
+
+    // Fetch active Daily Quote / Unspoken words from Go Backend
+    async function loadActiveQuoteFromGo() {
+      try {
+        const res = await fetch(`${GO_API_BASE_URL}/quotes/active`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.ok && data.quote) {
+            setActiveQuote(data.quote);
+            return;
+          }
+        }
+        setActiveQuote(null);
+      } catch {
+        setActiveQuote(null);
+      }
+    }
+
     loadStoriesFromGo();
+    loadActivePollFromGo();
+    loadActiveQuoteFromGo();
   }, []);
 
   const refreshUserStories = async (token?: string) => {
@@ -402,22 +428,50 @@ export default function OnuvutiBlogHomePage() {
     router.push(`/blog/${randomPost.slug}`);
   };
 
-  const handlePollVote = (optionId: string) => {
-    if (selectedPollId) return;
-    const updated = pollOptions.map((opt) =>
-      opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
-    );
-    setSelectedPollId(optionId);
-    setPollOptions(updated);
+  const handlePollVote = async (optionId: string) => {
+    if (!activePoll) return;
     try {
-      localStorage.setItem("onuvuti_home_poll_vote", optionId);
-      localStorage.setItem("onuvuti_home_poll_counts", JSON.stringify(updated));
+      const res = await fetch(
+        `${GO_API_BASE_URL}/polls/${encodeURIComponent(activePoll.id)}/vote`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ optionId }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && data.poll) {
+          setActivePoll(data.poll);
+        }
+      }
     } catch {
-      // Ignore storage errors
+      // Ignore network errors
     }
   };
 
-  const totalPollVotes = pollOptions.reduce((sum, item) => sum + item.votes, 0);
+  const handleQuoteReact = async () => {
+    if (!activeQuote) return;
+    try {
+      const res = await fetch(
+        `${GO_API_BASE_URL}/quotes/${encodeURIComponent(activeQuote.id)}/react`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && typeof data.reactCount === "number") {
+          setActiveQuote((prev) =>
+            prev ? { ...prev, reactCount: data.reactCount } : null
+          );
+        }
+      }
+    } catch {
+      // Ignore network errors
+    }
+  };
 
   const handleWriterImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
@@ -687,10 +741,11 @@ export default function OnuvutiBlogHomePage() {
             setShowSavedOnly(false);
             setCurrentPage(1);
           }}
-          pollOptions={pollOptions}
+          activePoll={activePoll}
           onVotePoll={handlePollVote}
-          selectedPollId={selectedPollId}
-          totalPollVotes={totalPollVotes}
+          activeQuote={activeQuote}
+          onReactQuote={handleQuoteReact}
+          onOpenSubmit={() => setIsSubmitModalOpen(true)}
         />
 
         {/* 8 Categories Grid */}

@@ -14,6 +14,7 @@ import {
   Clock,
 } from "lucide-react";
 import { BLOG_CATEGORIES } from "@/data/blogData";
+import { getSlugByCategory } from "@/data/categoryData";
 import { AppUser } from "@/lib/goApi";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -124,21 +125,21 @@ export default function HomeNavbar({
               <ChevronDown className="w-3 h-3 text-stone-400" />
             </button>
             {activeNavDropdown === "story" && (
-              <div className="absolute top-full left-0 mt-1 w-44 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full left-0 mt-1 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
                 {[
                   "রোমান্টিক গল্প",
                   "জীবনের গল্প",
                   "ক্রাশ ও কনফেশন",
                   "বিচ্ছেদ ও প্রাক্তন",
                 ].map((c) => (
-                  <button
+                  <Link
                     key={c}
-                    type="button"
-                    onClick={() => handleCategorySelect(c)}
-                    className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                    href={`/category/${getSlugByCategory(c)}`}
+                    onClick={() => setActiveNavDropdown(null)}
+                    className="block px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 transition"
                   >
                     {c}
-                  </button>
+                  </Link>
                 ))}
               </div>
             )}
@@ -161,14 +162,14 @@ export default function HomeNavbar({
             {activeNavDropdown === "letter" && (
               <div className="absolute top-full left-0 mt-1 w-44 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
                 {["না বলা কথা", "খোলা চিঠি"].map((c) => (
-                  <button
+                  <Link
                     key={c}
-                    type="button"
-                    onClick={() => handleCategorySelect(c)}
-                    className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                    href={`/category/${getSlugByCategory(c)}`}
+                    onClick={() => setActiveNavDropdown(null)}
+                    className="block px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 transition"
                   >
                     {c}
-                  </button>
+                  </Link>
                 ))}
               </div>
             )}
@@ -191,18 +192,26 @@ export default function HomeNavbar({
             {activeNavDropdown === "confession" && (
               <div className="absolute top-full left-0 mt-1 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
                 {["ক্রাশ ও কনফেশন", "না বলা কথা"].map((c) => (
-                  <button
+                  <Link
                     key={c}
-                    type="button"
-                    onClick={() => handleCategorySelect(c)}
-                    className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                    href={`/category/${getSlugByCategory(c)}`}
+                    onClick={() => setActiveNavDropdown(null)}
+                    className="block px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 transition"
                   >
                     {c}
-                  </button>
+                  </Link>
                 ))}
               </div>
             )}
           </div>
+
+          {/* ওয়েলনেস টিপস বাটন */}
+          <Link
+            href="/tips"
+            className="px-3 py-1.5 rounded-full text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 transition inline-flex items-center gap-1"
+          >
+            <span>🌿 ওয়েলনেস টিপস</span>
+          </Link>
 
           {/* বই Dropdown */}
           <div className="relative">
@@ -246,24 +255,16 @@ export default function HomeNavbar({
               <ChevronDown className="w-3 h-3 text-stone-400" />
             </button>
             {activeNavDropdown === "psy" && (
-              <div className="absolute top-full left-0 mt-1 w-48 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full left-0 mt-1 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-xl py-1.5 z-50 text-xs">
                 {["সম্পর্ক ও মনস্তত্ত্ব", "নিজেকে জানুন", "স্বাস্থ্য ও সুস্থতা"].map((c) => (
-                  <button
+                  <Link
                     key={c}
-                    type="button"
-                    onClick={() => {
-                      setActiveCategory(c);
-                      setShowSavedOnly(false);
-                      setCurrentPage(1);
-                      setActiveNavDropdown(null);
-                      document
-                        .getElementById("wellness-hub")
-                        ?.scrollIntoView({ behavior: "smooth" });
-                    }}
-                    className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                    href={`/category/${getSlugByCategory(c)}`}
+                    onClick={() => setActiveNavDropdown(null)}
+                    className="block px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 transition"
                   >
                     {c}
-                  </button>
+                  </Link>
                 ))}
               </div>
             )}
@@ -403,6 +404,14 @@ export default function HomeNavbar({
           </div>
 
           <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center gap-2">
+            <Link
+              href="/tips"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="w-full px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>🌿 ওয়েলনেস ও হেলথ টিপস</span>
+            </Link>
+
             <button
               type="button"
               onClick={() => {

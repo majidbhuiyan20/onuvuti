@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   HeartPulse,
   Sparkles,
@@ -357,6 +358,13 @@ export default function DailyWellnessCard() {
                   </>
                 )}
               </button>
+
+              <Link
+                href="/tips"
+                className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline cursor-pointer mr-2"
+              >
+                <span>সকল গাইড ও টিপস →</span>
+              </Link>
 
               <button
                 type="button"

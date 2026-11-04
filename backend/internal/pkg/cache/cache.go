@@ -45,6 +45,12 @@ func (c *TTLCache) Set(key string, value any, ttl time.Duration) {
 	c.mu.Unlock()
 }
 
+func (c *TTLCache) Delete(key string) {
+	c.mu.Lock()
+	delete(c.items, key)
+	c.mu.Unlock()
+}
+
 // InvalidatePrefix removes all cached entries matching a prefix (e.g. "stories:" when a new story is published).
 func (c *TTLCache) InvalidatePrefix(prefix string) {
 	c.mu.Lock()

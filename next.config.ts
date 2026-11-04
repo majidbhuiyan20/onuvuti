@@ -12,6 +12,15 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/wellness",
+        destination: "/tips",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     const backendOrigin =
       process.env.INTERNAL_GO_ORIGIN || "http://127.0.0.1:8081";

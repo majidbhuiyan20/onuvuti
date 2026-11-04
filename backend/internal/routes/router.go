@@ -20,6 +20,8 @@ type RouterDeps struct {
 	UserHandler      *handlers.UserHandler
 	AdHandler        *handlers.AdHandler
 	WellnessHandler  *handlers.WellnessHandler
+	PollHandler      *handlers.PollHandler
+	QuoteHandler     *handlers.QuoteHandler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -80,6 +82,26 @@ func NewRouter(deps RouterDeps) http.Handler {
 		mux.HandleFunc("POST /api/v1/admin/wellness", middleware.RequireAdmin(cfg, deps.WellnessHandler.CreateTip))
 		mux.HandleFunc("PUT /api/v1/admin/wellness/{id}", middleware.RequireAdmin(cfg, deps.WellnessHandler.UpdateTip))
 		mux.HandleFunc("DELETE /api/v1/admin/wellness/{id}", middleware.RequireAdmin(cfg, deps.WellnessHandler.DeleteTip))
+	}
+
+	// 8. Daily Reader Poll / Question Routes ("আজকের প্রশ্ন" — 100% Backend Single Source of Truth)
+	if deps.PollHandler != nil {
+		mux.HandleFunc("GET /api/v1/polls/active", deps.PollHandler.GetActive)
+		mux.HandleFunc("POST /api/v1/polls/{id}/vote", deps.PollHandler.Vote)
+		mux.HandleFunc("GET /api/v1/admin/polls", middleware.RequireAdmin(cfg, deps.PollHandler.GetAdminPolls))
+		mux.HandleFunc("POST /api/v1/admin/polls", middleware.RequireAdmin(cfg, deps.PollHandler.CreatePoll))
+		mux.HandleFunc("PUT /api/v1/admin/polls/{id}", middleware.RequireAdmin(cfg, deps.PollHandler.UpdatePoll))
+		mux.HandleFunc("DELETE /api/v1/admin/polls/{id}", middleware.RequireAdmin(cfg, deps.PollHandler.DeletePoll))
+	}
+
+	// 9. Daily Quote / Unspoken Words Routes ("আজকের না বলা কথা" — 100% Backend Single Source of Truth)
+	if deps.QuoteHandler != nil {
+		mux.HandleFunc("GET /api/v1/quotes/active", deps.QuoteHandler.GetActive)
+		mux.HandleFunc("POST /api/v1/quotes/{id}/react", deps.QuoteHandler.React)
+		mux.HandleFunc("GET /api/v1/admin/quotes", middleware.RequireAdmin(cfg, deps.QuoteHandler.GetAdminQuotes))
+		mux.HandleFunc("POST /api/v1/admin/quotes", middleware.RequireAdmin(cfg, deps.QuoteHandler.CreateQuote))
+		mux.HandleFunc("PUT /api/v1/admin/quotes/{id}", middleware.RequireAdmin(cfg, deps.QuoteHandler.UpdateQuote))
+		mux.HandleFunc("DELETE /api/v1/admin/quotes/{id}", middleware.RequireAdmin(cfg, deps.QuoteHandler.DeleteQuote))
 	}
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain
