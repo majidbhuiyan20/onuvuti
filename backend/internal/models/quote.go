@@ -26,3 +26,4 @@ type UpdateQuoteRequest struct {
 	StoryID  string `json:"storyId,omitempty"`
 	IsActive *bool  `json:"isActive,omitempty"`
 }
+

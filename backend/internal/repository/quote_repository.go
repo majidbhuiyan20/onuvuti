@@ -175,3 +175,4 @@ func (r *Repository) ReactQuote(id string) (int, error) {
 
 	return newCount, nil
 }
+

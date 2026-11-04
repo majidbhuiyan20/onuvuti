@@ -135,3 +135,4 @@ func (s *PollService) VotePoll(pollID string, optionID string) (*models.Poll, er
 
 	return updated, nil
 }
+

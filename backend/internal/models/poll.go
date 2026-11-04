@@ -32,3 +32,4 @@ type UpdatePollRequest struct {
 type VotePollRequest struct {
 	OptionID string `json:"optionId"`
 }
+

@@ -122,3 +122,4 @@ func (s *QuoteService) ReactQuote(id string) (int, error) {
 
 	return newCount, nil
 }
+

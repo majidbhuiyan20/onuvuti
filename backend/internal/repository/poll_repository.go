@@ -212,3 +212,4 @@ func (r *Repository) VotePoll(pollID string, optionID string) (*models.Poll, err
 
 	return &p, nil
 }
+

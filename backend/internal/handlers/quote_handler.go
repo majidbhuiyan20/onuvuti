@@ -107,3 +107,4 @@ func (h *QuoteHandler) DeleteQuote(w http.ResponseWriter, r *http.Request) {
 		"msg": "না বলা কথা মুছে ফেলা হয়েছে",
 	})
 }
+
