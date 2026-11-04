@@ -23,6 +23,7 @@ type RouterDeps struct {
 	PollHandler      *handlers.PollHandler
 	QuoteHandler     *handlers.QuoteHandler
 	WishHandler      *handlers.WishHandler
+	SecretHandler    *handlers.SecretHandler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -114,6 +115,17 @@ func NewRouter(deps RouterDeps) http.Handler {
 		mux.HandleFunc("GET /api/v1/wishes/{id}/replies", deps.WishHandler.ListReplies)
 		mux.HandleFunc("GET /api/v1/admin/wishes", middleware.RequireInternalOrAdmin(cfg, deps.WishHandler.ListAdmin))
 		mux.HandleFunc("DELETE /api/v1/admin/wishes/{id}", middleware.RequireInternalOrAdmin(cfg, deps.WishHandler.Delete))
+	}
+
+	// 11. Anonymous Secret Messages & Story Reply Routes (NGL / Ask.fm Style Viral Engine)
+	if deps.SecretHandler != nil {
+		mux.HandleFunc("POST /api/v1/secret/inboxes", deps.SecretHandler.CreateInbox)
+		mux.HandleFunc("GET /api/v1/secret/inboxes/{username}", deps.SecretHandler.GetPublicInbox)
+		mux.HandleFunc("POST /api/v1/secret/inboxes/{username}/messages", deps.SecretHandler.SendMessage)
+		mux.HandleFunc("GET /api/v1/secret/inboxes/{username}/inbox", deps.SecretHandler.GetPrivateInbox)
+		mux.HandleFunc("POST /api/v1/secret/inboxes/{username}/messages/{id}/reply", deps.SecretHandler.ReplyMessage)
+		mux.HandleFunc("DELETE /api/v1/secret/inboxes/{username}/messages/{id}", deps.SecretHandler.DeleteMessage)
+		mux.HandleFunc("GET /api/v1/admin/secret/stats", middleware.RequireInternalOrAdmin(cfg, deps.SecretHandler.AdminStats))
 	}
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain

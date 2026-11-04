@@ -230,6 +230,35 @@ CREATE TABLE IF NOT EXISTS wish_replies (
 );
 
 CREATE INDEX IF NOT EXISTS idx_wish_replies_wish_id ON wish_replies(wish_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS secret_inboxes (
+    id VARCHAR(40) PRIMARY KEY,
+    username VARCHAR(40) UNIQUE NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    prompt_text TEXT NOT NULL DEFAULT 'আমাকে যা বলতে চাও কিন্তু সামনাসামনি বলতে পারোনি...',
+    theme VARCHAR(32) NOT NULL DEFAULT 'crimson_love',
+    manage_key_hash VARCHAR(128) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    messages_count INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_secret_inboxes_username ON secret_inboxes(username);
+CREATE INDEX IF NOT EXISTS idx_secret_inboxes_created_at ON secret_inboxes(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS secret_messages (
+    id VARCHAR(40) PRIMARY KEY,
+    inbox_id VARCHAR(40) NOT NULL REFERENCES secret_inboxes(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    mood_emoji VARCHAR(16) NOT NULL DEFAULT '💌',
+    card_theme VARCHAR(32) NOT NULL DEFAULT 'crimson',
+    reply_text TEXT NOT NULL DEFAULT '',
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    is_favorite BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_secret_messages_inbox ON secret_messages(inbox_id, created_at DESC);
 `
 
 func RunMigrations(db *sql.DB) error {

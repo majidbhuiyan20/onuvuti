@@ -215,7 +215,14 @@ export default function HomeNavbar({
               <ChevronDown className={`w-3 h-3 text-stone-400 transition-transform ${activeNavDropdown === "letter" ? "rotate-180" : ""}`} />
             </button>
             {activeNavDropdown === "letter" && (
-              <div className="absolute top-full left-0 mt-1.5 w-52 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 z-50 text-xs">
+              <div className="absolute top-full left-0 mt-1.5 w-56 rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xl py-1.5 z-50 text-xs">
+                <Link
+                  href="/m"
+                  onClick={() => setActiveNavDropdown(null)}
+                  className="block px-3.5 py-2 font-bold hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-rose-700 dark:text-rose-400 border-b border-stone-100 dark:border-stone-800 transition"
+                >
+                  🤫 বেনামী বার্তা ও স্টোরি লিংক
+                </Link>
                 <Link
                   href="/birthday-wish"
                   onClick={() => setActiveNavDropdown(null)}
@@ -506,6 +513,14 @@ export default function HomeNavbar({
           </div>
 
           <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex flex-wrap items-center gap-2">
+            <Link
+              href="/m"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="w-full px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>🤫 বেনামী বার্তা ও স্টোরি রিপ্লাই লিংক</span>
+            </Link>
+
             <Link
               href="/birthday-wish"
               onClick={() => setIsMobileMenuOpen(false)}
