@@ -73,7 +73,7 @@ export const STORY_THEMES: Record<StoryThemeId, StoryTheme> = {
   },
   birthday_cake: {
     id: "birthday_cake",
-    nameBn: "🎂 বার্থডে সেলিব্রেশন",
+    nameBn: "বার্থডে সেলিব্রেশন",
     bgGradient: ["#4A044E", "#86198F", "#C026D3"],
     questionBg: "rgba(255, 255, 255, 0.96)",
     questionBorder: "#F5D0FE",
@@ -87,7 +87,7 @@ export const STORY_THEMES: Record<StoryThemeId, StoryTheme> = {
   },
   birthday_royal: {
     id: "birthday_royal",
-    nameBn: "👑 রয়্যাল গোল্ড বার্থডে",
+    nameBn: "রয়্যাল গোল্ড বার্থডে",
     bgGradient: ["#0F0C20", "#1E1536", "#0A0814"],
     questionBg: "rgba(255, 255, 255, 0.95)",
     questionBorder: "#FDE68A",
@@ -101,7 +101,7 @@ export const STORY_THEMES: Record<StoryThemeId, StoryTheme> = {
   },
   aurora: {
     id: "aurora",
-    nameBn: "🌌 নিয়ন অরোরা",
+    nameBn: "নিয়ন অরোরা",
     bgGradient: ["#030712", "#064E3B", "#1E1B4B"],
     questionBg: "rgba(15, 23, 42, 0.92)",
     questionBorder: "#2DD4BF",
@@ -115,7 +115,7 @@ export const STORY_THEMES: Record<StoryThemeId, StoryTheme> = {
   },
   polaroid: {
     id: "polaroid",
-    nameBn: "📸 পোলারয়েড রেট্রো",
+    nameBn: "পোলারয়েড রেট্রো",
     bgGradient: ["#292524", "#44403C", "#1C1917"],
     questionBg: "#FFFDF9",
     questionBorder: "#E7E5E4",
@@ -265,7 +265,7 @@ export async function renderStoryToCanvas(options: StoryRenderOptions) {
   ctx.font = "600 36px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
   ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
   ctx.fillText(
-    `👤 ${displayName}-এর কাছে পাঠানো বেনামী চিঠি`,
+    `${displayName}-এর কাছে পাঠানো বেনামী চিঠি`,
     width / 2,
     headerPillY + 120
   );
@@ -310,7 +310,7 @@ export async function renderStoryToCanvas(options: StoryRenderOptions) {
   ctx.fillStyle = theme.badgeText;
   ctx.textAlign = "center";
   ctx.fillText(
-    `🤫 বেনামী বার্তা ${moodEmoji || "💌"}`,
+    "বেনামী বার্তা • ANONYMOUS",
     qBadgeX + qBadgeW / 2,
     qBadgeY + 36
   );
@@ -329,7 +329,7 @@ export async function renderStoryToCanvas(options: StoryRenderOptions) {
   currentY += qBoxH + 60;
 
   // 5. Answer Box (User's Reply)
-  const safeReply = replyText.trim() || "ধন্যবাদ আপনার বেনামী বার্তার জন্য! ❤️";
+  const safeReply = replyText.trim() || "ধন্যবাদ আপনার বেনামী বার্তার জন্য!";
   ctx.font = "bold 46px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
   const answerLines = wrapText(ctx, safeReply, cardW - 120);
   const aLineHeight = 64;
@@ -362,7 +362,7 @@ export async function renderStoryToCanvas(options: StoryRenderOptions) {
   ctx.fillStyle = theme.badgeText;
   ctx.textAlign = "center";
   ctx.fillText(
-    `✍️ ${displayName}-এর উত্তর`,
+    `${displayName}-এর উত্তর`,
     aBadgeX + aBadgeW / 2,
     aBadgeY + 36
   );
@@ -406,7 +406,7 @@ export async function renderStoryToCanvas(options: StoryRenderOptions) {
   ctx.font = "bold 34px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
   ctx.fillStyle = "#7E151E";
   ctx.textAlign = "center";
-  ctx.fillText(`🔗 onuvuti.site/m/${username}`, width / 2, linkPillY + 48);
+  ctx.fillText(`onuvuti.site/m/${username}`, width / 2, linkPillY + 48);
 
   // Footer Caption
   ctx.font = "600 30px 'Hind Siliguri', 'SolaimanLipi', sans-serif";

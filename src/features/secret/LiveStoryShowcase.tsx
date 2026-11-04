@@ -35,10 +35,10 @@ const SAMPLE_STORIES: ShowcaseStory[] = [
     themeId: "birthday_cake",
     displayName: "সায়রা ইসলাম",
     username: "sayra",
-    question: "🎂 শুভ জন্মদিন প্রিয় সায়রা! দোয়া করি তোমার সব স্বপ্ন সত্যি হোক আর আজকের দিনটা তোমার জীবনের সেরা দিন হোক! 🎈🍰",
-    moodEmoji: "🎂",
-    reply: "অনেক অনেক ধন্যবাদ! তোমার মতো সুন্দর মনের মানুষের শুভকামনা পেয়ে দিনটা সত্যি অনেক স্পেশাল হয়ে গেল! 🧁✨",
-    tag: "🎂 বার্থডে সেলিব্রেশন",
+    question: "শুভ জন্মদিন প্রিয় সায়রা! দোয়া করি তোমার সব স্বপ্ন সত্যি হোক আর আজকের দিনটা তোমার জীবনের সেরা দিন হোক!",
+    moodEmoji: "",
+    reply: "অনেক অনেক ধন্যবাদ! তোমার মতো সুন্দর মনের মানুষের শুভকামনা পেয়ে দিনটা সত্যি অনেক স্পেশাল হয়ে গেল!",
+    tag: "বার্থডে সেলিব্রেশন",
     isBirthday: true,
   },
   {
@@ -46,10 +46,10 @@ const SAMPLE_STORIES: ShowcaseStory[] = [
     themeId: "birthday_royal",
     displayName: "আরিয়ান চৌধুরী",
     username: "ariyan",
-    question: "👑 শুভ জন্মদিন ভাই! তুই যে স্বপ্নগুলো দেখিস, আল্লাহ যেন সবগুলো তোর হাতের মুঠোয় এনে দেন! পার্টি মিস দিস না! 🎉🥂",
-    moodEmoji: "👑",
-    reply: "ধন্যবাদ ভাই! ইনশাআল্লাহ এই বছরটা হবে আমাদের সবচেয়ে সেরা বছর! আজকের রাতটা উদযাপন করার! 🍾🔥",
-    tag: "👑 রয়্যাল গোল্ড বার্থডে",
+    question: "শুভ জন্মদিন ভাই! তুই যে স্বপ্নগুলো দেখিস, আল্লাহ যেন সবগুলো তোর হাতের মুঠোয় এনে দেন! আজকের দিনটা সেলিব্রেট কর!",
+    moodEmoji: "",
+    reply: "ধন্যবাদ ভাই! ইনশাআল্লাহ এই বছরটা হবে আমাদের সবচেয়ে সেরা বছর! আজকের রাতটা উদযাপন করার!",
+    tag: "রয়্যাল গোল্ড বার্থডে",
     isBirthday: true,
   },
   {
@@ -57,70 +57,70 @@ const SAMPLE_STORIES: ShowcaseStory[] = [
     themeId: "crimson",
     displayName: "রাহিম আহমেদ",
     username: "rahim",
-    question: "ক্যাম্পাসের প্রথম দিন থেকেই আমি তোমার দিকে তাকিয়ে থাকতাম... তুমি কি কখনো বুঝতে পেরেছো? ❤️",
-    moodEmoji: "❤️",
-    reply: "সত্যি? তাহলে তো একদিন সামনাসামনি এসে কফি খাওয়ার অফার দিতেই পারো! দেখা যাক কে তুমি ☕",
-    tag: "❤️ ক্রাশ কনফেশন",
+    question: "ক্যাম্পাসের প্রথম দিন থেকেই আমি তোমার দিকে তাকিয়ে থাকতাম... তুমি কি কখনো বুঝতে পেরেছো?",
+    moodEmoji: "",
+    reply: "সত্যি? তাহলে তো একদিন সামনাসামনি এসে কফি খাওয়ার অফার দিতেই পারো! দেখা যাক কে তুমি!",
+    tag: "ক্রাশ কনফেশন",
   },
   {
     id: "story-aurora",
     themeId: "aurora",
     displayName: "তানভীর আহমেদ",
     username: "tanvir",
-    question: "🌌 তোমার কথা ভাবলেই মনে হয় এই পুরো শহরটাই যেন নিয়ন আলোয় ভিজে গেছে...",
-    moodEmoji: "💫",
-    reply: "ওয়াও! এতো সুন্দর কাব্যিক কথা কে বলে? রহস্য লুকিয়ে না রেখে ইনবক্সে আসো! ✨",
-    tag: "🌌 নিয়ন অরোরা",
+    question: "তোমার কথা ভাবলেই মনে হয় এই পুরো শহরটাই যেন শান্ত নিয়ন আলোয় ভিজে গেছে...",
+    moodEmoji: "",
+    reply: "ধন্যবাদ! এতো সুন্দর কাব্যিক কথা কে বলে? রহস্য লুকিয়ে না রেখে ইনবক্সে আসতে পারো!",
+    tag: "নিয়ন অরোরা",
   },
   {
     id: "story-polaroid",
     themeId: "polaroid",
     displayName: "মেহজাবিন নূর",
     username: "mehzabin",
-    question: "📸 পুরনো ডায়েরির পাতায় তোমার একটি শুকনো গোলাপ এখনো যত্নে রাখা আছে...",
-    moodEmoji: "🌹",
-    reply: "কিছু স্মৃতি কখনো মরে না, সময়ের সাথে সাথে আরো অমূল্য হয়ে ওঠে... 🍂",
-    tag: "📸 পোলারয়েড রেট্রো",
+    question: "পুরনো ডায়েরির পাতায় তোমার একটি স্মৃতি এখনো খুব যত্নে রাখা আছে...",
+    moodEmoji: "",
+    reply: "কিছু স্মৃতি কখনো মরে না, সময়ের সাথে সাথে আরো অমূল্য হয়ে ওঠে...",
+    tag: "পোলারয়েড রেট্রো",
   },
   {
     id: "story-2",
     themeId: "midnight",
     displayName: "তানিয়া ইসলাম",
     username: "tania",
-    question: "তোমার হাসির মাঝেও এক অদ্ভুত মায়াবী দুঃখ লুকিয়ে থাকে, কেন বলো তো? 🥺",
-    moodEmoji: "🥺",
-    reply: "কিছু গল্প কখনো বলা হয় না, বুকের ভেতরেই গোপন গোলাপ হয়ে ফুটে থাকে... 🌹",
-    tag: "🌙 গোপন অনুভূতি",
+    question: "তোমার হাসির মাঝেও এক অদ্ভুত মায়াবী স্নিগ্ধতা লুকিয়ে থাকে, কেন বলো তো?",
+    moodEmoji: "",
+    reply: "কিছু গল্প কখনো বলা হয় না, বুকের ভেতরেই গোপন অনুভূতির মতো ফুটে থাকে...",
+    tag: "গোপন অনুভূতি",
   },
   {
     id: "story-3",
     themeId: "sunset",
     displayName: "সায়ান খান",
     username: "sayankhan",
-    question: "তোমার এই অতিরিক্ত মুড সুইং সহ্য করার মতো মানুষ পৃথিবীতে শুধু একজনই আছে! 🔥",
-    moodEmoji: "🔥",
-    reply: "হাহাহা তাহলে সেই ধৈর্যশীল মানুষটি কে? সাহস থাকলে ইনবক্সে এসে বলো! 😂",
-    tag: "🔥 মজার আড্ডা",
+    question: "তোমার এই মিষ্টি রাগ সহ্য করার মতো ধৈর্য পৃথিবীতে শুধু একজন বিশেষ মানুষেরই আছে!",
+    moodEmoji: "",
+    reply: "হাহাহা তাহলে সেই ধৈর্যশীল মানুষটি কে? সাহস থাকলে ইনবক্সে এসে বলো!",
+    tag: "মজার আড্ডা",
   },
   {
     id: "story-4",
     themeId: "vintage",
     displayName: "আদিবা চৌধুরী",
     username: "adiba",
-    question: "আজ অনেক বছর পর তোমাকে মনে পড়ল... এখনো কি বৃষ্টির দিনে জানালার পাশে বসে পুরনো গান শোনো? 💌",
-    moodEmoji: "💌",
-    reply: "অভ্যাসগুলো কখনো বদলায় না, শুধু সাথে থাকা মানুষগুলো বদলে যায়... 🍂",
-    tag: "📜 ভিন্টেজ নস্টালজিয়া",
+    question: "আজ অনেক দিন পর তোমাকে মনে পড়ল... এখনো কি বৃষ্টির দিনে জানালার পাশে বসে পুরনো গান শোনো?",
+    moodEmoji: "",
+    reply: "অভ্যাসগুলো কখনো বদলায় না, শুধু সাথে থাকা দিনগুলো স্মৃতি হয়ে যায়...",
+    tag: "ভিন্টেজ নস্টালজিয়া",
   },
   {
     id: "story-5",
     themeId: "emerald",
     displayName: "ফাহিম রেজা",
     username: "fahim",
-    question: "তুমি যখন কথা বলো, মনে হয় সময়টা একটু আস্তে চললে খুব ভালো হতো... ✨",
-    moodEmoji: "✨",
-    reply: "এমন মিষ্টি প্রশংসার পর তো কথা বলার ভাষাটাই হারিয়ে গেল! অনেক ধন্যবাদ অচেনা বন্ধু 🌿",
-    tag: "🍃 মিষ্টি প্রশংসা",
+    question: "তুমি যখন কথা বলো, মনে হয় সময়টা একটু আস্তে চললে খুব ভালো হতো...",
+    moodEmoji: "",
+    reply: "এমন মিষ্টি প্রশংসার পর তো কথা বলার ভাষাটাই হারিয়ে গেল! অনেক ধন্যবাদ অচেনা বন্ধু!",
+    tag: "মিষ্টি প্রশংসা",
   },
 ];
 
@@ -298,13 +298,13 @@ export default function LiveStoryShowcase({ onSelectTheme }: LiveStoryShowcasePr
                   {/* Typing Indicator Pill */}
                   <span className="px-2 py-0.5 rounded-full bg-black/40 text-[9px] font-bold tracking-wider backdrop-blur-xs flex items-center gap-1">
                     {typingPhase === "question" && (
-                      <span className="text-rose-400 animate-pulse">✍️ টাইপিং...</span>
+                      <span className="text-rose-400 animate-pulse">টাইপিং...</span>
                     )}
                     {typingPhase === "reply" && (
-                      <span className="text-amber-300 animate-pulse">💬 উত্তর...</span>
+                      <span className="text-amber-300 animate-pulse">উত্তর...</span>
                     )}
                     {typingPhase === "done" && (
-                      <span className="text-emerald-400">✨ সম্পন্ন</span>
+                      <span className="text-emerald-400">সম্পন্ন</span>
                     )}
                   </span>
                 </div>
@@ -328,9 +328,13 @@ export default function LiveStoryShowcase({ onSelectTheme }: LiveStoryShowcasePr
                       color: theme.badgeText,
                     }}
                   >
+                    {current.isBirthday ? (
+                      <Cake className="w-3 h-3" />
+                    ) : (
+                      <Heart className="w-3 h-3" />
+                    )}
                     <span>
-                      {current.isBirthday ? "🎂 বার্থডে বার্তা" : "🤫 বেনামী বার্তা"}{" "}
-                      {current.moodEmoji}
+                      {current.isBirthday ? "বার্থডে বার্তা" : "বেনামী বার্তা"}
                     </span>
                   </div>
                   <p className="text-xs sm:text-[13px] font-bold leading-snug min-h-[38px]">
@@ -359,7 +363,8 @@ export default function LiveStoryShowcase({ onSelectTheme }: LiveStoryShowcasePr
                       color: theme.badgeText,
                     }}
                   >
-                    <span>✍️ {current.displayName}-এর উত্তর</span>
+                    <Check className="w-3 h-3" />
+                    <span>{current.displayName}-এর উত্তর</span>
                   </div>
                   <p className="text-xs sm:text-[13px] font-extrabold leading-snug min-h-[38px]">
                     {typedReply}
@@ -373,7 +378,7 @@ export default function LiveStoryShowcase({ onSelectTheme }: LiveStoryShowcasePr
               {/* Bottom Watermark Footer */}
               <div className="relative z-20 pt-2 text-center space-y-1">
                 <div className="inline-block px-3 py-1 rounded-full bg-white/95 text-[#7E151E] font-mono font-bold text-[10px] shadow-md border border-white">
-                  🔗 onuvuti.site/m/{current.username}
+                  onuvuti.site/m/{current.username}
                 </div>
                 <div
                   className="text-[9px] font-bold opacity-80"
@@ -412,8 +417,8 @@ export default function LiveStoryShowcase({ onSelectTheme }: LiveStoryShowcasePr
         {/* Right: Story Details, Template Badges & Navigation */}
         <div className="lg:col-span-6 space-y-5">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 text-xs font-bold border border-rose-200 dark:border-rose-800">
-              <span>{current.moodEmoji}</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 text-xs font-bold border border-rose-200 dark:border-rose-800">
+              <Sparkles className="w-3.5 h-3.5" />
               <span>থিম: {theme.nameBn}</span>
             </div>
 
@@ -429,7 +434,7 @@ export default function LiveStoryShowcase({ onSelectTheme }: LiveStoryShowcasePr
           {/* Theme Palette Bar (All 9 Themes) */}
           <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-200 dark:border-stone-800 space-y-2">
             <span className="text-xs font-bold text-stone-700 dark:text-stone-300 block">
-              🎨 ৯টি নান্দনিক স্টোরি টেমপ্লেট বেছে নেওয়ার সুবিধা:
+              নান্দনিক ৯টি স্টোরি টেমপ্লেট বেছে নেওয়ার সুবিধা:
             </span>
             <div className="flex flex-wrap gap-2">
               {(Object.keys(STORY_THEMES) as StoryThemeId[]).map((tid) => {

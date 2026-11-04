@@ -13,22 +13,25 @@ import {
   Check,
   ShieldCheck,
   ArrowRight,
-  Smile,
   AlertCircle,
+  MessageSquare,
+  Flame,
+  Cake,
+  Mail,
+  Tag,
 } from "lucide-react";
 import { getPublicInbox, sendSecretMessage } from "@/features/secret/api";
 import { SecretInboxPublic } from "@/features/secret/types";
 import LiveStoryShowcase from "@/features/secret/LiveStoryShowcase";
 import SecretFooter from "@/features/secret/SecretFooter";
 
-const MOOD_EMOJIS = [
-  { emoji: "❤️", label: "ক্রাশ" },
-  { emoji: "🥺", label: "গোপন কথা" },
-  { emoji: "🤫", label: "চরম সত্য" },
-  { emoji: "🔥", label: "সাহসী" },
-  { emoji: "🌹", label: "ভালোবাসা" },
-  { emoji: "💌", label: "চিঠি" },
-  { emoji: "💫", label: "অনুভূতি" },
+const MESSAGE_CATEGORIES = [
+  { id: "crush", label: "ক্রাশ ও ভালোবাসা", icon: Heart },
+  { id: "secret", label: "গোপন অনুভূতি", icon: Lock },
+  { id: "confession", label: "মনের কথা", icon: MessageSquare },
+  { id: "appreciation", label: "প্রশংসা ও শ্রদ্ধা", icon: Sparkles },
+  { id: "bold", label: "সাহসী স্বীকারোক্তি", icon: Flame },
+  { id: "birthday", label: "বার্থডে শুভেচ্ছা", icon: Cake },
 ];
 
 function PublicSecretMessageContent() {
@@ -41,7 +44,7 @@ function PublicSecretMessageContent() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [content, setContent] = useState("");
-  const [selectedEmoji, setSelectedEmoji] = useState("❤️");
+  const [selectedCategory, setSelectedCategory] = useState("crush");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [sentSuccess, setSentSuccess] = useState(false);
@@ -84,7 +87,7 @@ function PublicSecretMessageContent() {
     try {
       await sendSecretMessage(username, {
         content: content.trim(),
-        moodEmoji: selectedEmoji,
+        moodEmoji: selectedCategory,
         cardTheme: inbox?.theme || "crimson",
       });
       setSentSuccess(true);
@@ -153,8 +156,8 @@ function PublicSecretMessageContent() {
         ) : sentSuccess ? (
           /* Sent Success Screen */
           <div className="bg-white dark:bg-[#111827] rounded-3xl p-8 text-center border-2 border-rose-200 dark:border-rose-900 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto text-2xl shadow-inner">
-              💌
+            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-inner">
+              <Check className="w-8 h-8" />
             </div>
 
             <div className="space-y-1.5">
@@ -178,7 +181,7 @@ function PublicSecretMessageContent() {
                 href="/m"
                 className="w-full mt-2 py-2.5 rounded-xl bg-[#7E151E] hover:bg-[#680f18] text-white font-bold text-xs text-center shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <span>🚀 আমার নিজস্ব লিংক তৈরি করুন</span>
+                <span>আমার নিজস্ব লিংক তৈরি করুন</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -221,8 +224,9 @@ function PublicSecretMessageContent() {
               className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-5 sm:p-6 shadow-sm space-y-4"
             >
               {submitError && (
-                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-bold">
-                  ⚠️ {submitError}
+                <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-bold flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{submitError}</span>
                 </div>
               )}
 
@@ -242,33 +246,34 @@ function PublicSecretMessageContent() {
                   maxLength={600}
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  placeholder="মনের কথা, প্রশ্ন, ক্রাশ কনফেশন বা অভিযোগ লিখুন... (আপনার পরিচয় কখনো প্রকাশ করা হবে না 🤫)"
+                  placeholder="মনের কথা, প্রশ্ন, ক্রাশ কনফেশন বা মনের না বলা অনুভূতি লিখুন... (আপনার পরিচয় কখনো প্রকাশ করা হবে না)"
                   className="w-full rounded-2xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900 p-4 text-xs sm:text-sm font-medium text-stone-800 dark:text-stone-100 outline-none focus:border-[#7E151E] focus:ring-1 focus:ring-[#7E151E] transition resize-none leading-relaxed"
                 />
               </div>
 
-              {/* Mood Emoji Selector */}
+              {/* Message Category Selector */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-stone-600 dark:text-stone-400 flex items-center gap-1">
-                  <Smile className="w-3.5 h-3.5" />
-                  <span>বার্তার অনুভূতি / ইমোজি নির্বাচন করুন:</span>
+                <label className="text-xs font-bold text-stone-600 dark:text-stone-400 flex items-center gap-1.5">
+                  <Tag className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
+                  <span>বার্তার ক্যাটাগরি বা অনুভূতি নির্বাচন করুন:</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {MOOD_EMOJIS.map((m) => {
-                    const isSelected = selectedEmoji === m.emoji;
+                  {MESSAGE_CATEGORIES.map((cat) => {
+                    const isSelected = selectedCategory === cat.id;
+                    const IconComponent = cat.icon;
                     return (
                       <button
-                        key={m.emoji}
+                        key={cat.id}
                         type="button"
-                        onClick={() => setSelectedEmoji(m.emoji)}
+                        onClick={() => setSelectedCategory(cat.id)}
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border cursor-pointer flex items-center gap-1.5 ${
                           isSelected
                             ? "bg-rose-50 dark:bg-rose-950/70 border-[#7E151E] text-[#7E151E] dark:text-rose-300 shadow-xs"
                             : "bg-stone-50 dark:bg-stone-900 border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300 hover:bg-stone-100"
                         }`}
                       >
-                        <span>{m.emoji}</span>
-                        <span className="text-[11px]">{m.label}</span>
+                        <IconComponent className="w-3.5 h-3.5 shrink-0" />
+                        <span className="text-[11px]">{cat.label}</span>
                       </button>
                     );
                   })}
@@ -282,7 +287,7 @@ function PublicSecretMessageContent() {
                 className="w-full py-3.5 rounded-2xl bg-[#7E151E] hover:bg-[#680f18] text-white font-extrabold text-sm shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
-                <span>{submitting ? "পাঠানো হচ্ছে..." : "গোপনে বার্তা পাঠান 🚀"}</span>
+                <span>{submitting ? "পাঠানো হচ্ছে..." : "গোপনে বার্তা পাঠান"}</span>
               </button>
 
               {/* Privacy Guarantee Footer */}

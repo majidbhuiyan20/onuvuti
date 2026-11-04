@@ -14,6 +14,8 @@ import {
   MessageSquareHeart,
   ChevronRight,
   Heart,
+  Cake,
+  AlertCircle,
 } from "lucide-react";
 import { createSecretInbox } from "@/features/secret/api";
 import { getMySavedInboxes, saveMyInbox, removeMySavedInbox } from "@/features/secret/storage";
@@ -25,9 +27,9 @@ import SecretFooter from "@/features/secret/SecretFooter";
 
 const PRESET_PROMPTS = [
   "আমাকে যা বলতে চাও কিন্তু সামনাসামনি বলতে পারোনি...",
-  "আজ আমার জন্মদিন! জন্মদিনের শুভেচ্ছা ও মনের না বলা কথা জানিয়ে যাও 🎂🎈",
-  "তোমার মনে কি আমার জন্য কখনো কোনো অনুভূতি ছিল? ❤️",
-  "আমার জন্মদিনে এমন কোনো স্মৃতি বা কথা যা কখনো শেয়ার করোনি... 🍰✨",
+  "আজ আমার জন্মদিন! জন্মদিনের শুভেচ্ছা ও মনের না বলা কথা জানিয়ে যাও",
+  "তোমার মনে কি আমার জন্য কখনো কোনো অনুভূতি ছিল?",
+  "আমার জন্মদিনে এমন কোনো স্মৃতি বা কথা যা কখনো শেয়ার করোনি...",
   "আমার সম্পর্কে একটা সত্য কথা বলো যা কখনো বলোনি...",
   "আমার কোন অভ্যাসটা তোমার সবচেয়ে বেশি পছন্দ বা অপছন্দ?",
   "যদি একদিনের জন্য যা ইচ্ছা বলতে পারতে, কী বলতে?",
@@ -149,9 +151,10 @@ export default function CreateSecretInboxPage() {
             </Link>
             <Link
               href="/birthday-wish"
-              className="text-xs font-bold text-rose-700 dark:text-rose-400 px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800"
+              className="text-xs font-bold text-rose-700 dark:text-rose-400 px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 inline-flex items-center gap-1.5"
             >
-              🎂 জন্মদিনের চিঠি
+              <Cake className="w-3.5 h-3.5" />
+              <span>জন্মদিনের চিঠি</span>
             </Link>
           </div>
         </div>
@@ -183,8 +186,8 @@ export default function CreateSecretInboxPage() {
         {createdData ? (
           <div className="bg-white dark:bg-[#111827] rounded-3xl border-2 border-rose-200 dark:border-rose-900/60 p-6 sm:p-8 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-950/70 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto text-2xl shadow-inner">
-                🎉
+              <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-950/70 text-[#7E151E] dark:text-rose-400 flex items-center justify-center mx-auto shadow-inner">
+                <Sparkles className="w-8 h-8" />
               </div>
               <h2 className="text-2xl font-black text-[#142230] dark:text-white">
                 আপনার বেনামী লিংক রেডি!
@@ -197,7 +200,10 @@ export default function CreateSecretInboxPage() {
             {/* Public Link Box */}
             <div className="bg-rose-50/70 dark:bg-rose-950/30 rounded-2xl p-4 border border-rose-200/80 dark:border-rose-800/60 space-y-2">
               <div className="text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center justify-between">
-                <span>📲 বন্ধুদের পাঠানোর পাবলিক লিংক:</span>
+                <span className="flex items-center gap-1.5">
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>বন্ধুদের পাঠানোর পাবলিক লিংক:</span>
+                </span>
                 <span className="text-[10px] bg-rose-200 dark:bg-rose-900 px-2 py-0.5 rounded-full font-bold">
                   স্টোরিতে দিন
                 </span>
@@ -232,7 +238,7 @@ export default function CreateSecretInboxPage() {
                   className="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 text-white font-bold text-xs sm:text-sm text-center shadow-md hover:opacity-95 transition inline-flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <MessageSquareHeart className="w-4 h-4" />
-                  <span>📬 এখনই ইনবক্সে যান ও রিপ্লাই দিন</span>
+                  <span>এখনই ইনবক্সে যান ও রিপ্লাই দিন</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
                 <button
@@ -250,7 +256,7 @@ export default function CreateSecretInboxPage() {
                 </button>
               </div>
               <p className="text-[11px] text-stone-400">
-                💡 টিপ: ইনবক্স লিংকটি আপনার এই ব্রাউজারে স্বয়ংক্রিয়ভাবে সেভ হয়ে গেছে। নিচের তালিকা থেকেও যেকোনো সময় ঢুকতে পারবেন।
+                <span className="font-semibold text-rose-700 dark:text-rose-400">টিপ:</span> ইনবক্স লিংকটি আপনার এই ব্রাউজারে স্বয়ংক্রিয়ভাবে সেভ হয়ে গেছে। নিচের তালিকা থেকেও যেকোনো সময় ঢুকতে পারবেন।
               </p>
             </div>
 
@@ -275,8 +281,9 @@ export default function CreateSecretInboxPage() {
             className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-6 sm:p-8 shadow-sm space-y-6"
           >
             {error && (
-              <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-bold">
-                ⚠️ {error}
+              <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 text-xs font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
               </div>
             )}
 
@@ -349,7 +356,7 @@ export default function CreateSecretInboxPage() {
                   onClick={() => setUseCustomPrompt((prev) => !prev)}
                   className="text-xs font-bold text-[#7E151E] dark:text-rose-400 hover:underline cursor-pointer"
                 >
-                  {useCustomPrompt ? "✕ তৈরি করা প্রম্পট তালিকা ব্যবহার করুন" : "✍️ অথবা নিজের মতো প্রম্পট লিখুন"}
+                  {useCustomPrompt ? "তৈরি করা প্রম্পট তালিকা ব্যবহার করুন" : "অথবা নিজের মতো প্রম্পট লিখুন"}
                 </button>
                 {useCustomPrompt && (
                   <input
@@ -403,7 +410,7 @@ export default function CreateSecretInboxPage() {
               className="w-full py-3.5 rounded-2xl bg-[#7E151E] hover:bg-[#680f18] text-white font-extrabold text-sm sm:text-base shadow-md hover:shadow-lg transition cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
             >
               <Sparkles className="w-4 h-4" />
-              <span>{loading ? "তৈরি হচ্ছে..." : "🚀 আমার বেনামী লিংক তৈরি করুন"}</span>
+              <span>{loading ? "তৈরি হচ্ছে..." : "আমার বেনামী লিংক তৈরি করুন"}</span>
             </button>
           </form>
         )}

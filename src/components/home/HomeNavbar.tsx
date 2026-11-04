@@ -221,14 +221,14 @@ export default function HomeNavbar({
                   onClick={() => setActiveNavDropdown(null)}
                   className="block px-3.5 py-2 font-bold hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-rose-700 dark:text-rose-400 border-b border-stone-100 dark:border-stone-800 transition"
                 >
-                  🤫 বেনামী বার্তা ও স্টোরি লিংক
+                  বেনামী বার্তা ও স্টোরি লিংক
                 </Link>
                 <Link
                   href="/birthday-wish"
                   onClick={() => setActiveNavDropdown(null)}
                   className="block px-3.5 py-2 font-bold hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-rose-700 dark:text-rose-400 border-b border-stone-100 dark:border-stone-800 transition"
                 >
-                  🎂 জন্মদিনের চিঠি পাঠান
+                  জন্মদিনের চিঠি পাঠান
                 </Link>
                 {["না বলা কথা", "খোলা চিঠি"].map((c) => (
                   <Link
@@ -518,7 +518,7 @@ export default function HomeNavbar({
               onClick={() => setIsMobileMenuOpen(false)}
               className="w-full px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>🤫 বেনামী বার্তা ও স্টোরি রিপ্লাই লিংক</span>
+              <span>বেনামী বার্তা ও স্টোরি রিপ্লাই লিংক</span>
             </Link>
 
             <Link
@@ -526,7 +526,7 @@ export default function HomeNavbar({
               onClick={() => setIsMobileMenuOpen(false)}
               className="w-full px-3 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>🎂 জন্মদিনের জাদুকরী চিঠি পাঠান</span>
+              <span>জন্মদিনের চিঠি পাঠান</span>
             </Link>
 
             <Link
