@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { WISH_THEMES, WishTheme } from "@/data/birthdayTemplates";
-import { Flame, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
+import { Flame, RotateCcw, Send, Volume2, VolumeX, Wind, Sparkles, Crown, HeartHandshake } from "lucide-react";
 import { wishApi } from "../api";
 import { burstConfetti, floatBalloons } from "../confetti";
 import { playChime, primeAudio, startMusic, type MusicHandle } from "../music";
@@ -156,7 +156,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
           <div className="w-16 h-16 rounded-full bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mb-4">
             <Flame className="w-8 h-8 text-rose-300" />
           </div>
-          <h1 className="text-2xl font-extrabold text-white mb-2">চিঠিটি আর নেই 🔥</h1>
+          <h1 className="text-2xl font-extrabold text-white mb-2">চিঠিটি আর নেই</h1>
           <p className="text-sm text-stone-300">
             এটি একটি গোপন চিঠি ছিল—একবার পড়ার পর প্রেরকের নিয়ম অনুযায়ী চিরতরে মুছে ফেলা হয়েছে।
           </p>
@@ -207,66 +207,141 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
       );
     }
 
+    const isWedding =
+      wish.relationship?.includes("বিবাহ") ||
+      wish.theme === "wedding_royal" ||
+      (content?.message?.includes("শুভ বিবাহ") ?? false) ||
+      (content?.message?.includes("পাত্র:") ?? false);
+    const isAnniv =
+      wish.relationship?.includes("বার্ষিকী") ||
+      wish.theme === "anniversary_gold" ||
+      (content?.message?.includes("বিবাহবার্ষিকী") ?? false);
+
     return (
       <div className="w-full max-w-xl animate-fade-in-up flex flex-col items-center">
         {wish.selfDestruct && (
-          <div className="mb-4 w-full rounded-2xl bg-rose-500/15 border border-rose-400/40 p-3 text-center text-xs font-semibold text-rose-200">
-            🔥 এটি একটি গোপন চিঠি—পেজ রিফ্রেশ করলে বা বন্ধ করলে আর কখনো দেখা যাবে না। এখনই পড়ে নাও!
+          <div className="mb-4 w-full rounded-2xl bg-rose-500/15 border border-rose-400/40 p-3 text-center text-xs font-semibold text-rose-200 flex items-center justify-center gap-2">
+            <Flame className="w-4 h-4 text-amber-300 shrink-0" />
+            <span>এটি একটি গোপন চিঠি—পেজ রিফ্রেশ করলে বা বন্ধ করলে আর কখনো দেখা যাবে না। এখনই পড়ে নিন!</span>
           </div>
         )}
 
         <LetterCard wish={wish} content={content} theme={theme} />
 
-        {/* Candle */}
-        <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 text-center shadow-xl">
-          <div
-            onClick={handleBlowCandle}
-            className="cursor-pointer group inline-flex flex-col items-center mb-3 transition transform hover:scale-105 active:scale-95"
-          >
-            <div className="relative flex flex-col items-center">
-              {!candleBlown ? (
-                <div className="relative mb-1">
-                  <div className="w-4 h-6 rounded-full bg-gradient-to-t from-amber-500 via-orange-400 to-yellow-200 animate-pulse shadow-lg shadow-amber-400/80" />
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-3 bg-white rounded-full opacity-80" />
-                </div>
-              ) : (
-                <div className="text-xl animate-fade-in mb-1">💨</div>
-              )}
-              <div className="w-2.5 h-7 bg-gradient-to-r from-pink-300 via-white to-pink-300 rounded-xs shadow-xs" />
+        {/* Occasion Interactive Card */}
+        {isWedding ? (
+          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 text-center shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center mx-auto mb-3 text-amber-300">
+              <Crown className="w-6 h-6" />
             </div>
-            <div className="w-24 h-6 bg-pink-400 rounded-t-lg border-b-2 border-pink-500 flex items-center justify-around px-2 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
-              <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
-              <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
-            </div>
-            <div className="w-32 h-8 bg-amber-100 rounded-b-xl border-t border-pink-300 flex items-center justify-around px-2 shadow-md">
-              <span className="w-2 h-2 rounded-full bg-rose-400" />
-              <span className="w-2 h-2 rounded-full bg-amber-400" />
-              <span className="w-2 h-2 rounded-full bg-indigo-400" />
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            </div>
-          </div>
-
-          {!candleBlown ? (
-            <div>
+            <h3 className="text-base font-bold text-white mb-1">নবদম্পতির নতুন জীবনের সূচনা</h3>
+            <p className="text-xs text-stone-300 mb-4 max-w-xs mx-auto">
+              বরের ও কনের ভবিষ্যৎ দিনগুলো যেন অপার বরকত ও আনন্দে ভরে ওঠে—আপনার আন্তরিক দোয়া ও শুভেচ্ছা জানান।
+            </p>
+            {!candleBlown ? (
               <button
                 type="button"
                 onClick={handleBlowCandle}
-                className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-300 hover:text-amber-200 transition bg-amber-500/20 hover:bg-amber-500/30 px-4 py-1.5 rounded-full border border-amber-400/40 cursor-pointer animate-pulse"
+                className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-[#7E151E] hover:opacity-95 px-5 py-2.5 rounded-full border border-amber-400/30 cursor-pointer shadow-lg animate-pulse"
               >
-                <span>🎂 একটি ইচ্ছা মনে রেখে মোমবাতিতে ফুঁ দিন (ট্যাপ করুন)</span>
+                <Sparkles className="w-4 h-4 text-amber-200" />
+                <span>দোয়া ও শুভাশিস বর্ষণ করুন</span>
               </button>
-              <p className="text-[11px] text-stone-300 mt-1.5">
-                মোমবাতিতে চাপ দিলে তোমার আজকের জন্মদিনের শুভেচ্ছা বাতাসে ছড়িয়ে পড়বে
-              </p>
+            ) : (
+              <div className="animate-fade-in-up py-1">
+                <p className="text-sm font-bold text-amber-300 flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>বারাকাল্লাহু লাকুমা ওয়া বারাকা আলাইকুমা!</span>
+                </p>
+                <p className="text-xs text-stone-300 mt-1">আপনার হৃদয়নিংড়ানো শুভকামনা নবদম্পতির কাছে পৌঁছে গেছে।</p>
+              </div>
+            )}
+          </div>
+        ) : isAnniv ? (
+          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 text-center shadow-xl">
+            <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto mb-3 text-rose-300">
+              <HeartHandshake className="w-6 h-6" />
             </div>
-          ) : (
-            <div className="animate-fade-in-up">
-              <p className="text-sm font-bold text-amber-300">🎉 তোমার মনের সব স্বপ্ন সত্যি হোক! শুভ জন্মদিন! 🎈</p>
-              <p className="text-xs text-stone-300 mt-1">আজকের প্রতিটি ক্ষণ ভরে উঠুক আনন্দে ও ভালোবাসায়।</p>
+            <h3 className="text-base font-bold text-white mb-1">চিরন্তন বন্ধনের অটুট জয়গান</h3>
+            <p className="text-xs text-stone-300 mb-4 max-w-xs mx-auto">
+              বিবাহবার্ষিকীর এই পবিত্র লগ্নে প্রিয় দম্পতির জন্য ভালোবাসার শুভেচ্ছা ও দোয়া বর্ষণ করুন।
+            </p>
+            {!candleBlown ? (
+              <button
+                type="button"
+                onClick={handleBlowCandle}
+                className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-rose-600 hover:opacity-95 px-5 py-2.5 rounded-full border border-amber-400/30 cursor-pointer shadow-lg animate-pulse"
+              >
+                <Sparkles className="w-4 h-4 text-amber-200" />
+                <span>ভালোবাসা ও শুভকামনা জানান</span>
+              </button>
+            ) : (
+              <div className="animate-fade-in-up py-1">
+                <p className="text-sm font-bold text-amber-300 flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>শুভ বিবাহবার্ষিকী! বন্ধন থাকুক চির অটুট!</span>
+                </p>
+                <p className="text-xs text-stone-300 mt-1">আপনাদের ভালোবাসার প্রতিটি প্রহর চিরনবীন থাকুক।</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 text-center shadow-xl">
+            <div
+              onClick={handleBlowCandle}
+              className="cursor-pointer group inline-flex flex-col items-center mb-3 transition transform hover:scale-105 active:scale-95"
+            >
+              <div className="relative flex flex-col items-center">
+                {!candleBlown ? (
+                  <div className="relative mb-1">
+                    <div className="w-4 h-6 rounded-full bg-gradient-to-t from-amber-500 via-orange-400 to-yellow-200 animate-pulse shadow-lg shadow-amber-400/80" />
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-3 bg-white rounded-full opacity-80" />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center mb-1 text-stone-300 animate-fade-in">
+                    <Wind className="w-5 h-5" />
+                  </div>
+                )}
+                <div className="w-2.5 h-7 bg-gradient-to-r from-pink-300 via-white to-pink-300 rounded-xs shadow-xs" />
+              </div>
+              <div className="w-24 h-6 bg-pink-400 rounded-t-lg border-b-2 border-pink-500 flex items-center justify-around px-2 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
+                <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
+              </div>
+              <div className="w-32 h-8 bg-amber-100 rounded-b-xl border-t border-pink-300 flex items-center justify-around px-2 shadow-md">
+                <span className="w-2 h-2 rounded-full bg-rose-400" />
+                <span className="w-2 h-2 rounded-full bg-amber-400" />
+                <span className="w-2 h-2 rounded-full bg-indigo-400" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              </div>
             </div>
-          )}
-        </div>
+
+            {!candleBlown ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={handleBlowCandle}
+                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-300 hover:text-amber-200 transition bg-amber-500/20 hover:bg-amber-500/30 px-4 py-1.5 rounded-full border border-amber-400/40 cursor-pointer animate-pulse"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                  <span>একটি ইচ্ছা মনে রেখে মোমবাতিতে ফুঁ দিন (ট্যাপ করুন)</span>
+                </button>
+                <p className="text-[11px] text-stone-300 mt-1.5">
+                  মোমবাতিতে চাপ দিলে আপনার অনুভূতি বাতাসে ছড়িয়ে পড়বে
+                </p>
+              </div>
+            ) : (
+              <div className="animate-fade-in-up">
+                <p className="text-sm font-bold text-amber-300 flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-4 h-4 text-amber-400" />
+                  <span>আপনার মনের সব ইচ্ছা পূরণ হোক!</span>
+                </p>
+                <p className="text-xs text-stone-300 mt-1">প্রতিটি ক্ষণ ভরে উঠুক অনাবিল আনন্দে ও ভালোবাসায়।</p>
+              </div>
+            )}
+          </div>
+        )}
 
         <ReactionBox wishId={wish.id} senderName={wish.senderName} />
 

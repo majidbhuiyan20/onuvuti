@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Heart } from "lucide-react";
+import { Heart, Mic, FastForward } from "lucide-react";
 import type { WishTheme } from "@/data/birthdayTemplates";
 import { HANDWRITING_FONT } from "../share";
 import type { WishContent, WishPublic } from "../types";
@@ -15,6 +15,36 @@ interface LetterCardProps {
 export default function LetterCard({ wish, content, theme }: LetterCardProps) {
   const handwritten = wish.fontStyle === "handwritten";
   const corner = "absolute text-xs opacity-30 select-none font-serif";
+
+  const isWedding =
+    wish.relationship?.includes("বিবাহ") ||
+    wish.theme === "wedding_royal" ||
+    content.message.includes("শুভ বিবাহ") ||
+    content.message.includes("পাত্র:");
+  const isAnniversary =
+    wish.relationship?.includes("বার্ষিকী") ||
+    wish.theme === "anniversary_gold" ||
+    content.message.includes("বিবাহবার্ষিকী");
+  const isLove =
+    wish.relationship?.includes("ভালোবাসার চিঠি") ||
+    wish.relationship?.includes("প্রস্তাব") ||
+    wish.theme === "rose";
+
+  const cardTitle = isWedding
+    ? "শুভ বিবাহ নিমন্ত্রণপত্র"
+    : isAnniversary
+    ? "শুভ বিবাহবার্ষিকী"
+    : isLove
+    ? "এক টুকরো অনুভূতি"
+    : "শুভ জন্মদিন";
+
+  const cardSubtitle = isWedding
+    ? "আপনার ও আপনার পরিবারের সাদর উপস্থিতি কাম্য"
+    : isAnniversary
+    ? "চিরন্তন ভালোবাসা ও অটুট বন্ধনের শুভেচ্ছা"
+    : wish.relationship
+    ? `(${wish.relationship} এর জন্য বিশেষ চিঠি)`
+    : "একটি পবিত্র অনুভূতির উপহার";
 
   // Typewriter effect
   const [displayedLength, setDisplayedLength] = useState(0);
@@ -66,14 +96,20 @@ export default function LetterCard({ wish, content, theme }: LetterCardProps) {
           <Heart className="w-5 h-5 fill-current" />
         </div>
         <h2 className="text-xl sm:text-2xl font-black tracking-wide" style={{ color: theme.accentColor }}>
-          শুভ জন্মদিন
+          {cardTitle}
         </h2>
         <p className="text-xs text-stone-500 mt-0.5">
-          {wish.relationship ? `(${wish.relationship} এর জন্য বিশেষ চিঠি)` : "একটি পবিত্র অনুভূতির উপহার"}
+          {cardSubtitle}
         </p>
       </div>
 
-      <p className="text-lg font-bold mb-4">প্রিয় {wish.recipientName},</p>
+      <p className="text-lg font-bold mb-4">
+        {isWedding
+          ? wish.recipientName.startsWith("জনাব") || wish.recipientName.startsWith("প্রিয়")
+            ? wish.recipientName
+            : `সম্মানিত ${wish.recipientName},`
+          : `প্রিয় ${wish.recipientName},`}
+      </p>
 
       {content.photoUrl && (
         <figure className="my-5 mx-auto max-w-sm rotate-[-1.5deg] bg-white p-2.5 pb-7 rounded-md shadow-lg border border-stone-200">
@@ -99,17 +135,19 @@ export default function LetterCard({ wish, content, theme }: LetterCardProps) {
           <button
             type="button"
             onClick={handleSkipTyping}
-            className="text-[11px] font-bold text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 underline cursor-pointer"
+            className="text-[11px] font-bold text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 underline cursor-pointer inline-flex items-center gap-1"
           >
-            ⏩ একবারে সম্পূর্ণ পড়ুন
+            <FastForward className="w-3 h-3" />
+            <span>একবারে সম্পূর্ণ পড়ুন</span>
           </button>
         </div>
       )}
 
       {content.voiceUrl && (
         <div className="mt-5 p-3 rounded-2xl border" style={{ borderColor: `${theme.accentColor}33`, backgroundColor: `${theme.accentColor}0d` }}>
-          <span className="block text-xs font-bold mb-1.5" style={{ color: theme.accentColor }}>
-            🎙️ {wish.senderName}-এর কণ্ঠে একটি বার্তা
+          <span className="block text-xs font-bold mb-1.5 flex items-center gap-1.5" style={{ color: theme.accentColor }}>
+            <Mic className="w-3.5 h-3.5" />
+            <span>{wish.senderName}-এর কণ্ঠে একটি বার্তা</span>
           </span>
           <audio src={content.voiceUrl} controls className="w-full h-10" />
         </div>

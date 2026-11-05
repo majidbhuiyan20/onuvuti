@@ -25,7 +25,7 @@ export default function ReactionBox({ wishId, senderName }: { wishId: string; se
     return (
       <div className="mt-6 w-full max-w-md rounded-3xl bg-emerald-500/15 border border-emerald-400/40 p-5 text-center animate-fade-in-up">
         <Check className="w-6 h-6 text-emerald-300 mx-auto mb-1" />
-        <p className="text-sm font-bold text-emerald-200">তোমার রিঅ্যাকশন {senderName}-এর কাছে পৌঁছে গেছে 💌</p>
+        <p className="text-sm font-bold text-emerald-200">তোমার রিঅ্যাকশন {senderName}-এর কাছে পৌঁছে গেছে</p>
       </div>
     );
   }

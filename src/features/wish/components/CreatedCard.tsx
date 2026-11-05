@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { BarChart3, Check, Copy, ExternalLink, RefreshCw } from "lucide-react";
+import { BarChart3, Check, Copy, ExternalLink, RefreshCw, Clock, Key, Flame, Lock, Eye, Sparkles } from "lucide-react";
 import type { CreatedWish } from "../types";
 import { absoluteWishUrl, inviteText, manageUrl } from "../share";
 import ShareBar from "./ShareBar";
@@ -63,8 +63,9 @@ export default function CreatedCard({
           <div className="w-14 h-14 bg-emerald-500 text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
             <Check className="w-7 h-7" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white">
-            আপনার জাদুকরী চিঠি প্রস্তুত! 🎉
+          <h2 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white flex items-center justify-center gap-2">
+            <span>আপনার জাদুকরী চিঠি প্রস্তুত!</span>
+            <Sparkles className="w-5 h-5 text-amber-500" />
           </h2>
           <p className="text-sm text-stone-600 dark:text-stone-300 mt-1">
             লিঙ্কটি প্রিয়জনকে পাঠিয়ে দিন। সে লিঙ্কে ঢুকলেই মোমের সিল ভেঙে চিঠিটি খুলে পড়বে।
@@ -72,10 +73,25 @@ export default function CreatedCard({
         </div>
 
         {(scheduledLabel || hasPasscode || selfDestruct) && (
-          <ul className="text-[11px] font-semibold text-stone-700 dark:text-stone-200 space-y-1 p-3 rounded-2xl bg-white/70 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700">
-            {scheduledLabel && <li>⏰ চিঠি খুলবে: {scheduledLabel}</li>}
-            {hasPasscode && <li>🔑 সিক্রেট কোড দিতে হবে — কোডটি প্রাপককে আলাদা করে জানান</li>}
-            {selfDestruct && <li>🔥 একবার খুললেই চিঠি চিরতরে মুছে যাবে (আপনি নিজে খুললেও!)</li>}
+          <ul className="text-[11px] font-semibold text-stone-700 dark:text-stone-200 space-y-1.5 p-3 rounded-2xl bg-white/70 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700">
+            {scheduledLabel && (
+              <li className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span>চিঠি খুলবে: {scheduledLabel}</span>
+              </li>
+            )}
+            {hasPasscode && (
+              <li className="flex items-center gap-1.5">
+                <Key className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span>সিক্রেট কোড দিতে হবে — কোডটি প্রাপককে আলাদা করে জানান</span>
+              </li>
+            )}
+            {selfDestruct && (
+              <li className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400">
+                <Flame className="w-3.5 h-3.5 shrink-0" />
+                <span>একবার খুললেই চিঠি চিরতরে মুছে যাবে (আপনি নিজে খুললেও!)</span>
+              </li>
+            )}
           </ul>
         )}
 
@@ -83,7 +99,7 @@ export default function CreatedCard({
         <ShareBar url={shareUrl} text={inviteText(recipientName)} />
 
         <div className="pt-1 space-y-3">
-          <CopyField label="🔒 শুধু আপনার জন্য: রিঅ্যাকশন দেখার গোপন লিঙ্ক (সংরক্ষণ করে রাখুন)" value={reactionsUrl} />
+          <CopyField label="শুধু আপনার জন্য: রিঅ্যাকশন দেখার গোপন লিঙ্ক (সংরক্ষণ করে রাখুন)" value={reactionsUrl} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link
               href={`/wish/${wish.id}/replies?key=${encodeURIComponent(wish.manageKey)}`}
@@ -99,8 +115,8 @@ export default function CreatedCard({
                 target="_blank"
                 className="py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md"
               >
-                <ExternalLink className="w-4 h-4" />
-                <span>👀 নিজে একবার খুলে দেখুন</span>
+                <Eye className="w-4 h-4" />
+                <span>নিজে একবার খুলে দেখুন</span>
               </Link>
             )}
           </div>

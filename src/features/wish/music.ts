@@ -92,7 +92,17 @@ const LULLABY = arpeggio(
   0.5
 );
 
+// Traditional Bengali & Indian Wedding Shehnai melody
+const SHEHNAI = melody([
+  [65, 0.75], [67, 0.25], [69, 1], [72, 1], [74, 1.5], [76, 0.5], [74, 1], [72, 2],
+  [69, 0.75], [72, 0.25], [69, 1], [67, 1], [65, 2],
+  [65, 0.5], [67, 0.5], [69, 1], [72, 1], [74, 2],
+  [77, 1], [76, 0.5], [74, 0.5], [72, 1], [69, 1], [67, 1.5], [65, 2.5],
+  [0, 2],
+]);
+
 const TUNES: Record<Exclude<WishMusic, "none">, Tune> = {
+  shehnai: { bpm: 78, wave: "triangle", volume: 0.18, loopBeats: SHEHNAI.total, notes: SHEHNAI.notes },
   happy_birthday: { bpm: 112, wave: "triangle", volume: 0.2, loopBeats: HAPPY.total, notes: HAPPY.notes },
   romantic: { bpm: 84, wave: "sine", volume: 0.16, loopBeats: ROMANTIC.total, notes: ROMANTIC.notes },
   lullaby: { bpm: 66, wave: "sine", volume: 0.14, loopBeats: LULLABY.total, notes: LULLABY.notes },

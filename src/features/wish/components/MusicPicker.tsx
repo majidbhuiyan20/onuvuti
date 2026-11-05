@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Pause, Play } from "lucide-react";
+import { Pause, Play, Music, VolumeX } from "lucide-react";
 import { startMusic, type MusicHandle } from "../music";
 import { MUSIC_OPTIONS, type WishMusic } from "../types";
 
@@ -52,8 +52,13 @@ export default function MusicPicker({ value, onChange }: MusicPickerProps) {
               onClick={() => select(opt.id)}
               className="flex-1 flex items-center gap-2 text-left text-xs font-semibold text-stone-800 dark:text-stone-200 cursor-pointer"
             >
-              <span className="text-base">{opt.emoji}</span>
-              <span>{opt.label}</span>
+              <span className={`p-1 rounded-lg ${active ? "bg-[#7E151E] text-white" : "bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-300"}`}>
+                {opt.id === "none" ? <VolumeX className="w-3.5 h-3.5" /> : <Music className="w-3.5 h-3.5" />}
+              </span>
+              <div className="flex flex-col">
+                <span>{opt.label}</span>
+                <span className="text-[10px] text-stone-400 font-normal">{opt.tag}</span>
+              </div>
             </button>
             {opt.id !== "none" && (
               <button

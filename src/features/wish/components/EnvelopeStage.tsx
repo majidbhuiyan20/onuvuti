@@ -21,19 +21,47 @@ export default function EnvelopeStage({
   busy,
   onOpen,
 }: EnvelopeStageProps) {
+  const isWedding = theme.id === "wedding_royal" || theme.sealText === "শুভ বিবাহ";
+  const isAnniv = theme.id === "anniversary_gold" || theme.sealText === "চিরন্তন";
+
+  const badgeText = isWedding
+    ? "শুভ বিবাহ নিমন্ত্রণপত্র"
+    : isAnniv
+    ? "বিবাহবার্ষিকীর বিশেষ চিঠি"
+    : "একটি বিশেষ অনুভূতির উপহার";
+
+  const greeting = isWedding
+    ? recipientName.startsWith("জনাব") || recipientName.startsWith("প্রিয়")
+      ? recipientName
+      : `সম্মানিত ${recipientName}`
+    : `প্রিয় ${recipientName}`;
+
+  const messageLead = isWedding ? (
+    <>
+      <span className="font-semibold text-amber-300">{senderName}</span> পরিবার আপনাকে শুভ পরিণয় ও প্রীতিভোজ অনুষ্ঠানে সাদর আমন্ত্রণ জানিয়েছেন। খামটি খুলতে নিচের রাজকীয় সিলমোহরে ট্যাপ করুন।
+    </>
+  ) : isAnniv ? (
+    <>
+      <span className="font-semibold text-amber-300">{senderName}</span> আপনার জন্য একরাশ ভালোবাসা ও শ্রদ্ধার বিবাহবার্ষিকীর চিঠি পাঠিয়েছেন। খামটি খুলতে নিচের সিলটিতে ট্যাপ করুন।
+    </>
+  ) : (
+    <>
+      <span className="font-semibold text-amber-300">{senderName}</span> আপনার জন্য একটি বিশেষ অনুভূতির চিঠি পাঠিয়েছেন। খামটি খুলে দেখতে নিচের সিলটিতে ট্যাপ করুন।
+    </>
+  );
+
   return (
     <div className="flex flex-col items-center text-center animate-fade-in w-full max-w-lg">
       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-amber-300 text-xs font-medium mb-4 shadow-lg animate-bounce">
         <Sparkles className="w-3.5 h-3.5" />
-        <span>একটি বিশেষ অনুভূতির উপহার</span>
+        <span>{badgeText}</span>
       </div>
 
       <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2 tracking-wide drop-shadow-md">
-        প্রিয় {recipientName},
+        {greeting},
       </h1>
       <p className="text-sm text-stone-300 mb-8 max-w-sm">
-        <span className="font-semibold text-amber-300">{senderName}</span> তোমার জন্য একটি বিশেষ অনুভূতির
-        চিঠি পাঠিয়েছেন। খামটি খুলে দেখতে নিচের সিলটিতে ট্যাপ করো।
+        {messageLead}
       </p>
 
       <div
@@ -83,7 +111,7 @@ export default function EnvelopeStage({
         className="mt-8 px-6 py-3 rounded-full bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-bold text-sm shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 cursor-pointer flex items-center gap-2 disabled:opacity-60"
       >
         <Sparkles className="w-4 h-4 animate-spin text-amber-200" />
-        <span>খামটি খুলতে ট্যাপ করুন ✦</span>
+        <span>{isWedding ? "নিমন্ত্রণপত্রটি খুলতে ট্যাপ করুন" : "খামটি খুলতে ট্যাপ করুন"}</span>
       </button>
     </div>
   );

@@ -74,7 +74,7 @@ export default function RepliesView({ id, manageKey }: { id: string; manageKey: 
 
               {replies.length === 0 ? (
                 <p className="py-10 text-center text-sm text-stone-500 dark:text-stone-400">
-                  এখনো কোনো রিঅ্যাকশন আসেনি। প্রাপক চিঠি খুলে রিঅ্যাকশন দিলে এখানে দেখতে পাবেন 💌
+                  এখনো কোনো রিঅ্যাকশন আসেনি। প্রাপক চিঠি খুলে রিঅ্যাকশন দিলে এখানে দেখতে পাবেন।
                 </p>
               ) : (
                 <ul className="space-y-3">

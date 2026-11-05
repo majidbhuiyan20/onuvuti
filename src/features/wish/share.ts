@@ -8,7 +8,7 @@ export const manageUrl = (id: string, key: string) =>
   `${window.location.origin}/wish/${id}/replies?key=${encodeURIComponent(key)}`;
 
 export const inviteText = (recipient: string) =>
-  `🎂 প্রিয় ${recipient}, তোমার জন্য ভালোবাসায় মোড়ানো একটি বিশেষ জন্মদিনের চিঠি এসেছে! খামটি খুলে দেখতে এই লিঙ্কে ক্লিক করো:`;
+  `প্রিয় ${recipient}, আপনার জন্য ভালোবাসায় মোড়ানো একটি বিশেষ সিলমোহরযুক্ত ডিজিটাল চিঠি ও খাম এসেছে! খামটি খুলে দেখতে এই লিঙ্কে ক্লিক করুন:`;
 
 export const shareLinks = {
   whatsapp: (url: string, text: string) =>
@@ -104,15 +104,34 @@ export async function downloadLetterPng(input: LetterImageInput): Promise<void> 
   ctx.strokeRect(30, 30, W - 60, H - 60);
   ctx.globalAlpha = 1;
 
+  const isWedding = theme.id === "wedding_royal" || theme.sealText === "শুভ বিবাহ";
+  const isAnniv = theme.id === "anniversary_gold" || theme.sealText.includes("চিরন্তন");
+  const isLove = theme.id === "rose";
+  const cardTitle = isWedding
+    ? "শুভ বিবাহ নিমন্ত্রণপত্র"
+    : isAnniv
+    ? "শুভ বিবাহবার্ষিকী"
+    : isLove
+    ? "এক টুকরো অনুভূতি"
+    : "শুভ জন্মদিন";
+
   ctx.textAlign = "center";
   ctx.fillStyle = theme.accentColor;
   ctx.font = `bold 78px ${family}`;
-  ctx.fillText("শুভ জন্মদিন 🎂", W / 2, 170);
+  ctx.fillText(cardTitle, W / 2, 170);
 
   ctx.textAlign = "left";
   ctx.fillStyle = theme.textColor;
   ctx.font = `bold 46px ${family}`;
-  ctx.fillText(`প্রিয় ${recipient},`, pad, 290);
+  ctx.fillText(
+    isWedding
+      ? recipient.startsWith("জনাব") || recipient.startsWith("প্রিয়")
+        ? `${recipient},`
+        : `সম্মানিত ${recipient},`
+      : `প্রিয় ${recipient},`,
+    pad,
+    290
+  );
 
   let y = 350;
   if (photo) {

@@ -46,7 +46,7 @@ export default function HomeQuickActions({
             className="px-3.5 py-2 rounded-xl bg-[#FAF4E6] dark:bg-[#1E293B] hover:bg-[#F2E8D2] text-[#80131E] dark:text-rose-300 border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-xs font-bold inline-flex items-center gap-1.5 transition cursor-pointer shrink-0"
           >
             <Gift className="w-3.5 h-3.5 text-[#C59B27]" />
-            <span>জন্মদিনের চিঠি ও খাম</span>
+            <span>ডিজিটাল চিঠি ও নিমন্ত্রণ কার্ড</span>
           </Link>
 
           {/* Surprise Random Story */}
