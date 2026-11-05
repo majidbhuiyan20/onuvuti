@@ -42,9 +42,10 @@ var (
 	allowedThemes = map[string]bool{
 		"rose": true, "vintage": true, "midnight": true, "gold": true,
 		"blossom": true, "spring": true, "royal": true, "ocean": true,
+		"wedding_royal": true, "anniversary_gold": true,
 	}
 	allowedFonts  = map[string]bool{"classic": true, "handwritten": true}
-	allowedMusic  = map[string]bool{"none": true, "happy_birthday": true, "lullaby": true, "romantic": true}
+	allowedMusic  = map[string]bool{"none": true, "happy_birthday": true, "lullaby": true, "romantic": true, "shehnai": true}
 	allowedEmojis = map[string]bool{"❤️": true, "😍": true, "🥹": true, "🎉": true, "🥳": true, "🙏": true}
 
 	photoDataURL = regexp.MustCompile(`^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$`)
