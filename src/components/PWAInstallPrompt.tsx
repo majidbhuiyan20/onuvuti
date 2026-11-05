@@ -133,7 +133,7 @@ export default function PWAInstallPrompt() {
   return (
     <aside
       aria-label="মোবাইল অ্যাপ ইনস্টল করুন"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-50 animate-fadeIn"
+      className="fixed bottom-20 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-50 animate-fadeIn"
     >
       <div className="rounded-3xl bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border border-[#C59B27]/40 dark:border-stone-800 p-4 sm:p-5 shadow-2xl space-y-3.5 transition-all">
         {/* Top Header Row with Icon and Close Button */}

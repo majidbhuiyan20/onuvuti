@@ -31,6 +31,7 @@ import CategoryGrid from "@/components/home/CategoryGrid";
 import StoriesFeed from "@/components/home/StoriesFeed";
 import CallToActionBanner from "@/components/home/CallToActionBanner";
 import HomeFooter from "@/components/home/HomeFooter";
+import MobileBottomNav from "@/components/home/MobileBottomNav";
 
 // Modals
 import SubmitStoryModal from "@/components/modals/SubmitStoryModal";
@@ -707,7 +708,7 @@ export default function OnuvutiBlogHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] flex flex-col transition-colors duration-200">
+    <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] flex flex-col transition-colors duration-200 pb-20 lg:pb-0">
       {/* Feature-First Smart Navbar with Previous Original Brand Logo */}
       <HomeNavbar
         activeCategory={activeCategory}
@@ -949,6 +950,18 @@ export default function OnuvutiBlogHomePage() {
           setIsProfileModalOpen(false);
           setIsSubmitModalOpen(true);
         }}
+      />
+
+      {/* Native App-Style Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        onOpenSubmit={() => setIsSubmitModalOpen(true)}
+        onOpenProfile={() => setIsProfileModalOpen(true)}
+        onOpenAuth={() => {
+          setAuthMode("login");
+          setAuthError(null);
+          setIsAuthModalOpen(true);
+        }}
+        currentUser={currentUser}
       />
     </div>
   );
