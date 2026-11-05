@@ -21,6 +21,10 @@ import DailyWellnessCard from "@/components/DailyWellnessCard";
 // Modular Feature-First Components
 import HomeNavbar from "@/components/home/HomeNavbar";
 import HomeHero from "@/components/home/HomeHero";
+import HomeQuickActions from "@/components/home/HomeQuickActions";
+import HomeMoodSelector from "@/components/home/HomeMoodSelector";
+import HomeTrendingStoriesRail from "@/components/home/HomeTrendingStoriesRail";
+import BookSpotlightBanner from "@/components/home/BookSpotlightBanner";
 import EditorsPickCard from "@/components/home/EditorsPickCard";
 import HomeFeatureRow from "@/components/home/HomeFeatureRow";
 import CategoryGrid from "@/components/home/CategoryGrid";
@@ -730,6 +734,12 @@ export default function OnuvutiBlogHomePage() {
         {/* Lake Sunset Hero Section */}
         <HomeHero onOpenSubmit={() => setIsSubmitModalOpen(true)} />
 
+        {/* Quick Interactive Actions Bar & Live Readers Pulse */}
+        <HomeQuickActions
+          onOpenSubmit={() => setIsSubmitModalOpen(true)}
+          onSurpriseRandom={handleSurpriseRandomStory}
+        />
+
         {/* 100% Dynamic Editor's Pick Card (Backend-Driven, Zero Dummy Data) */}
         <EditorsPickCard
           posts={posts}
@@ -768,6 +778,19 @@ export default function OnuvutiBlogHomePage() {
               onOpenSubmit={() => setIsSubmitModalOpen(true)}
             />
 
+            {/* Interactive Daily Mood Selector (আজকে আপনার অনুভূতি কেমন?) */}
+            <HomeMoodSelector
+              activeCategory={activeCategory}
+              onSelectCategory={(cat) => {
+                setActiveCategory(cat);
+                setShowSavedOnly(false);
+                setCurrentPage(1);
+              }}
+            />
+
+            {/* Horizontal Trending Stories Carousel Rail */}
+            <HomeTrendingStoriesRail posts={posts} />
+
             {/* 8 Categories Grid */}
             <CategoryGrid
               activeCategory={activeCategory}
@@ -801,6 +824,9 @@ export default function OnuvutiBlogHomePage() {
               onSurpriseRandom={handleSurpriseRandomStory}
               onOpenSubmit={() => setIsSubmitModalOpen(true)}
             />
+
+            {/* Bestseller Book 3D Spotlight Showcase Banner */}
+            <BookSpotlightBanner />
 
             {/* Daily Wellness Hub (100% Backend Controlled via Go API & PostgreSQL) */}
             <section id="wellness-hub">

@@ -12,6 +12,9 @@ import {
   Menu,
   Bookmark,
   Clock,
+  HeartPulse,
+  Gift,
+  BarChart2,
 } from "lucide-react";
 import { BLOG_CATEGORIES } from "@/data/blogData";
 import { getSlugByCategory } from "@/data/categoryData";
@@ -288,17 +291,19 @@ export default function HomeNavbar({
           {/* ওয়েলনেস টিপস বাটন */}
           <Link
             href="/tips"
-            className="px-3 py-1.5 rounded-full text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 transition inline-flex items-center gap-1"
+            className="px-3 py-1.5 rounded-full text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-800/80 transition inline-flex items-center gap-1.5"
           >
-            <span>🌿 ওয়েলনেস টিপস</span>
+            <HeartPulse className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>ওয়েলনেস টিপস</span>
           </Link>
 
           {/* জন্মদিনের চিঠি বাটন */}
           <Link
             href="/birthday-wish"
-            className="px-3 py-1.5 rounded-full text-xs font-bold text-rose-800 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/80 transition inline-flex items-center gap-1 shadow-xs"
+            className="px-3 py-1.5 rounded-full text-xs font-bold text-rose-800 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/80 transition inline-flex items-center gap-1.5 shadow-xs"
           >
-            <span>🎂 জন্মদিনের চিঠি</span>
+            <Gift className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
+            <span>জন্মদিনের চিঠি</span>
           </Link>
 
           {/* বই Dropdown */}
@@ -406,9 +411,10 @@ export default function HomeNavbar({
                       .getElementById("home-poll-section")
                       ?.scrollIntoView({ behavior: "smooth" });
                   }}
-                  className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                  className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition flex items-center gap-2"
                 >
-                  📊 আজকের পাঠক জরিপ ও ভোট
+                  <BarChart2 className="w-3.5 h-3.5 text-stone-500" />
+                  <span>আজকের পাঠক জরিপ ও ভোট</span>
                 </button>
                 <button
                   type="button"
@@ -416,9 +422,10 @@ export default function HomeNavbar({
                     setActiveNavDropdown(null);
                     onOpenTracker();
                   }}
-                  className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition"
+                  className="w-full text-left px-3.5 py-2 font-medium hover:bg-[#FAF4E6] dark:hover:bg-[#1E293B] text-stone-700 dark:text-stone-200 hover:text-[#7E151E] dark:hover:text-rose-300 cursor-pointer transition flex items-center gap-2"
                 >
-                  🕒 আমার পাঠানো লেখা ট্র্যাক করুন
+                  <Clock className="w-3.5 h-3.5 text-stone-500" />
+                  <span>আমার পাঠানো লেখা ট্র্যাক করুন</span>
                 </button>
               </div>
             )}
@@ -537,7 +544,8 @@ export default function HomeNavbar({
               onClick={() => setIsMobileMenuOpen(false)}
               className="w-full px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>🌿 ওয়েলনেস ও হেলথ টিপস</span>
+              <HeartPulse className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              <span>ওয়েলনেস ও হেলথ টিপস</span>
             </Link>
 
             <button
