@@ -519,7 +519,7 @@ export default function BirthdayWishCreatorPage() {
                 <Sliders className="w-3.5 h-3.5 text-stone-500" />
                 <span>নিরাপত্তা ও বিশেষ সেটিংস</span>
               </label>
-              <SpecialOptions value={special} onChange={setSpecial} />
+              <SpecialOptions value={special} onChange={setSpecial} occasion={selectedOccasion} />
             </div>
 
             <button

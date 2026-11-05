@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { CalendarClock, Flame, KeyRound } from "lucide-react";
 import { toLocalInputValue } from "../media";
+import type { OccasionType } from "@/data/birthdayTemplates";
 
 export interface SpecialOptionsValue {
   scheduleOn: boolean;
@@ -14,6 +15,7 @@ export interface SpecialOptionsValue {
 interface SpecialOptionsProps {
   value: SpecialOptionsValue;
   onChange: (next: SpecialOptionsValue) => void;
+  occasion?: OccasionType;
 }
 
 const inputCls =
@@ -28,9 +30,9 @@ function quickTimes(): { label: string; date: Date }[] {
   morning.setHours(8, 0, 0, 0);
   const inHour = new Date(now.getTime() + 60 * 60 * 1000);
   return [
-    { label: "১ ঘণ্টা পর", date: inHour },
     { label: "আজ রাত ১২:০০", date: tonight },
     { label: "আগামীকাল সকাল ৮টা", date: morning },
+    { label: "১ ঘণ্টা পর", date: inHour },
   ];
 }
 
@@ -66,13 +68,43 @@ function Toggle({
   );
 }
 
-export default function SpecialOptions({ value, onChange }: SpecialOptionsProps) {
+export default function SpecialOptions({ value, onChange, occasion = "birthday" }: SpecialOptionsProps) {
   const set = (patch: Partial<SpecialOptionsValue>) => onChange({ ...value, ...patch });
   const [minLocal, setMinLocal] = useState("");
 
   useEffect(() => {
     setMinLocal(toLocalInputValue(new Date()));
   }, []);
+
+  const scheduleTitle =
+    occasion === "wedding"
+      ? "অনুষ্ঠান বা বিয়ের ক্ষণে খুলবে (কাউন্টডাউন সহ)"
+      : occasion === "anniversary"
+      ? "বিবাহবার্ষিকীর বিশেষ ক্ষণে খুলবে (কাউন্টডাউন সহ)"
+      : occasion === "love"
+      ? "নির্ধারিত ভালোবাসার ক্ষণে চিঠি খুলবে (কাউন্টডাউন সহ)"
+      : "জন্মদিনের সময়ে চিঠি খুলবে (রাত ১২টার কাউন্টডাউন)";
+
+  const scheduleHint =
+    occasion === "wedding"
+      ? "নির্ধারিত সময় না হওয়া পর্যন্ত নিমন্ত্রণপত্রটি বন্ধ থাকবে, মেহমানরা শুধু কাউন্টডাউন টাইমার দেখতে পাবেন。"
+      : occasion === "anniversary"
+      ? "বিবাহবার্ষিকীর সময় না হওয়া পর্যন্ত চিঠি বন্ধ থাকবে, জীবনসঙ্গী বা দম্পতি কাউন্টডাউন টাইমার দেখবেন।"
+      : "নির্ধারিত সময় না হওয়া পর্যন্ত চিঠিটি বন্ধ থাকবে, প্রাপক কেবল উল্টো গণনা (কাউন্টডাউন) দেখতে পাবেন।";
+
+  const selfDestructTitle =
+    occasion === "wedding"
+      ? "একবার দর্শনের কার্ড — একবার দেখার পর মুছে যাবে (ঐচ্ছিক)"
+      : occasion === "anniversary"
+      ? "একবার পড়ার পর মুছে যাবে (ঐচ্ছিক)"
+      : "গোপন চিঠি — একবার পড়ার পর মুছে যাবে (ঐচ্ছিক)";
+
+  const selfDestructHint =
+    occasion === "wedding"
+      ? "অতিথি একবার খুললেই কার্ডটি মুছে যাবে (সাধারণত বিয়ের নিমন্ত্রণপত্র আজীবন সংরক্ষণযোগ্য রাখতে এটি বন্ধ রাখা উত্তম)।"
+      : occasion === "anniversary"
+      ? "প্রাপক একবার খুললেই চিঠিটি মুছে যাবে (বিবাহবার্ষিকীর স্মৃতি আজীবন রাখতে এটি বন্ধ রাখাই উত্তম)।"
+      : "প্রাপক একবার খুললেই চিঠি, ছবি ও ভয়েস সার্ভার থেকে চিরতরে মুছে যাবে। নিজে খুলে দেখলেও মুছে যাবে!";
 
   return (
     <div className="space-y-4 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/50">
@@ -82,12 +114,12 @@ export default function SpecialOptions({ value, onChange }: SpecialOptionsProps)
           onChange={(v) =>
             set({
               scheduleOn: v,
-              unlockLocal: v && !value.unlockLocal ? toLocalInputValue(quickTimes()[1].date) : value.unlockLocal,
+              unlockLocal: v && !value.unlockLocal ? toLocalInputValue(quickTimes()[0].date) : value.unlockLocal,
             })
           }
           icon={<CalendarClock className="w-3.5 h-3.5 text-amber-600" />}
-          title="জন্মদিনের সময়ে খুলবে (কাউন্টডাউন সহ)"
-          hint="সময় না হওয়া পর্যন্ত চিঠি বন্ধ থাকবে, প্রাপক শুধু কাউন্টডাউন দেখবে।"
+          title={scheduleTitle}
+          hint={scheduleHint}
         />
         {value.scheduleOn && (
           <div className="pl-7 space-y-2">
@@ -117,18 +149,18 @@ export default function SpecialOptions({ value, onChange }: SpecialOptionsProps)
       <div className="space-y-2">
         <span className="flex items-center gap-1.5 text-xs font-bold text-stone-800 dark:text-stone-100">
           <KeyRound className="w-3.5 h-3.5 text-amber-600" />
-          সিক্রেট কোড (ঐচ্ছিক)
+          সিক্রেট পাসকোড লক (ঐচ্ছিক)
         </span>
         <input
           type="text"
           maxLength={20}
           value={value.passcode}
           onChange={(e) => set({ passcode: e.target.value })}
-          placeholder="৪–২০ অক্ষর, যেমন: 1234 বা আমাদেরগল্প"
+          placeholder="৪–২০ অক্ষর, যেমন: 1234 বা আমাদেরবিয়ে"
           className={inputCls}
         />
         <p className="text-[11px] text-stone-500 dark:text-stone-400">
-          কোড না জানলে কেউ চিঠি খুলতে পারবে না। কোডটি প্রাপককে আলাদা করে জানিয়ে দিন।
+          পাসকোড না জানলে কেউ কার্ড বা চিঠি খুলতে পারবে না। পাসকোডটি প্রাপককে আলাদাভাবে জানিয়ে দিন।
         </p>
       </div>
 
@@ -136,8 +168,8 @@ export default function SpecialOptions({ value, onChange }: SpecialOptionsProps)
         checked={value.selfDestruct}
         onChange={(v) => set({ selfDestruct: v })}
         icon={<Flame className="w-3.5 h-3.5 text-rose-600" />}
-        title="গোপন চিঠি — একবার পড়ার পর মুছে যাবে"
-        hint="প্রাপক একবার খুললেই চিঠি, ছবি ও ভয়েস সার্ভার থেকে চিরতরে মুছে যাবে। নিজে খুলে দেখলেও মুছে যাবে!"
+        title={selfDestructTitle}
+        hint={selfDestructHint}
       />
     </div>
   );

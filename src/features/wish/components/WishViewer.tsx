@@ -172,6 +172,8 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
           recipientName={wish.recipientName}
           senderName={wish.senderName}
           onDone={() => setWish((w) => ({ ...w, locked: false }))}
+          themeId={wish.theme}
+          relationship={wish.relationship}
         />
       );
     }
