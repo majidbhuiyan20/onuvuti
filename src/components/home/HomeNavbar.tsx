@@ -15,6 +15,8 @@ import {
   HeartPulse,
   Gift,
   BarChart2,
+  Download,
+  Smartphone,
 } from "lucide-react";
 import { BLOG_CATEGORIES } from "@/data/blogData";
 import { getSlugByCategory } from "@/data/categoryData";
@@ -547,6 +549,20 @@ export default function HomeNavbar({
               <HeartPulse className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>ওয়েলনেস ও হেলথ টিপস</span>
             </Link>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new Event("trigger-pwa-install"));
+                }
+              }}
+              className="w-full px-3 py-2 rounded-xl bg-[#80131E] hover:bg-[#680f18] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>অনুভূতি অ্যাপ ইনস্টল করুন</span>
+            </button>
 
             <button
               type="button"

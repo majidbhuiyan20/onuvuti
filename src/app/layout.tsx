@@ -1,7 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { BOOK_INFO } from "@/data/bookData";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+
+export const viewport: Viewport = {
+  themeColor: "#80131E",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -12,9 +20,21 @@ export const metadata: Metadata = {
   title: `অনুভূতি (Onuvuti) — ${BOOK_INFO.titleBn}`,
   description:
     "অনুভূতি (Onuvuti) — মনস্তত্ত্ব, সম্পর্ক ও জীবনদর্শন ব্লগ এবং স্পর্শের ব্যাকরণ ই-বুক।",
-  icons: {
-    icon: "/images/Onuvuti-Publications-Logo.png",
+  applicationName: "অনুভূতি",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "অনুভূতি",
   },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: "/icon-192.png",
+    apple: "/apple-touch-icon.png",
+    shortcut: "/icon-192.png",
+  },
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
@@ -57,9 +77,18 @@ export default function RootLayout({
             `,
           }}
         />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="অনুভূতি" />
       </head>
       <body className="min-h-full flex flex-col bg-[#FCFAF6] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] transition-colors duration-200">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          {children}
+          <PWAInstallPrompt />
+        </ThemeProvider>
       </body>
     </html>
   );

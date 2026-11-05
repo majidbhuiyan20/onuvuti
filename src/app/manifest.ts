@@ -1,0 +1,37 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "অনুভূতি — সাহিত্য, সম্পর্ক ও মনস্তত্ত্ব",
+    short_name: "অনুভূতি",
+    description:
+      "অনুভূতি (Onuvuti) — মনস্তত্ত্ব, সম্পর্ক ও জীবনদর্শন ব্লগ এবং স্পর্শের ব্যাকরণ ই-বুক।",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#FCFAF6",
+    theme_color: "#80131E",
+    orientation: "portrait-primary",
+    icons: [
+      {
+        src: "/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
+    categories: ["books", "lifestyle", "entertainment"],
+  };
+}
+
