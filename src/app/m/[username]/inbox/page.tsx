@@ -46,6 +46,7 @@ import {
 } from "@/features/secret/storyGenerator";
 import EnvelopeCard, { WAX_SEAL_ICONS } from "@/features/secret/EnvelopeCard";
 import LetterRevealModal from "@/features/secret/LetterRevealModal";
+import StoryStickerCardModal from "@/features/secret/StoryStickerCardModal";
 import SecretFooter from "@/features/secret/SecretFooter";
 
 function PrivateInboxContent() {
@@ -62,6 +63,7 @@ function PrivateInboxContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isStickerModalOpen, setIsStickerModalOpen] = useState(false);
 
   // Story Reply Modal State
   const [activeMessage, setActiveMessage] = useState<SecretMessage | null>(null);
@@ -308,6 +310,14 @@ function PrivateInboxContent() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => setIsStickerModalOpen(true)}
+              className="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-[#7E151E] dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-bold shadow-xs hover:bg-rose-100 dark:hover:bg-rose-900/60 transition inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
+              <span>স্টোরি স্টিকার</span>
+            </button>
+            <button
+              type="button"
               onClick={handleCopyShareLink}
               className="px-3.5 py-1.5 rounded-full bg-[#7E151E] hover:bg-[#680f18] text-white text-xs font-bold shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"
             >
@@ -398,11 +408,19 @@ function PrivateInboxContent() {
               <div className="flex items-center gap-2 w-full sm:w-auto">
                 <button
                   type="button"
+                  onClick={() => setIsStickerModalOpen(true)}
+                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 text-white shadow-xs text-xs font-bold transition inline-flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-95"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>স্টোরি স্টিকার কার্ড</span>
+                </button>
+                <button
+                  type="button"
                   onClick={handleCopyShareLink}
                   className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-xs font-bold transition inline-flex items-center justify-center gap-1.5 cursor-pointer hover:bg-rose-100"
                 >
                   <Share2 className="w-3.5 h-3.5" />
-                  <span>স্টোরি লিংক শেয়ার</span>
+                  <span>লিংক কপি</span>
                 </button>
               </div>
             </div>
@@ -417,16 +435,26 @@ function PrivateInboxContent() {
                   এখনো কোনো বেনামী বার্তা আসেনি
                 </h3>
                 <p className="text-xs text-stone-500 max-w-sm mx-auto leading-relaxed">
-                  আপনার ফেসবুক বা ইনস্টাগ্রাম স্টোরিতে লিংকটি শেয়ার করুন। বন্ধুরা যখনই গোপনে বার্তা পাঠাবে, তা সরাসরি এখানে জমা হবে!
+                  আপনার ফেসবুক বা ইনস্টাগ্রাম স্টোরিতে রেডিমেড স্টিকার কার্ড বা লিংক শেয়ার করুন। বন্ধুরা যখনই গোপনে বার্তা পাঠাবে, তা সরাসরি এখানে জমা হবে!
                 </p>
-                <button
-                  type="button"
-                  onClick={handleCopyShareLink}
-                  className="px-5 py-2.5 rounded-full bg-[#7E151E] text-white text-xs font-bold shadow-md hover:bg-[#680f18] transition inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                  <span>লিংক কপি করে স্টোরিতে দিন</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsStickerModalOpen(true)}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-gradient-to-r from-[#7E151E] to-rose-700 text-white text-xs font-bold shadow-md hover:opacity-95 transition inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>স্টোরি স্টিকার কার্ড ডাউনলোড</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyShareLink}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-700 text-xs font-bold hover:bg-stone-200 dark:hover:bg-stone-700 transition inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>লিংক কপি করে স্টোরিতে দিন</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -760,6 +788,18 @@ function PrivateInboxContent() {
           onDeleteMessage={(id) => handleDeleteMessage(id)}
           isInitialUnopened={isInitialUnopened}
         />
+
+        {/* NGL-Style Instagram/Facebook Story Sticker Card Modal */}
+        {isStickerModalOpen && inboxView && (
+          <StoryStickerCardModal
+            isOpen={isStickerModalOpen}
+            onClose={() => setIsStickerModalOpen(false)}
+            username={username}
+            displayName={inboxView.inbox.displayName}
+            promptText={inboxView.inbox.promptText}
+            initialTheme={(inboxView.inbox.theme as StoryThemeId) || "crimson"}
+          />
+        )}
       </main>
 
       <SecretFooter />

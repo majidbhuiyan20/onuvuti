@@ -492,3 +492,241 @@ export async function shareStoryImage(
   }
 }
 
+export interface StickerCardRenderOptions {
+  canvas: HTMLCanvasElement;
+  displayName: string;
+  username: string;
+  promptText?: string;
+  themeId?: StoryThemeId;
+}
+
+/**
+ * Renders high-resolution 1080x1920 NGL-Style Instagram/Facebook Story Sticker Card.
+ */
+export async function renderStickerCardToCanvas(options: StickerCardRenderOptions) {
+  const {
+    canvas,
+    displayName,
+    username,
+    promptText = "আমাকে যেকোনো মনের কথা বা না বলা গোপন অনুভূতি লিখে পাঠাও...",
+    themeId = "crimson",
+  } = options;
+
+  const width = 1080;
+  const height = 1920;
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+
+  const theme = STORY_THEMES[themeId] || STORY_THEMES.crimson;
+
+  // 1. Background Gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+  bgGrad.addColorStop(0, theme.bgGradient[0]);
+  bgGrad.addColorStop(0.5, theme.bgGradient[1]);
+  bgGrad.addColorStop(1, theme.bgGradient[2]);
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // 2. Decorative luminous ambient circles
+  ctx.save();
+  ctx.globalAlpha = 0.14;
+  ctx.fillStyle = "#FFFFFF";
+  ctx.beginPath();
+  ctx.arc(width * 0.2, height * 0.18, 320, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(width * 0.85, height * 0.72, 420, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  // 3. Top Header Glass Pill
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.18)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.lineWidth = 2.5;
+  const headerPillW = 540;
+  const headerPillH = 74;
+  const headerPillX = (width - headerPillW) / 2;
+  const headerPillY = 170;
+  roundRect(ctx, headerPillX, headerPillY, headerPillW, headerPillH, 37, true, true);
+
+  ctx.font = "bold 30px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillText("ONUVUTI • গোপন বার্তা", width / 2, headerPillY + 47);
+
+  // Subtitle
+  ctx.font = "600 38px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  ctx.fillText("আমাকে যা বলতে চাও, গোপনে বলো...", width / 2, headerPillY + 130);
+  ctx.restore();
+
+  // 4. Central NGL-Style Story Sticker Card
+  const cardW = 920;
+  const cardX = (width - cardW) / 2;
+  const cardY = 460;
+
+  ctx.font = "bold 50px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  const promptLines = wrapText(ctx, promptText, cardW - 140);
+  const pLineHeight = 68;
+  const pBadgeH = 88;
+  const mockTapH = 92;
+  const cardPaddingTop = 40;
+  const cardPaddingBottom = 45;
+  const cardH =
+    cardPaddingTop + pBadgeH + 50 + promptLines.length * pLineHeight + 50 + mockTapH + cardPaddingBottom;
+
+  // Deep Soft Shadow for 3D Floating Sticker look
+  ctx.save();
+  ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+  ctx.shadowBlur = 50;
+  ctx.shadowOffsetY = 24;
+
+  ctx.fillStyle = theme.questionBg;
+  ctx.strokeStyle = theme.questionBorder;
+  ctx.lineWidth = 4;
+  roundRect(ctx, cardX, cardY, cardW, cardH, 52, true, true);
+  ctx.restore();
+
+  // Top Sticker Header Pill (User avatar + badge)
+  ctx.save();
+  const topBadgeW = cardW - 80;
+  const topBadgeH = 88;
+  const topBadgeX = cardX + 40;
+  const topBadgeY = cardY + cardPaddingTop;
+  ctx.fillStyle = theme.badgeBg;
+  ctx.strokeStyle = "transparent";
+  roundRect(ctx, topBadgeX, topBadgeY, topBadgeW, topBadgeH, 32, true, false);
+
+  // User handle inside badge
+  ctx.font = "bold 34px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = theme.badgeText;
+  ctx.textAlign = "center";
+  ctx.fillText(
+    `@${username} • SEND ANONYMOUS MESSAGE`,
+    topBadgeX + topBadgeW / 2,
+    topBadgeY + 54
+  );
+
+  // Sticker Message / Prompt Text
+  ctx.font = "bold 52px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = theme.questionText;
+  ctx.textAlign = "center";
+  let lineY = topBadgeY + topBadgeH + 74;
+  for (const line of promptLines) {
+    ctx.fillText(line, width / 2, lineY);
+    lineY += pLineHeight;
+  }
+
+  // Mock Interactive Tap / Link Button inside sticker
+  const tapW = cardW - 120;
+  const tapH = 88;
+  const tapX = cardX + 60;
+  const tapY = lineY + 16;
+  ctx.fillStyle = "rgba(0, 0, 0, 0.06)";
+  ctx.strokeStyle = "rgba(0, 0, 0, 0.12)";
+  ctx.lineWidth = 2;
+  roundRect(ctx, tapX, tapY, tapW, tapH, 44, true, true);
+
+  ctx.font = "bold 34px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = theme.questionText;
+  ctx.textAlign = "center";
+  ctx.fillText("লিংক বায়োতে / স্টোরি লিংকে ট্যাপ করুন", width / 2, tapY + 55);
+  ctx.restore();
+
+  // 5. Instruction & Link Guide Box below the sticker
+  const guideY = cardY + cardH + 70;
+  ctx.save();
+  ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+  ctx.lineWidth = 2.5;
+  const guideW = 860;
+  const guideH = 200;
+  const guideX = (width - guideW) / 2;
+  roundRect(ctx, guideX, guideY, guideW, guideH, 36, true, true);
+
+  ctx.textAlign = "center";
+  ctx.font = "600 30px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+  ctx.fillText("স্টোরিতে ছবিটি দিয়ে নিচের লিংকটি Link স্টিকারে দিন:", width / 2, guideY + 68);
+
+  ctx.font = "bold 38px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillText(`onuvuti.site/m/${username}`, width / 2, guideY + 140);
+  ctx.restore();
+
+  // 6. Bottom Brand Footer
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.font = "600 32px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = theme.footerColor;
+  ctx.fillText("অনুভূতি • ১০০% গোপন ও নিরাপদ চিঠি", width / 2, height - 120);
+
+  ctx.font = "normal 24px 'Hind Siliguri', 'SolaimanLipi', sans-serif";
+  ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+  ctx.fillText("onuvuti.site/m", width / 2, height - 76);
+  ctx.restore();
+}
+
+/**
+ * Downloads NGL-style Sticker Card directly to device.
+ */
+export async function downloadStickerImage(
+  canvas: HTMLCanvasElement,
+  username: string
+) {
+  const blob = await exportStoryAsBlob(canvas);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `onuvuti-sticker-${username}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/**
+ * Shares NGL-style Sticker Card via native mobile share sheet.
+ */
+export async function shareStickerImage(
+  canvas: HTMLCanvasElement,
+  username: string
+): Promise<boolean> {
+  try {
+    const blob = await exportStoryAsBlob(canvas);
+    const file = new File([blob], `onuvuti-sticker-${username}.png`, {
+      type: "image/png",
+    });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: "আমার বেনামী বার্তার স্টোরি স্টিকার",
+        text: `আমাকে যেকোনো মনের কথা বা না বলা গোপন অনুভূতি লিখে পাঠাও... https://onuvuti.site/m/${username}`,
+        files: [file],
+      });
+      return true;
+    }
+
+    if (navigator.share) {
+      await navigator.share({
+        title: "আমার বেনামী বার্তার স্টোরি স্টিকার",
+        text: `আমাকে যেকোনো মনের কথা বা না বলা গোপন অনুভূতি লিখে পাঠাও... https://onuvuti.site/m/${username}`,
+        url: `https://onuvuti.site/m/${username}`,
+      });
+      return true;
+    }
+
+    await downloadStickerImage(canvas, username);
+    return false;
+  } catch (err) {
+    if ((err as Error).name !== "AbortError") {
+      await downloadStickerImage(canvas, username);
+    }
+    return false;
+  }
+}
+
