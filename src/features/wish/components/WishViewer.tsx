@@ -90,6 +90,11 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
 
   const playOpenAnimation = () => {
     setOpening(true);
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      try {
+        navigator.vibrate([40, 25, 50]);
+      } catch {}
+    }
     if (soundEnabled) playChime("open");
     later(() => burstConfetti(confettiRef.current, 100), 400);
     later(() => {

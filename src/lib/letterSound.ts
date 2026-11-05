@@ -158,6 +158,89 @@ class LetterSoundManager {
       // Audio fallback
     }
   }
+
+  private lastPenSoundTime = 0;
+
+  /**
+   * Subtle soft pen scratch / typewriter tick during letter writing.
+   * Throttled to max once every 90ms.
+   */
+  public playPenScratch() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    const nowMs = Date.now();
+    if (nowMs - this.lastPenSoundTime < 85) return;
+    this.lastPenSoundTime = nowMs;
+
+    try {
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(1200 + Math.random() * 400, now);
+      osc.frequency.exponentialRampToValueAtTime(800, now + 0.025);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.04, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.035);
+    } catch {
+      // Fallback
+    }
+  }
+
+  /**
+   * Gentle celebration chime when letter finishes writing.
+   */
+  public playLetterCompleteChime() {
+    const ctx = this.getContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime;
+      const notes = [659.25, 880, 1046.5]; // E5, A5, C6
+      notes.forEach((freq, i) => {
+        const t = now + i * 0.12;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, t);
+
+        gain.gain.setValueAtTime(0.001, t);
+        gain.gain.exponentialRampToValueAtTime(0.12, t + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.65);
+      });
+    } catch {
+      // Fallback
+    }
+  }
+
+  /**
+   * Mobile haptic vibration helper.
+   */
+  public triggerHaptic(pattern: number | number[] = [35, 25, 50]) {
+    if (typeof window !== "undefined" && typeof navigator !== "undefined" && navigator.vibrate) {
+      try {
+        navigator.vibrate(pattern);
+      } catch {
+        // Ignored if not permitted by user agent
+      }
+    }
+  }
 }
 
 export const letterSound = new LetterSoundManager();

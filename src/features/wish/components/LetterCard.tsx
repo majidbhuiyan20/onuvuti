@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Heart, Mic, FastForward } from "lucide-react";
+import { Heart, Mic, FastForward, Sparkles } from "lucide-react";
 import type { WishTheme } from "@/data/birthdayTemplates";
 import { renderFormattedInline } from "@/lib/formatText";
 import { HANDWRITING_FONT } from "../share";
@@ -85,7 +85,7 @@ export default function LetterCard({ wish, content, theme }: LetterCardProps) {
     >
       {["top-2 left-2", "top-2 right-2", "bottom-2 left-2", "bottom-2 right-2"].map((pos) => (
         <div key={pos} className={`${corner} ${pos}`} style={{ color: theme.accentColor }}>
-          ❦
+          <Sparkles className="w-3 h-3 opacity-60" />
         </div>
       ))}
 

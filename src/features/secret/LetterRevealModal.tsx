@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   X,
   Sparkles,
@@ -12,12 +12,22 @@ import {
   Mail,
   ShieldCheck,
   Smartphone,
-  Eye,
   RotateCcw,
+  Download,
+  Type,
+  Volume2,
+  VolumeX,
+  FastForward,
 } from "lucide-react";
 import { SecretMessage, SecretInboxPublic } from "@/features/secret/types";
 import EnvelopeCard, { WAX_SEAL_ICONS } from "./EnvelopeCard";
 import { letterSound } from "@/lib/letterSound";
+import { renderFormattedInline } from "@/lib/formatText";
+import {
+  renderPostcardToCanvas,
+  downloadPostcardImage,
+} from "./postcardGenerator";
+import LetterAmbientParticles from "./LetterAmbientParticles";
 
 interface LetterRevealModalProps {
   isOpen: boolean;
@@ -29,6 +39,8 @@ interface LetterRevealModalProps {
   isInitialUnopened?: boolean;
 }
 
+type RevealStage = "sealed" | "opening" | "unfolding" | "revealed";
+
 export default function LetterRevealModal({
   isOpen,
   onClose,
@@ -38,38 +50,135 @@ export default function LetterRevealModal({
   onDeleteMessage,
   isInitialUnopened = false,
 }: LetterRevealModalProps) {
-  const [isOpening, setIsOpening] = useState(false);
-  const [isLetterRevealed, setIsLetterRevealed] = useState(!isInitialUnopened);
+  const [stage, setStage] = useState<RevealStage>(
+    isInitialUnopened ? "sealed" : "revealed"
+  );
+  const [typedLength, setTypedLength] = useState(0);
+  const [isTyping, setIsTyping] = useState(false);
 
-  // Sync state when new message is opened
+  // Preference Controls
+  const [fontStyle, setFontStyle] = useState<"handwritten" | "classic">(
+    "handwritten"
+  );
+  const [isLargeText, setIsLargeText] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isDownloadingPostcard, setIsDownloadingPostcard] = useState(false);
+  const [postcardSaved, setPostcardSaved] = useState(false);
+
+  const postcardCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Sync state when new message is loaded
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && message) {
       if (isInitialUnopened) {
-        setIsLetterRevealed(false);
-        setIsOpening(false);
+        setStage("sealed");
+        setTypedLength(0);
+        setIsTyping(false);
       } else {
-        setIsLetterRevealed(true);
-        setIsOpening(false);
+        setStage("revealed");
+        setTypedLength(message.content.length);
+        setIsTyping(false);
       }
     }
   }, [isOpen, isInitialUnopened, message?.id]);
 
+  // Typewriter Engine
+  useEffect(() => {
+    if (stage !== "revealed" || !message) return;
+
+    if (typedLength >= message.content.length) {
+      setIsTyping(false);
+      return;
+    }
+
+    setIsTyping(true);
+    const char = message.content[typedLength] || "";
+    // Variable natural typing speed
+    const delay = char === " " ? 20 : char === "\n" ? 70 : 26;
+
+    const timer = setTimeout(() => {
+      setTypedLength((prev) => {
+        const next = prev + 1;
+        if (soundEnabled && next % 3 === 0) {
+          letterSound.playPenScratch();
+        }
+        if (next >= message.content.length) {
+          setIsTyping(false);
+          if (soundEnabled) {
+            letterSound.playLetterCompleteChime();
+          }
+        }
+        return next;
+      });
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [stage, typedLength, message?.content, soundEnabled]);
+
   if (!isOpen || !message || !inbox) return null;
 
   const handleBreakSeal = () => {
-    if (isOpening || isLetterRevealed) return;
-    setIsOpening(true);
-    letterSound.playSealBreak();
+    if (stage !== "sealed") return;
 
+    // Step 1: Break Seal
+    setStage("opening");
+    if (soundEnabled) {
+      letterSound.playSealBreak();
+    }
+    letterSound.triggerHaptic([40, 25, 55]);
+
+    // Step 2: Unfold Letter Paper
     setTimeout(() => {
-      setIsLetterRevealed(true);
-      setIsOpening(false);
-    }, 700);
+      setStage("unfolding");
+      if (soundEnabled) {
+        letterSound.playPaperRustle(0.22);
+      }
+      letterSound.triggerHaptic([20, 20]);
+    }, 450);
+
+    // Step 3: Full Reading View & Typewriter Start
+    setTimeout(() => {
+      setStage("revealed");
+      setTypedLength(0);
+      setIsTyping(true);
+    }, 1100);
+  };
+
+  const handleSkipTyping = () => {
+    setTypedLength(message.content.length);
+    setIsTyping(false);
   };
 
   const handleReplayEnvelope = () => {
-    setIsLetterRevealed(false);
-    setIsOpening(false);
+    setStage("sealed");
+    setTypedLength(0);
+    setIsTyping(false);
+  };
+
+  const handleSavePostcard = async () => {
+    if (!postcardCanvasRef.current || !message || !inbox) return;
+    setIsDownloadingPostcard(true);
+    try {
+      await renderPostcardToCanvas({
+        canvas: postcardCanvasRef.current,
+        recipientDisplayName: inbox.displayName,
+        recipientUsername: inbox.username,
+        messageContent: message.content,
+        sealLabel: seal.label,
+        createdAt: message.createdAt,
+      });
+
+      await downloadPostcardImage(
+        postcardCanvasRef.current,
+        inbox.username,
+        message.id
+      );
+
+      setPostcardSaved(true);
+      setTimeout(() => setPostcardSaved(false), 2500);
+    } finally {
+      setIsDownloadingPostcard(false);
+    }
   };
 
   const formatExactTime = (isoString: string) => {
@@ -105,64 +214,91 @@ export default function LetterRevealModal({
   const SealIcon = seal.icon;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg mx-auto flex flex-col items-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+      {/* Floating Ambient Stardust Particles based on message mood */}
+      <LetterAmbientParticles moodCategory={message.moodEmoji || "crush"} />
+
+      {/* Hidden Canvas for Postcard Keepsake Export */}
+      <canvas ref={postcardCanvasRef} className="hidden" />
+
+      <div className="relative w-full max-w-xl mx-auto flex flex-col items-center z-10 my-auto py-6">
         {/* Close Button on Top Right */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute -top-12 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition cursor-pointer"
+          className="absolute -top-10 sm:-top-12 right-1 sm:right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition cursor-pointer z-50 shadow-md"
           title="বন্ধ করুন"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* 1. SEALED ENVELOPE STAGE (Before breaking seal) */}
-        {!isLetterRevealed && (
+        {/* 1. SEALED & OPENING STAGES */}
+        {stage !== "revealed" && (
           <div className="flex flex-col items-center space-y-6 w-full animate-in zoom-in-95 duration-300">
             <div className="text-center space-y-1">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/20 text-amber-200 border border-amber-500/40 text-xs font-bold shadow-xs">
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
                 <span>সিলমোহরকৃত গোপন চিঠি</span>
               </span>
-              <h3 className="text-xl font-black text-white pt-1">
+              <h3 className="text-xl sm:text-2xl font-black text-white pt-1">
                 আপনার নামে একটি বেনামী চিঠি এসেছে
               </h3>
-              <p className="text-xs text-stone-300 max-w-xs mx-auto">
-                চিঠিটি পড়তে এবং ভেতরে কী লেখা আছে দেখতে মোমের সিলমোহরে স্পর্শ করুন।
+              <p className="text-xs sm:text-sm text-stone-300 max-w-xs mx-auto">
+                চিঠির ভেতরের গোপন অনুভূতি দেখতে মোমের সিলমোহরে স্পর্শ করুন।
               </p>
             </div>
 
-            {/* Interactive Envelope with Seal */}
-            <EnvelopeCard
-              theme={message.cardTheme || "crimson"}
-              sealCategory={message.moodEmoji || "crush"}
-              recipientUsername={inbox.username}
-              recipientDisplayName={inbox.displayName}
-              isOpening={isOpening}
-              isOpened={false}
-              onSealClick={handleBreakSeal}
-              showClickHint={!isOpening}
-              size="lg"
-            />
+            {/* Interactive Envelope & 3D Folding Stage */}
+            <div className="relative w-full flex justify-center">
+              <EnvelopeCard
+                theme={message.cardTheme || "crimson"}
+                sealCategory={message.moodEmoji || "crush"}
+                recipientUsername={inbox.username}
+                recipientDisplayName={inbox.displayName}
+                isOpening={stage === "opening" || stage === "unfolding"}
+                isOpened={stage === "unfolding"}
+                onSealClick={handleBreakSeal}
+                showClickHint={stage === "sealed"}
+                size="lg"
+              />
+
+              {/* 3D Paper Sliding Up & Unfolding */}
+              {stage === "unfolding" && (
+                <div
+                  className="absolute -top-8 w-11/12 max-w-md bg-[#FAF5E8] dark:bg-[#1E1915] rounded-2xl border-2 border-amber-400/80 shadow-2xl p-6 z-40 animate-in slide-in-from-bottom-16 duration-700 overflow-hidden"
+                  style={{ perspective: "1000px" }}
+                >
+                  <div className="text-center space-y-2 py-4">
+                    <Feather className="w-8 h-8 text-[#7E151E] dark:text-amber-300 mx-auto animate-pulse" />
+                    <span className="text-xs font-black text-[#7E151E] dark:text-amber-200 uppercase tracking-widest block">
+                      চিঠির ভাঁজ খোলা হচ্ছে...
+                    </span>
+                    <div className="w-32 h-1.5 bg-amber-200/50 rounded-full mx-auto overflow-hidden">
+                      <div className="w-full h-full bg-[#7E151E] animate-pulse" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Action Trigger Button */}
-            <button
-              type="button"
-              onClick={handleBreakSeal}
-              disabled={isOpening}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-900 font-extrabold text-sm shadow-xl transition flex items-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
-            >
-              <Sparkles className="w-4 h-4 text-stone-900" />
-              <span>{isOpening ? "সিলমোহর খোলা হচ্ছে..." : "সিলমোহর ভেঙে চিঠিটি পড়ুন"}</span>
-            </button>
+            {stage === "sealed" && (
+              <button
+                type="button"
+                onClick={handleBreakSeal}
+                className="px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-stone-900 font-black text-sm shadow-xl transition flex items-center gap-2 cursor-pointer active:scale-95 transform hover:scale-102"
+              >
+                <Sparkles className="w-4 h-4 text-stone-900" />
+                <span>সিলমোহর ভেঙে চিঠিটি পড়ুন</span>
+              </button>
+            )}
           </div>
         )}
 
         {/* 2. REVEALED PARCHMENT LETTER STAGE */}
-        {isLetterRevealed && (
-          <div className="w-full bg-[#FAF5E8] dark:bg-[#1C1814] text-stone-800 dark:text-stone-100 rounded-3xl border-2 border-[#D4AF37]/50 shadow-2xl p-6 sm:p-8 space-y-5 animate-in slide-in-from-bottom-8 duration-500 relative overflow-hidden">
-            {/* Subtle vintage letter paper texture */}
+        {stage === "revealed" && (
+          <div className="w-full bg-[#FAF5E8] dark:bg-[#1A1612] text-stone-800 dark:text-stone-100 rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl p-5 sm:p-8 space-y-5 animate-in slide-in-from-bottom-8 duration-500 relative overflow-hidden">
+            {/* Subtle vintage lined notebook texture */}
             <div
               className="absolute inset-0 opacity-[0.04] pointer-events-none"
               style={{
@@ -171,8 +307,8 @@ export default function LetterRevealModal({
               }}
             />
 
-            {/* Letter Header */}
-            <div className="flex items-center justify-between border-b border-stone-300/80 dark:border-stone-800 pb-3 relative z-10">
+            {/* Top Toolbar: Seal Info (Left) & Controls (Right) */}
+            <div className="flex items-center justify-between border-b border-stone-300/80 dark:border-stone-800 pb-3 relative z-10 gap-2">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-[#7E151E] text-amber-200 flex items-center justify-center shadow-xs">
                   <SealIcon className="w-4 h-4" />
@@ -187,23 +323,99 @@ export default function LetterRevealModal({
                 </div>
               </div>
 
-              <div className="text-right text-[11px] text-stone-500 dark:text-stone-400">
-                <div className="font-semibold">{formatExactTime(message.createdAt)}</div>
-                <div className="text-[10px]">{formatExactDate(message.createdAt)}</div>
+              {/* Reader Controls: Font Style, Font Size, Audio */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFontStyle((prev) =>
+                      prev === "handwritten" ? "classic" : "handwritten"
+                    )
+                  }
+                  className="px-2.5 py-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-white/70 dark:bg-stone-800 text-stone-700 dark:text-stone-200 hover:bg-stone-100 text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                  title="ফন্ট স্টাইল পরিবর্তন (হস্তাক্ষর / মুদ্রিত)"
+                >
+                  <Type className="w-3 h-3 text-[#7E151E] dark:text-rose-400" />
+                  <span className="hidden sm:inline">
+                    {fontStyle === "handwritten" ? "হস্তাক্ষর" : "মুদ্রিত"}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsLargeText((prev) => !prev)}
+                  className="px-2 py-1 rounded-lg border border-stone-300 dark:border-stone-700 bg-white/70 dark:bg-stone-800 text-stone-700 dark:text-stone-200 hover:bg-stone-100 text-[11px] font-bold transition cursor-pointer"
+                  title="লেখার আকার ছোট/বড় করুন"
+                >
+                  {isLargeText ? "A-" : "A+"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSoundEnabled((prev) => !prev)}
+                  className="p-1.5 rounded-lg border border-stone-300 dark:border-stone-700 bg-white/70 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-100 transition cursor-pointer"
+                  title={soundEnabled ? "শব্দ বন্ধ করুন" : "শব্দ চালু করুন"}
+                >
+                  {soundEnabled ? (
+                    <Volume2 className="w-3.5 h-3.5 text-amber-600" />
+                  ) : (
+                    <VolumeX className="w-3.5 h-3.5 text-stone-400" />
+                  )}
+                </button>
               </div>
             </div>
 
             {/* Letter Salutation */}
             <div className="space-y-3 relative z-10">
-              <div className="font-serif italic text-base sm:text-lg text-[#7E151E] dark:text-amber-200 font-bold">
-                প্রিয় {inbox.displayName},
+              <div className="flex items-center justify-between">
+                <div className="font-serif italic text-base sm:text-lg text-[#7E151E] dark:text-amber-200 font-bold">
+                  প্রিয় {inbox.displayName},
+                </div>
+                <div className="text-right text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400">
+                  <span>{formatExactTime(message.createdAt)}</span> •{" "}
+                  <span>{formatExactDate(message.createdAt)}</span>
+                </div>
               </div>
 
-              {/* Letter Body (Parchment Styled with Ruled Lines) */}
-              <div className="p-4 sm:p-5 rounded-2xl bg-white/70 dark:bg-stone-900/60 border border-stone-200/90 dark:border-stone-800 shadow-inner">
-                <p className="text-sm sm:text-base font-serif leading-relaxed text-stone-800 dark:text-stone-100 whitespace-pre-wrap font-medium">
-                  &ldquo;{message.content}&rdquo;
-                </p>
+              {/* Letter Body (Parchment Styled with Ruled Lines & Typewriter Animation) */}
+              <div
+                className={`p-4 sm:p-6 rounded-2xl bg-white/75 dark:bg-stone-900/70 border border-stone-200/90 dark:border-stone-800 shadow-inner relative transition-all ${
+                  isLargeText
+                    ? "text-base sm:text-lg leading-relaxed sm:leading-loose"
+                    : "text-sm sm:text-base leading-relaxed sm:leading-loose"
+                } ${
+                  fontStyle === "handwritten"
+                    ? "font-serif italic font-medium tracking-wide"
+                    : "font-sans font-medium"
+                }`}
+              >
+                <div className="text-stone-800 dark:text-stone-100 whitespace-pre-wrap select-text">
+                  &ldquo;
+                  {renderFormattedInline(
+                    message.content.slice(0, typedLength)
+                  )}
+                  &rdquo;
+                  {/* Blinking calligraphy quill / pen cursor */}
+                  {isTyping && (
+                    <span className="inline-flex items-center ml-1 text-[#7E151E] dark:text-rose-400 animate-pulse">
+                      <Feather className="w-3.5 h-3.5 inline align-middle -rotate-45" />
+                    </span>
+                  )}
+                </div>
+
+                {/* Fast Forward / Skip Typewriter Button */}
+                {isTyping && (
+                  <div className="flex justify-end pt-2">
+                    <button
+                      type="button"
+                      onClick={handleSkipTyping}
+                      className="text-[11px] font-bold text-stone-400 hover:text-[#7E151E] dark:hover:text-rose-400 underline cursor-pointer inline-flex items-center gap-1 transition"
+                    >
+                      <FastForward className="w-3 h-3" />
+                      <span>একবারে সম্পূর্ণ পড়ুন</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="text-right font-serif italic text-xs text-stone-500 dark:text-stone-400 pt-1">
@@ -212,14 +424,14 @@ export default function LetterRevealModal({
             </div>
 
             {/* Sender Hints & Curiosity Meter */}
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/20 space-y-1.5 relative z-10">
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/25 space-y-1.5 relative z-10">
               <div className="flex items-center justify-between text-[11px] font-bold text-amber-900 dark:text-amber-200">
                 <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                   <span>প্রেরকের সংকেত (Clues):</span>
                 </span>
                 <span className="text-[10px] text-amber-700/80 dark:text-amber-300/80">
-                  ১০০% বেনামী
+                  ১০০% গোপন ও ব্যক্তিগত
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px] text-stone-600 dark:text-stone-300 font-medium">
@@ -229,7 +441,7 @@ export default function LetterRevealModal({
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Smartphone className="w-3 h-3 text-stone-400" />
-                  <span>মাধ্যম: মোবাইল ব্রাউজার</span>
+                  <span>মাধ্যম: অনলাইন মোবাইল ব্রাউজার</span>
                 </div>
               </div>
             </div>
@@ -247,15 +459,15 @@ export default function LetterRevealModal({
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row items-center gap-2.5 relative z-10">
+            {/* Action Buttons Toolbar */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-2 relative z-10">
               <button
                 type="button"
                 onClick={() => {
                   onClose();
                   onOpenReply(message);
                 }}
-                className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 hover:from-[#650e16] hover:to-rose-800 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full sm:flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-[#7E151E] via-[#941924] to-rose-700 hover:opacity-95 text-white font-black text-xs shadow-md transition flex items-center justify-center gap-2 cursor-pointer transform hover:scale-[1.01]"
               >
                 <Share2 className="w-4 h-4" />
                 <span>
@@ -266,10 +478,29 @@ export default function LetterRevealModal({
               </button>
 
               <div className="flex items-center gap-2 w-full sm:w-auto">
+                {/* Save Keepsake Postcard Button */}
+                <button
+                  type="button"
+                  onClick={handleSavePostcard}
+                  disabled={isDownloadingPostcard}
+                  className="flex-1 sm:flex-initial px-3.5 py-3 rounded-xl border border-amber-500/40 bg-amber-50/70 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 hover:bg-amber-100 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  title="ভিন্টেজ পোস্টকার্ড হিসেবে সেভ করুন"
+                >
+                  <Download className="w-4 h-4 text-amber-700 dark:text-amber-300" />
+                  <span>
+                    {isDownloadingPostcard
+                      ? "সেভ হচ্ছে..."
+                      : postcardSaved
+                      ? "সেভ হয়েছে!"
+                      : "পোস্টকার্ড সেভ"}
+                  </span>
+                </button>
+
+                {/* Replay Wax Seal & Unfolding */}
                 <button
                   type="button"
                   onClick={handleReplayEnvelope}
-                  className="p-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-100 text-stone-600 dark:text-stone-300 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                  className="p-3 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-800 hover:bg-stone-100 text-stone-600 dark:text-stone-300 text-xs font-bold transition flex items-center justify-center cursor-pointer"
                   title="পুনরায় খামসহ দেখুন"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -282,7 +513,7 @@ export default function LetterRevealModal({
                       onDeleteMessage(message.id);
                       onClose();
                     }}
-                    className="p-3 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-400 text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                    className="p-3 rounded-xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-400 text-xs font-bold transition flex items-center justify-center cursor-pointer"
                     title="চিঠি মুছে ফেলুন"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -296,4 +527,3 @@ export default function LetterRevealModal({
     </div>
   );
 }
-
