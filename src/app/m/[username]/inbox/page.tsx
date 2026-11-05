@@ -23,6 +23,7 @@ import {
   Clock,
   ArrowLeft,
   ChevronRight,
+  Mail,
 } from "lucide-react";
 import {
   getPrivateInbox,
@@ -42,6 +43,8 @@ import {
   downloadStoryImage,
   shareStoryImage,
 } from "@/features/secret/storyGenerator";
+import EnvelopeCard, { WAX_SEAL_ICONS } from "@/features/secret/EnvelopeCard";
+import LetterRevealModal from "@/features/secret/LetterRevealModal";
 import SecretFooter from "@/features/secret/SecretFooter";
 
 function PrivateInboxContent() {
@@ -66,7 +69,25 @@ function PrivateInboxContent() {
   const [savingReply, setSavingReply] = useState(false);
   const [sharingStory, setSharingStory] = useState(false);
 
+  // Letter Reveal Modal State (Interactive Tap-to-Break Wax Seal)
+  const [revealModalMessage, setRevealModalMessage] = useState<SecretMessage | null>(null);
+  const [isRevealModalOpen, setIsRevealModalOpen] = useState(false);
+  const [isInitialUnopened, setIsInitialUnopened] = useState(false);
+  const [openedMessageIds, setOpenedMessageIds] = useState<Record<string, boolean>>({});
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // Load opened message tracking state from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined" && username) {
+      try {
+        const stored = localStorage.getItem(`onuvuti_opened_msgs_${username}`);
+        if (stored) {
+          setOpenedMessageIds(JSON.parse(stored));
+        }
+      } catch {}
+    }
+  }, [username]);
 
   // If no key in URL, look up in localStorage
   useEffect(() => {
@@ -80,6 +101,22 @@ function PrivateInboxContent() {
       }
     }
   }, [username, manageKey]);
+
+  const handleOpenLetterModal = (msg: SecretMessage, isUnopened = false) => {
+    setRevealModalMessage(msg);
+    setIsInitialUnopened(isUnopened);
+    setIsRevealModalOpen(true);
+
+    if (isUnopened) {
+      setOpenedMessageIds((prev) => {
+        const next = { ...prev, [msg.id]: true };
+        try {
+          localStorage.setItem(`onuvuti_opened_msgs_${username}`, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
+    }
+  };
 
   // Load inbox data
   const loadInbox = async (key: string) => {
@@ -392,72 +429,174 @@ function PrivateInboxContent() {
               </div>
             ) : (
               <div className="space-y-4">
-                <h2 className="text-xs font-extrabold text-stone-500 uppercase tracking-wider">
-                  আগত বার্তাসমূহ ({inboxView.messages.length})
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xs font-extrabold text-stone-500 uppercase tracking-wider">
+                    আগত চিঠিসমূহ ({inboxView.messages.length})
+                  </h2>
+                  <span className="text-[11px] text-stone-400">
+                    খুলতে মোমের সিলে স্পর্শ করুন
+                  </span>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {inboxView.messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between space-y-4"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <span className="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
-                            <span>বেনামী বার্তা</span>
-                          </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {inboxView.messages.map((msg) => {
+                    const isOpened = Boolean(
+                      openedMessageIds[msg.id] || msg.isRead || msg.replyText
+                    );
+                    const seal =
+                      msg.moodEmoji in WAX_SEAL_ICONS
+                        ? WAX_SEAL_ICONS[msg.moodEmoji]
+                        : WAX_SEAL_ICONS.crush;
+                    const SealIcon = seal.icon;
 
-                          <span className="text-[11px] text-stone-400 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            <span>{formatRelativeTime(msg.createdAt)}</span>
-                          </span>
-                        </div>
+                    if (!isOpened) {
+                      /* 1. Unopened Sealed Vintage Envelope Card */
+                      return (
+                        <div
+                          key={msg.id}
+                          className="rounded-3xl border-2 border-amber-500/40 dark:border-amber-500/20 bg-gradient-to-br from-[#FFFBF2] via-white to-[#FFF5E6] dark:from-[#1C1710] dark:via-[#111827] dark:to-[#18130C] p-5 shadow-md hover:shadow-lg transition flex flex-col justify-between space-y-4 relative overflow-hidden"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                              <span>সিলমোহরকৃত নতুন চিঠি</span>
+                            </span>
 
-                        {/* Content */}
-                        <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-900/60 border border-stone-100 dark:border-stone-800/80">
-                          <p className="text-sm font-semibold text-stone-800 dark:text-stone-100 leading-relaxed whitespace-pre-wrap">
-                            &ldquo;{msg.content}&rdquo;
-                          </p>
-                        </div>
-
-                        {/* Existing Reply if any */}
-                        {msg.replyText && (
-                          <div className="p-3.5 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/70 dark:border-rose-800/60 space-y-1">
-                            <div className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
-                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                              <span>আপনার উত্তর:</span>
-                            </div>
-                            <p className="text-xs font-medium text-stone-700 dark:text-stone-200 leading-relaxed">
-                              {msg.replyText}
-                            </p>
+                            <span className="text-[11px] text-stone-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>{formatRelativeTime(msg.createdAt)}</span>
+                            </span>
                           </div>
-                        )}
-                      </div>
 
-                      {/* Card Action Buttons */}
-                      <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenReplyModal(msg)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 hover:from-[#680f18] hover:to-rose-800 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          <span>{msg.replyText ? "স্টোরি কার্ড এডিট করুন" : "উত্তর দিন ও স্টোরি কার্ড বানান"}</span>
-                        </button>
+                          {/* Interactive Envelope Preview */}
+                          <div
+                            onClick={() => handleOpenLetterModal(msg, true)}
+                            className="py-2 flex justify-center cursor-pointer group"
+                            title="চিঠিটি খুলতে স্পর্শ করুন"
+                          >
+                            <EnvelopeCard
+                              theme={msg.cardTheme || "crimson"}
+                              sealCategory={msg.moodEmoji || "crush"}
+                              recipientUsername={inboxView.inbox.username}
+                              recipientDisplayName={inboxView.inbox.displayName}
+                              isOpened={false}
+                              showClickHint={false}
+                              size="sm"
+                              className="group-hover:scale-102 transition duration-200"
+                            />
+                          </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteMessage(msg.id)}
-                          title="বার্তা মুছে ফেলুন"
-                          className="p-2 text-stone-400 hover:text-red-600 transition cursor-pointer rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <div className="flex items-center gap-2 pt-1 border-t border-stone-200/70 dark:border-stone-800">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenLetterModal(msg, true)}
+                              className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-900 text-xs font-extrabold shadow-sm transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                            >
+                              <Sparkles className="w-3.5 h-3.5 text-stone-900" />
+                              <span>মোমের সিল ভেঙে পড়ুন</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              title="চিঠি মুছে ফেলুন"
+                              className="p-2.5 text-stone-400 hover:text-red-600 transition cursor-pointer rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    /* 2. Opened Letter Parchment Card */
+                    return (
+                      <div
+                        key={msg.id}
+                        className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between space-y-4"
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
+                                <SealIcon className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
+                                <span>{seal.label}</span>
+                              </span>
+                              <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                খোলা হয়েছে
+                              </span>
+                            </div>
+
+                            <span className="text-[11px] text-stone-400 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>{formatRelativeTime(msg.createdAt)}</span>
+                            </span>
+                          </div>
+
+                          {/* Letter Content Preview (Clickable to reveal full modal) */}
+                          <div
+                            onClick={() => handleOpenLetterModal(msg, false)}
+                            className="p-4 rounded-2xl bg-[#FAF5E8]/60 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800/80 cursor-pointer hover:border-[#D4AF37] transition group"
+                            title="সম্পূর্ণ চিঠিটি পড়ুন"
+                          >
+                            <p className="text-sm font-serif font-medium text-stone-800 dark:text-stone-100 leading-relaxed whitespace-pre-wrap line-clamp-3">
+                              &ldquo;{msg.content}&rdquo;
+                            </p>
+                            <span className="text-[11px] text-[#7E151E] dark:text-rose-400 font-bold block pt-2 group-hover:underline">
+                              সম্পূর্ণ চিঠি খুলুন →
+                            </span>
+                          </div>
+
+                          {/* Existing Reply if any */}
+                          {msg.replyText && (
+                            <div className="p-3.5 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/70 dark:border-rose-800/60 space-y-1">
+                              <div className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
+                                <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                <span>আপনার উত্তর:</span>
+                              </div>
+                              <p className="text-xs font-medium text-stone-700 dark:text-stone-200 leading-relaxed">
+                                {msg.replyText}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Action Buttons */}
+                        <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenLetterModal(msg, false)}
+                            className="py-2 px-3 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            <span>চিঠি পড়ুন</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleOpenReplyModal(msg)}
+                            className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 hover:from-[#680f18] hover:to-rose-800 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>
+                              {msg.replyText
+                                ? "স্টোরি এডিট"
+                                : "উত্তর ও স্টোরি কার্ড"}
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteMessage(msg.id)}
+                            title="বার্তা মুছে ফেলুন"
+                            className="p-2 text-stone-400 hover:text-red-600 transition cursor-pointer rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -552,7 +691,7 @@ function PrivateInboxContent() {
               {/* Live Canvas Preview (scaled down smoothly to fit preview) */}
               <div className="space-y-1.5 text-center">
                 <div className="text-[11px] font-bold text-stone-400">
-                  📱 লাইভ স্টোরি প্রিভিউ (১০৮০ × ১৯২০)
+                  লাইভ স্টোরি প্রিভিউ (১০৮০ × ১৯২০)
                 </div>
                 <div className="bg-stone-900/90 rounded-2xl p-3 inline-block max-h-72 overflow-hidden shadow-inner border border-stone-800">
                   <canvas
@@ -574,7 +713,7 @@ function PrivateInboxContent() {
                   <span>
                     {sharingStory
                       ? "প্রস্তুত হচ্ছে..."
-                      : "📲 ইনস্টাগ্রাম / ফেসবুক স্টোরিতে দিন"}
+                      : "ইনস্টাগ্রাম / ফেসবুক স্টোরিতে দিন"}
                   </span>
                 </button>
 
@@ -584,7 +723,7 @@ function PrivateInboxContent() {
                   className="py-3 px-4 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-stone-800 dark:hover:bg-stone-700 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <Download className="w-4 h-4" />
-                  <span>💾 HD স্টোরি ছবি ডাউনলোড (PNG)</span>
+                  <span>HD স্টোরি ছবি ডাউনলোড (PNG)</span>
                 </button>
               </div>
 
@@ -609,6 +748,17 @@ function PrivateInboxContent() {
             </div>
           </div>
         )}
+
+        {/* Step 1: Interactive Letter Reveal Modal (Tap-to-Break Wax Seal) */}
+        <LetterRevealModal
+          isOpen={isRevealModalOpen}
+          onClose={() => setIsRevealModalOpen(false)}
+          message={revealModalMessage}
+          inbox={inboxView?.inbox || null}
+          onOpenReply={(msg) => handleOpenReplyModal(msg)}
+          onDeleteMessage={(id) => handleDeleteMessage(id)}
+          isInitialUnopened={isInitialUnopened}
+        />
       </main>
 
       <SecretFooter />
