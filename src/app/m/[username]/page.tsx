@@ -30,6 +30,7 @@ import EnvelopeCard, {
   WAX_SEAL_ICONS,
   EnvelopeThemeKey,
 } from "@/features/secret/EnvelopeCard";
+import LetterDispatchAnimation from "@/features/secret/LetterDispatchAnimation";
 import { letterSound } from "@/lib/letterSound";
 
 const WAX_SEALS = [
@@ -112,29 +113,19 @@ function PublicSecretMessageContent() {
     setSubmitError(null);
     setIsDispatching(true);
 
-    // Play synthesized letter dispatch chime & swoosh
-    letterSound.playLetterSent();
-
     try {
       await sendSecretMessage(username, {
         content: content.trim(),
         moodEmoji: selectedCategory,
         cardTheme: selectedTheme,
       });
-
-      // Allow 800ms for smooth dispatch animation before showing success screen
-      setTimeout(() => {
-        setSentSuccess(true);
-        setIsDispatching(false);
-        setContent("");
-      }, 850);
+      // The 3D LetterDispatchAnimation takes care of the folding -> sealing -> flying timeline!
     } catch (err) {
       setIsDispatching(false);
+      setSubmitting(false);
       setSubmitError(
         (err as Error).message || "বার্তা পাঠানো যায়নি। আবার চেষ্টা করুন।"
       );
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -166,6 +157,23 @@ function PublicSecretMessageContent() {
       </header>
 
       <main className="flex-1 max-w-xl mx-auto w-full px-4 py-8 flex flex-col justify-center">
+        {/* Full Interactive 3D Letter Dispatch Animation (Folding -> Sealing -> Flying) */}
+        {isDispatching && inbox && (
+          <LetterDispatchAnimation
+            theme={selectedTheme}
+            sealCategory={selectedCategory}
+            content={content}
+            recipientDisplayName={inbox.displayName}
+            recipientUsername={inbox.username}
+            onComplete={() => {
+              setSentSuccess(true);
+              setIsDispatching(false);
+              setSubmitting(false);
+              setContent("");
+            }}
+          />
+        )}
+
         {loading ? (
           <div className="text-center py-20 space-y-3">
             <div className="w-10 h-10 border-3 border-rose-500 border-t-transparent rounded-full animate-spin mx-auto" />
@@ -191,10 +199,10 @@ function PublicSecretMessageContent() {
             </Link>
           </div>
         ) : sentSuccess ? (
-          /* Sent Success Screen */
-          <div className="bg-white dark:bg-[#111827] rounded-3xl p-6 sm:p-8 text-center border-2 border-rose-200 dark:border-rose-900 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-300">
+          /* Sent Success Screen: Delivered Sealed Envelope Showcase */
+          <div className="bg-white dark:bg-[#111827] rounded-3xl p-6 sm:p-8 text-center border-2 border-emerald-500/40 dark:border-emerald-500/30 shadow-xl space-y-6 animate-in fade-in zoom-in-95 duration-500">
             {/* Delivered Sealed Envelope Showcase */}
-            <div className="flex justify-center py-2">
+            <div className="flex justify-center py-2 animate-in slide-in-from-top-6 duration-700">
               <EnvelopeCard
                 theme={selectedTheme}
                 sealCategory={selectedCategory}
@@ -202,14 +210,14 @@ function PublicSecretMessageContent() {
                 recipientDisplayName={inbox.displayName}
                 isOpened={false}
                 showClickHint={false}
-                size="sm"
+                size="md"
               />
             </div>
 
             <div className="space-y-1.5">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold shadow-xs">
                 <Check className="w-3.5 h-3.5" />
-                <span>চিঠিটি সিলমোহর করে পাঠানো হয়েছে</span>
+                <span>চিঠিটি সিলমোহর করে সফলভাবে পৌঁছে দেওয়া হয়েছে</span>
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-[#142230] dark:text-white">
                 আপনার চিঠিটি পৌঁছে গেছে!
