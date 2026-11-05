@@ -143,6 +143,14 @@ func (r *Repository) defaultAds() []models.AdBanner {
 			IsActive:  true,
 			UpdatedAt: now,
 		},
+		{
+			Slot:      "top_notice",
+			Title:     "অনুভূতি পাবলিকেশন্স — ‘স্পর্শের ব্যাকরণ’ বেস্টসেলার ই-বুক এখন মাত্র ১৯০ টাকায় সংগ্রহ করুন!",
+			ImageURL:  "",
+			LinkURL:   "/sporsher-byakoron",
+			IsActive:  true,
+			UpdatedAt: now,
+		},
 	}
 }
 

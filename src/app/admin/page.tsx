@@ -34,6 +34,17 @@ import {
   Copy,
   Check,
   Loader2,
+  Search,
+  Phone,
+  Mail,
+  RefreshCw,
+  DollarSign,
+  Key,
+  Flame,
+  Camera,
+  Mic,
+  Music,
+  Heart,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
@@ -45,6 +56,8 @@ import {
   BackendQuote,
   BackendWish,
   BackendWishStats,
+  BackendBookOrder,
+  AdminUserSummary,
 } from "@/lib/goApi";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -136,8 +149,31 @@ export default function AdminDashboardPage() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
-    "analytics" | "pending" | "published" | "comments" | "create" | "ads" | "wellness" | "polls" | "quotes" | "wishes"
+    | "analytics"
+    | "orders"
+    | "users"
+    | "pending"
+    | "published"
+    | "comments"
+    | "create"
+    | "ads"
+    | "wellness"
+    | "polls"
+    | "quotes"
+    | "wishes"
   >("analytics");
+
+  // Book Orders & Customers Management State (PostgreSQL Controlled)
+  const [adminOrders, setAdminOrders] = useState<BackendBookOrder[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
+  const [orderSearch, setOrderSearch] = useState("");
+  const [orderFilter, setOrderFilter] = useState<"ALL" | "PAID" | "PENDING">("ALL");
+  const [copiedDownloadOrder, setCopiedDownloadOrder] = useState<string | null>(null);
+
+  // Registered Users Management State (PostgreSQL Controlled)
+  const [adminUsers, setAdminUsers] = useState<AdminUserSummary[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [userSearch, setUserSearch] = useState("");
 
   // Birthday Wishes Management State (PostgreSQL Controlled)
   const [adminWishes, setAdminWishes] = useState<BackendWish[]>([]);
@@ -196,6 +232,13 @@ export default function AdminDashboardPage() {
       slot: "right_sidebar",
       title: "স্পর্শের ব্যাকরণ - ই-বুক সংগ্রহ করুন",
       imageUrl: "/images/book-back.png",
+      linkUrl: "/sporsher-byakoron",
+      isActive: true,
+    },
+    {
+      slot: "top_notice",
+      title: "অনুভূতি পাবলিকেশন্স — ‘স্পর্শের ব্যাকরণ’ বেস্টসেলার ই-বুক এখন মাত্র ১৯০ টাকায় সংগ্রহ করুন!",
+      imageUrl: "",
       linkUrl: "/sporsher-byakoron",
       isActive: true,
     },
@@ -336,6 +379,44 @@ export default function AdminDashboardPage() {
       }
     } catch {
       // Fallback to localStorage if Go server is unreachable
+    }
+  }, []);
+
+  const fetchOrdersFromGo = useCallback(async () => {
+    setIsLoadingOrders(true);
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/orders`, {
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && Array.isArray(data.orders)) {
+          setAdminOrders(data.orders);
+        }
+      }
+    } catch {
+      // offline fallback
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  }, []);
+
+  const fetchUsersFromGo = useCallback(async () => {
+    setIsLoadingUsers(true);
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/admin/users`, {
+        headers: getAdminAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.ok && Array.isArray(data.users)) {
+          setAdminUsers(data.users);
+        }
+      }
+    } catch {
+      // offline fallback
+    } finally {
+      setIsLoadingUsers(false);
     }
   }, []);
 
@@ -795,6 +876,8 @@ export default function AdminDashboardPage() {
         fetchPollsFromGo();
         fetchQuotesFromGo();
         fetchWishesFromGo();
+        fetchOrdersFromGo();
+        fetchUsersFromGo();
       }
 
       const savedPending = localStorage.getItem("onuvuti_pending_stories");
@@ -815,6 +898,8 @@ export default function AdminDashboardPage() {
     fetchWellnessFromGo,
     fetchPollsFromGo,
     fetchQuotesFromGo,
+    fetchOrdersFromGo,
+    fetchUsersFromGo,
   ]);
 
   const handlePeriodSwitch = (
@@ -880,6 +965,8 @@ export default function AdminDashboardPage() {
       await fetchWellnessFromGo();
       await fetchPollsFromGo();
       await fetchQuotesFromGo();
+      await fetchOrdersFromGo();
+      await fetchUsersFromGo();
     } catch {
       setAuthError("সার্ভারের সাথে সংযোগ করা যায়নি।");
     } finally {
@@ -1242,6 +1329,38 @@ export default function AdminDashboardPage() {
 
           <button
             type="button"
+            onClick={() => {
+              setActiveTab("orders");
+              fetchOrdersFromGo();
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "orders"
+                ? "bg-[#80131E] text-white"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>বই ক্রেতা ও অর্ডার ({adminOrders.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("users");
+              fetchUsersFromGo();
+            }}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "users"
+                ? "bg-[#80131E] text-white"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>নিবন্ধিত ব্যবহারকারী ({adminUsers.length})</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab("pending")}
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
               activeTab === "pending"
@@ -1315,7 +1434,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <HeartPulse className="w-4 h-4" />
-            <span>🌿 সুস্থতা গাইড কন্ট্রোল ({wellnessTips.length})</span>
+            <span>সুস্থতা গাইড কন্ট্রোল ({wellnessTips.length})</span>
           </button>
 
           <button
@@ -1328,7 +1447,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <BarChart2 className="w-4 h-4" />
-            <span>📊 আজকের প্রশ্ন ({adminPolls.length})</span>
+            <span>আজকের প্রশ্ন ({adminPolls.length})</span>
           </button>
 
           <button
@@ -1341,7 +1460,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <MessageSquareHeart className="w-4 h-4" />
-            <span>💬 না বলা কথা ({adminQuotes.length})</span>
+            <span>না বলা কথা ({adminQuotes.length})</span>
           </button>
 
           <button
@@ -1357,7 +1476,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <Gift className="w-4 h-4" />
-            <span>🎂 জন্মদিনের চিঠি ({adminWishes.length})</span>
+            <span>জন্মদিনের চিঠি ({adminWishes.length})</span>
           </button>
         </div>
 
@@ -1669,6 +1788,542 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* TAB: BOOK ORDERS CRM (PostgreSQL Controlled) */}
+        {activeTab === "orders" && (() => {
+          const paidOrders = adminOrders.filter((o) => o.status === "PAID");
+          const pendingOrdersList = adminOrders.filter((o) => o.status === "PENDING");
+          const totalRevenue = paidOrders.reduce((acc, o) => acc + (o.amount || 0), 0);
+          const filteredOrders = adminOrders.filter((o) => {
+            if (orderFilter !== "ALL" && o.status !== orderFilter) return false;
+            if (!orderSearch.trim()) return true;
+            const q = orderSearch.toLowerCase();
+            return (
+              (o.cusName && o.cusName.toLowerCase().includes(q)) ||
+              (o.cusPhone && o.cusPhone.toLowerCase().includes(q)) ||
+              (o.cusEmail && o.cusEmail.toLowerCase().includes(q)) ||
+              (o.orderId && o.orderId.toLowerCase().includes(q)) ||
+              (o.transactionId && o.transactionId.toLowerCase().includes(q))
+            );
+          });
+
+          return (
+            <div className="space-y-6">
+              {/* Header & Stats Banner */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-stone-200 dark:border-stone-800">
+                <div>
+                  <h2 className="text-xl font-black text-[#142230] dark:text-white flex items-center gap-2">
+                    <ShoppingBag className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
+                    <span>বই ক্রেতা ও অর্ডার ম্যানেজমেন্ট (CRM)</span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold">
+                      মোট: {adminOrders.length}টি
+                    </span>
+                  </h2>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                    ‘স্পর্শের ব্যাকরণ’ বইটির সমস্ত অনলাইন ক্রেতাদের ডাটাবেজ, পেমেন্ট ট্রানজেকশন ও ই-বুক ডাউনলোড ট্র্যাকিং।
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={fetchOrdersFromGo}
+                    disabled={isLoadingOrders}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 cursor-pointer transition flex items-center gap-1.5"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOrders ? "animate-spin" : ""}`} />
+                    <span>রিফ্রেশ</span>
+                  </button>
+                  <Link
+                    href="/sporsher-byakoron"
+                    target="_blank"
+                    className="px-4 py-2 rounded-xl text-xs font-bold bg-[#80131E] hover:bg-[#680f18] text-white transition flex items-center gap-1.5 shadow-xs"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>বইয়ের পেজ দেখুন</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* KPI Stat Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">মোট অর্ডার</span>
+                    <span className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-[#80131E] dark:text-rose-400">
+                      <ShoppingBag className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-[#142230] dark:text-white">{adminOrders.length}</div>
+                  <p className="text-[11px] text-stone-400 mt-1">সর্বমোট প্রাপ্ত বুকিং</p>
+                </div>
+
+                <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">সফল পেইড অর্ডার</span>
+                    <span className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{paidOrders.length}</div>
+                  <p className="text-[11px] text-stone-400 mt-1">
+                    {adminOrders.length > 0
+                      ? `${Math.round((paidOrders.length / adminOrders.length) * 100)}% কনভার্সন রেট`
+                      : "০% কনভার্সন"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">মোট সংগৃহীত রেভিনিউ</span>
+                    <span className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-[#80131E] dark:text-rose-400">
+                      <DollarSign className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-[#142230] dark:text-white">৳{totalRevenue.toLocaleString("bn-BD")}</div>
+                  <p className="text-[11px] text-stone-400 mt-1">শুধুমাত্র ভেরিফাইড সেলস</p>
+                </div>
+
+                <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">অপেক্ষমাণ / পেন্ডিং</span>
+                    <span className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400">
+                      <Clock className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-amber-600 dark:text-amber-400">{pendingOrdersList.length}</div>
+                  <p className="text-[11px] text-stone-400 mt-1">পেমেন্ট প্রক্রিয়াদিন</p>
+                </div>
+              </div>
+
+              {/* Search & Status Filters */}
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="text"
+                    value={orderSearch}
+                    onChange={(e) => setOrderSearch(e.target.value)}
+                    placeholder="নাম, ফোন নম্বর, ইমেইল, ট্রানজেকশন আইডি বা অর্ডার আইডি..."
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#80131E]"
+                  />
+                  {orderSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setOrderSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      ক্লিয়ার
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setOrderFilter("ALL")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      orderFilter === "ALL"
+                        ? "bg-[#80131E] text-white"
+                        : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300"
+                    }`}
+                  >
+                    সব ({adminOrders.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOrderFilter("PAID")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      orderFilter === "PAID"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300"
+                    }`}
+                  >
+                    পরিশোধিত ({paidOrders.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOrderFilter("PENDING")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                      orderFilter === "PENDING"
+                        ? "bg-amber-600 text-white"
+                        : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300"
+                    }`}
+                  >
+                    অপেক্ষমাণ ({pendingOrdersList.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Orders List */}
+              {isLoadingOrders ? (
+                <div className="py-16 text-center text-xs text-stone-500 dark:text-stone-400">
+                  ডাটাবেজ থেকে অর্ডার লোড হচ্ছে...
+                </div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="py-16 text-center text-stone-500 dark:text-stone-400 rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-8">
+                  <ShoppingBag className="w-12 h-12 text-stone-300 dark:text-stone-700 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
+                    কোনো অর্ডার পাওয়া যায়নি
+                  </p>
+                  <p className="text-xs text-stone-400 mt-1">
+                    সার্চ ফিল্টার পরিবর্তন করে পুনরায় চেষ্টা করুন।
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredOrders.map((ord) => {
+                    const isPaid = ord.status === "PAID";
+                    const isCopied = copiedDownloadOrder === ord.orderId;
+                    const downloadUrl = typeof window !== "undefined"
+                      ? `${window.location.origin}/api/download?token=${ord.downloadToken || ""}`
+                      : `/api/download?token=${ord.downloadToken || ""}`;
+
+                    return (
+                      <div
+                        key={ord.orderId}
+                        className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 sm:p-5 shadow-xs hover:border-[#80131E]/40 transition space-y-3"
+                      >
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-stone-100 dark:border-stone-800">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200">
+                              #{ord.orderId}
+                            </span>
+                            {ord.invoiceId && (
+                              <span className="text-[11px] font-mono text-stone-400">
+                                Inv: {ord.invoiceId}
+                              </span>
+                            )}
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                isPaid
+                                  ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                                  : "bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                              }`}
+                            >
+                              {isPaid ? (
+                                <>
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>পরিশোধিত (PAID)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="w-3 h-3" />
+                                  <span>পেন্ডিং (PENDING)</span>
+                                </>
+                              )}
+                            </span>
+                          </div>
+
+                          <span className="text-xs text-stone-500 dark:text-stone-400 font-medium">
+                            {ord.createdAt
+                              ? new Date(ord.createdAt).toLocaleString("bn-BD", {
+                                  dateStyle: "medium",
+                                  timeStyle: "short",
+                                })
+                              : "তারিখ অনুপস্থিত"}
+                          </span>
+                        </div>
+
+                        {/* Order Body Grid */}
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                          {/* Customer Info */}
+                          <div className="space-y-1">
+                            <div className="font-extrabold text-[#142230] dark:text-white text-sm">
+                              {ord.cusName || "অজ্ঞাত গ্রাহক"}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
+                              <Phone className="w-3 h-3 text-stone-400 shrink-0" />
+                              <a href={`tel:${ord.cusPhone}`} className="hover:underline font-mono">
+                                {ord.cusPhone || "ফোন নম্বর নেই"}
+                              </a>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-stone-600 dark:text-stone-300">
+                              <Mail className="w-3 h-3 text-stone-400 shrink-0" />
+                              <a href={`mailto:${ord.cusEmail}`} className="hover:underline truncate">
+                                {ord.cusEmail || "ইমেইল নেই"}
+                              </a>
+                            </div>
+                          </div>
+
+                          {/* Payment Info */}
+                          <div className="space-y-1">
+                            <div className="text-stone-500 dark:text-stone-400 font-medium">
+                              পেমেন্ট বিবরণ:
+                            </div>
+                            <div className="text-sm font-black text-[#80131E] dark:text-rose-400">
+                              ৳{ord.amount} {ord.currency || "BDT"}
+                            </div>
+                            <div className="text-[11px] text-stone-600 dark:text-stone-300 font-mono">
+                              মেথড: {ord.paymentMethod || "bKash"}
+                            </div>
+                            {ord.transactionId && (
+                              <div className="text-[11px] text-stone-600 dark:text-stone-300 font-mono truncate">
+                                TrxID: {ord.transactionId}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Download Link & Token Controls */}
+                          <div className="space-y-2 sm:col-span-2 lg:col-span-1 flex flex-col justify-between">
+                            <div>
+                              <div className="text-stone-500 dark:text-stone-400 font-medium">
+                                ডাউনলোড পরিসংখ্যান:
+                              </div>
+                              <div className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                                {ord.downloadCount} / ১০ বার ডাউনলোড সম্পন্ন
+                              </div>
+                            </div>
+
+                            {ord.downloadToken ? (
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(downloadUrl);
+                                    setCopiedDownloadOrder(ord.orderId);
+                                    setTimeout(() => setCopiedDownloadOrder(null), 2000);
+                                  }}
+                                  className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                                    isCopied
+                                      ? "bg-emerald-600 text-white"
+                                      : "bg-[#FAF4E6] dark:bg-[#1E293B] text-[#80131E] dark:text-rose-300 hover:bg-[#F3E7CA]"
+                                  }`}
+                                >
+                                  {isCopied ? (
+                                    <>
+                                      <Check className="w-3.5 h-3.5" />
+                                      <span>কপি হয়েছে!</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy className="w-3.5 h-3.5" />
+                                      <span>ডাউনলোড লিংক কপি</span>
+                                    </>
+                                  )}
+                                </button>
+                                <a
+                                  href={downloadUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:text-stone-900 transition"
+                                  title="ডাউনলোড পেজ খুলুন"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-stone-400 italic">
+                                পেমেন্ট সম্পন্ন হলে ডাউনলোড লিংক তৈরি হবে
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* TAB: REGISTERED USERS MANAGEMENT (PostgreSQL Controlled) */}
+        {activeTab === "users" && (() => {
+          const googleUsers = adminUsers.filter((u) => u.provider === "google");
+          const manualUsers = adminUsers.filter((u) => u.provider !== "google");
+          const filteredUsers = adminUsers.filter((u) => {
+            if (!userSearch.trim()) return true;
+            const q = userSearch.toLowerCase();
+            return (
+              (u.name && u.name.toLowerCase().includes(q)) ||
+              (u.email && u.email.toLowerCase().includes(q)) ||
+              (u.provider && u.provider.toLowerCase().includes(q))
+            );
+          });
+
+          return (
+            <div className="space-y-6">
+              {/* Header & Stats Banner */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-stone-200 dark:border-stone-800">
+                <div>
+                  <h2 className="text-xl font-black text-[#142230] dark:text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
+                    <span>নিবন্ধিত ব্যবহারকারীদের প্রোফাইল ও অ্যাকাউন্ট</span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold">
+                      মোট: {adminUsers.length} জন
+                    </span>
+                  </h2>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                    অনুভূতি প্ল্যাটফর্মের সকল নিবন্ধিত ইউজার এবং তাদের সাইন-ইন মাধ্যম (Google / Email)।
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={fetchUsersFromGo}
+                    disabled={isLoadingUsers}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 cursor-pointer transition flex items-center gap-1.5"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingUsers ? "animate-spin" : ""}`} />
+                    <span>রিফ্রেশ</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* KPI Stat Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">সর্বমোট সদস্য</span>
+                    <span className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-[#80131E] dark:text-rose-400">
+                      <Users className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-[#142230] dark:text-white">{adminUsers.length}</div>
+                  <p className="text-[11px] text-stone-400 mt-1">সক্রিয় ইউজার অ্যাকাউন্ট</p>
+                </div>
+
+                <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">গুগল সাইন-ইন</span>
+                    <span className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400">
+                      <ShieldCheck className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{googleUsers.length}</div>
+                  <p className="text-[11px] text-stone-400 mt-1">
+                    {adminUsers.length > 0
+                      ? `${Math.round((googleUsers.length / adminUsers.length) * 100)}% ইউজার`
+                      : "০%"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-stone-500 dark:text-stone-400">ম্যানুয়াল ইমেইল</span>
+                    <span className="p-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400">
+                      <Lock className="w-4 h-4" />
+                    </span>
+                  </div>
+                  <div className="text-2xl font-black text-[#142230] dark:text-white">{manualUsers.length}</div>
+                  <p className="text-[11px] text-stone-400 mt-1">ইমেইল ও পাসওয়ার্ড</p>
+                </div>
+              </div>
+
+              {/* Search Box */}
+              <div className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400" />
+                  <input
+                    type="text"
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    placeholder="ব্যবহারকারীর নাম বা ইমেইল দিয়ে খুঁজুন..."
+                    className="w-full pl-9 pr-8 py-2 rounded-xl bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#80131E]"
+                  />
+                  {userSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setUserSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      ক্লিয়ার
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Users List */}
+              {isLoadingUsers ? (
+                <div className="py-16 text-center text-xs text-stone-500 dark:text-stone-400">
+                  ডাটাবেজ থেকে ব্যবহারকারীদের তালিকা লোড হচ্ছে...
+                </div>
+              ) : filteredUsers.length === 0 ? (
+                <div className="py-16 text-center text-stone-500 dark:text-stone-400 rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-8">
+                  <Users className="w-12 h-12 text-stone-300 dark:text-stone-700 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-stone-700 dark:text-stone-300">
+                    কোনো নিবন্ধিত ব্যবহারকারী পাওয়া যায়নি
+                  </p>
+                  <p className="text-xs text-stone-400 mt-1">
+                    সার্চ ফিল্টার পরিবর্তন করে পুনরায় চেষ্টা করুন।
+                  </p>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                  {filteredUsers.map((usr) => {
+                    const isGoogle = usr.provider === "google";
+                    const initialLetter = usr.name ? usr.name.charAt(0).toUpperCase() : "U";
+
+                    return (
+                      <div
+                        key={usr.id}
+                        className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-4 shadow-xs hover:border-[#80131E]/40 transition space-y-3"
+                      >
+                        <div className="flex items-center gap-3">
+                          {usr.avatarUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={usr.avatarUrl}
+                              alt={usr.name}
+                              className="w-11 h-11 rounded-full object-cover border border-stone-200 dark:border-stone-700"
+                            />
+                          ) : (
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#80131E] to-[#FAF4E6] text-white font-black flex items-center justify-center text-base shadow-xs shrink-0">
+                              {initialLetter}
+                            </div>
+                          )}
+
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-bold text-[#142230] dark:text-white truncate">
+                              {usr.name || "নামহীন ইউজার"}
+                            </h3>
+                            <p className="text-xs text-stone-500 dark:text-stone-400 truncate">
+                              {usr.email}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between text-[11px]">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold ${
+                              isGoogle
+                                ? "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                                : "bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300"
+                            }`}
+                          >
+                            {isGoogle ? (
+                              <>
+                                <ShieldCheck className="w-3 h-3 text-blue-600" />
+                                <span>Google সাইন-ইন</span>
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="w-3 h-3 text-stone-500" />
+                                <span>ইমেইল অ্যাকাউন্ট</span>
+                              </>
+                            )}
+                          </span>
+
+                          <span className="text-stone-400">
+                            {usr.createdAt
+                              ? new Date(usr.createdAt).toLocaleDateString("bn-BD", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })
+                              : ""}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Tab 1: Pending User Stories */}
         {activeTab === "pending" && (
@@ -2200,18 +2855,26 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Ads Grid (Left Banner & Right Banner) */}
+            {/* Ads Grid (Top Notice Strip, Left Banner & Right Banner) */}
             <div className="grid lg:grid-cols-2 gap-6">
               {[
                 {
+                  slot: "top_notice",
+                  titleBn: "শীর্ষ নোটিশ / জরুরি ঘোষণা ব্যানার (Top Notice Strip)",
+                  subtitleBn: "ওয়েবসাইটের একদম উপরে সকল পেজে জরুরি বিজ্ঞপ্তি হিসেবে প্রদর্শিত হবে",
+                  isNotice: true,
+                },
+                {
                   slot: "left_sidebar",
-                  titleBn: "👈 বাম পাশের ব্যানার (Left Sidebar)",
+                  titleBn: "বাম পাশের ব্যানার (Left Sidebar)",
                   subtitleBn: "ডেস্কটপ স্ক্রিনের বাম মার্জিনে ভেসে থাকবে",
+                  isNotice: false,
                 },
                 {
                   slot: "right_sidebar",
-                  titleBn: "👉 ডান পাশের ব্যানার (Right Sidebar)",
+                  titleBn: "ডান পাশের ব্যানার (Right Sidebar)",
                   subtitleBn: "ডেস্কটপ স্ক্রিনের ডান মার্জিনে ভেসে থাকবে",
+                  isNotice: false,
                 },
               ].map((meta) => {
                 const ad =
@@ -2228,7 +2891,9 @@ export default function AdminDashboardPage() {
                 return (
                   <div
                     key={meta.slot}
-                    className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 space-y-5 shadow-xs flex flex-col justify-between"
+                    className={`rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-5 sm:p-6 space-y-5 shadow-xs flex flex-col justify-between ${
+                      meta.isNotice ? "lg:col-span-2 border-[#C59B27]/40 dark:border-[#C59B27]/30" : ""
+                    }`}
                   >
                     <div className="space-y-4">
                       {/* Slot Header & Active Status Switch */}
@@ -2270,11 +2935,13 @@ export default function AdminDashboardPage() {
                       {/* Title Input */}
                       <div>
                         <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                          বিজ্ঞাপনের শিরোনাম / অল্টার টেক্সট
+                          {meta.isNotice
+                            ? "নোটিশের মূল বক্তব্য / বার্তা"
+                            : "বিজ্ঞাপনের শিরোনাম / অল্টার টেক্সট"}
                         </label>
                         <input
                           type="text"
-                          maxLength={160}
+                          maxLength={180}
                           value={ad.title}
                           onChange={(e) =>
                             handleAdFieldChange(
@@ -2283,7 +2950,11 @@ export default function AdminDashboardPage() {
                               e.target.value
                             )
                           }
-                          placeholder="যেমন: স্পর্শের ব্যাকরণ - অনুভূতি পাবলিকেশন্স"
+                          placeholder={
+                            meta.isNotice
+                              ? "যেমন: স্পর্শের ব্যাকরণ বেস্টসেলার ই-বুক এখন মাত্র ১৯০ টাকায় সংগ্রহ করুন!"
+                              : "যেমন: স্পর্শের ব্যাকরণ - অনুভূতি পাবলিকেশন্স"
+                          }
                           className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#80131E]"
                         />
                       </div>
@@ -2291,7 +2962,12 @@ export default function AdminDashboardPage() {
                       {/* Image URL Input */}
                       <div>
                         <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                          ব্যানারের ছবির লিংক (Image URL)
+                          ব্যানারের ছবির লিংক (Image URL){" "}
+                          {meta.isNotice && (
+                            <span className="font-normal text-stone-400">
+                              (ঐচ্ছিক)
+                            </span>
+                          )}
                         </label>
                         <input
                           type="text"
@@ -2324,7 +3000,7 @@ export default function AdminDashboardPage() {
                                 e.target.value
                               )
                             }
-                            placeholder="যেমন: /sporsher-byakoron বা https://facebook.com/..."
+                            placeholder="যেমন: /sporsher-byakoron বা https://..."
                             className="flex-1 px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#80131E]"
                           />
                           {ad.linkUrl && (
@@ -2347,35 +3023,51 @@ export default function AdminDashboardPage() {
                           লাইভ প্রিভিউ (পাঠক যেমন দেখবে)
                         </span>
                         <div className="p-3 bg-[#FDF8F2] dark:bg-[#0B0F17] rounded-2xl border border-stone-200 dark:border-stone-800 flex justify-center">
-                          <div className="w-44 rounded-xl overflow-hidden bg-white dark:bg-[#111827] border border-[#C59B27]/40 dark:border-stone-700 shadow-sm text-center">
-                            <div className="bg-[#FAF4E6] dark:bg-[#1A2234] px-2 py-1 border-b border-stone-200/80 dark:border-stone-800 text-[9px] font-bold text-[#80131E] dark:text-rose-400">
-                              বিজ্ঞাপন
-                            </div>
-                            <div className="p-2.5 space-y-2">
-                              {ad.imageUrl ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={ad.imageUrl}
-                                  alt={ad.title || "Ad Preview"}
-                                  className="w-full h-32 object-contain rounded-lg bg-stone-50 dark:bg-stone-800/40"
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display =
-                                      "none";
-                                  }}
-                                />
-                              ) : (
-                                <div className="w-full h-32 bg-stone-100 dark:bg-stone-800 rounded-lg flex items-center justify-center text-xs text-stone-400">
-                                  ছবির লিংক দিন
-                                </div>
-                              )}
-                              <p className="text-xs font-bold text-[#142230] dark:text-white line-clamp-2">
-                                {ad.title || "বিজ্ঞাপনের শিরোনাম"}
-                              </p>
-                              <span className="inline-block w-full py-1.5 rounded-lg bg-[#80131E] text-white text-[11px] font-bold">
-                                বিস্তারিত দেখুন
+                          {meta.isNotice ? (
+                            <div className="w-full bg-[#80131E] text-white p-3 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-3 text-xs shadow-xs">
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-amber-200 shrink-0">
+                                  <Megaphone className="w-3.5 h-3.5" />
+                                </span>
+                                <span className="truncate font-medium text-stone-100">
+                                  {ad.title || "জরুরি নোটিশের শিরোনাম এখানে লিখুন..."}
+                                </span>
+                              </div>
+                              <span className="shrink-0 px-3 py-1 rounded-full bg-[#FAF4E6] text-[#80131E] font-bold text-[11px]">
+                                দেখুন
                               </span>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="w-44 rounded-xl overflow-hidden bg-white dark:bg-[#111827] border border-[#C59B27]/40 dark:border-stone-700 shadow-sm text-center">
+                              <div className="bg-[#FAF4E6] dark:bg-[#1A2234] px-2 py-1 border-b border-stone-200/80 dark:border-stone-800 text-[9px] font-bold text-[#80131E] dark:text-rose-400">
+                                বিজ্ঞাপন
+                              </div>
+                              <div className="p-2.5 space-y-2">
+                                {ad.imageUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={ad.imageUrl}
+                                    alt={ad.title || "Ad Preview"}
+                                    className="w-full h-32 object-contain rounded-lg bg-stone-50 dark:bg-stone-800/40"
+                                    onError={(e) => {
+                                      (e.target as HTMLElement).style.display =
+                                        "none";
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="w-full h-32 bg-stone-100 dark:bg-stone-800 rounded-lg flex items-center justify-center text-xs text-stone-400">
+                                    ছবির লিংক দিন
+                                  </div>
+                                )}
+                                <p className="text-xs font-bold text-[#142230] dark:text-white line-clamp-2">
+                                  {ad.title || "বিজ্ঞাপনের শিরোনাম"}
+                                </p>
+                                <span className="inline-block w-full py-1.5 rounded-lg bg-[#80131E] text-white text-[11px] font-bold">
+                                  বিস্তারিত দেখুন
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -2956,8 +3648,9 @@ export default function AdminDashboardPage() {
                           >
                             {q.isActive ? "হোমপেজে সক্রিয় (Active)" : "নিষ্ক্রিয়"}
                           </span>
-                          <span className="text-xs text-rose-500 font-bold">
-                            ❤️ {q.reactCount} জন পাঠক
+                          <span className="flex items-center gap-1 text-xs text-rose-500 font-bold">
+                            <Heart className="w-3.5 h-3.5 fill-rose-500" />
+                            <span>{q.reactCount} জন পাঠক</span>
                           </span>
                         </div>
 
@@ -3002,7 +3695,7 @@ export default function AdminDashboardPage() {
               <div>
                 <h2 className="text-xl font-black text-[#142230] dark:text-white flex items-center gap-2">
                   <Gift className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
-                  <span>🎂 জন্মদিনের চিঠি ও খাম ব্যবস্থাপনা</span>
+                  <span>জন্মদিনের চিঠি ও খাম ব্যবস্থাপনা</span>
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300 font-bold">
                     মোট: {adminWishes.length}টি
                   </span>
@@ -3019,7 +3712,8 @@ export default function AdminDashboardPage() {
                   disabled={isLoadingWishes}
                   className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 cursor-pointer transition flex items-center gap-1.5"
                 >
-                  <span>🔄 রিফ্রেশ</span>
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingWishes ? "animate-spin" : ""}`} />
+                  <span>রিফ্রেশ</span>
                 </button>
                 <Link
                   href="/birthday-wish"
@@ -3041,18 +3735,18 @@ export default function AdminDashboardPage() {
             {wishStats && (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
-                  { label: "মোট চিঠি", value: wishStats.total, icon: "💌" },
-                  { label: "মোট ভিউ", value: wishStats.totalViews, icon: "👁️" },
-                  { label: "রিঅ্যাকশন", value: wishStats.totalReplies, icon: "😍" },
-                  { label: "টাইমার সেট", value: wishStats.scheduled, icon: "⏰" },
-                  { label: "সিক্রেট কোড", value: wishStats.protected, icon: "🔑" },
-                  { label: "গোপন চিঠি", value: wishStats.selfDestruct, icon: "🔥" },
+                  { label: "মোট চিঠি", value: wishStats.total, icon: <Gift className="w-5 h-5 mx-auto text-[#80131E] dark:text-rose-400" /> },
+                  { label: "মোট ভিউ", value: wishStats.totalViews, icon: <Eye className="w-5 h-5 mx-auto text-blue-500" /> },
+                  { label: "রিঅ্যাকশন", value: wishStats.totalReplies, icon: <Heart className="w-5 h-5 mx-auto text-rose-500" /> },
+                  { label: "টাইমার সেট", value: wishStats.scheduled, icon: <Clock className="w-5 h-5 mx-auto text-amber-500" /> },
+                  { label: "সিক্রেট কোড", value: wishStats.protected, icon: <Key className="w-5 h-5 mx-auto text-indigo-500" /> },
+                  { label: "গোপন চিঠি", value: wishStats.selfDestruct, icon: <Flame className="w-5 h-5 mx-auto text-rose-600" /> },
                 ].map((stat) => (
                   <div
                     key={stat.label}
                     className="rounded-2xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-3.5 text-center shadow-xs"
                   >
-                    <div className="text-lg">{stat.icon}</div>
+                    <div className="mb-1">{stat.icon}</div>
                     <div className="text-xl font-black text-[#142230] dark:text-white">{stat.value}</div>
                     <div className="text-[10px] font-semibold text-stone-500 dark:text-stone-400">{stat.label}</div>
                   </div>
@@ -3136,27 +3830,51 @@ export default function AdminDashboardPage() {
                           “{w.message}”
                         </p>
 
-                        <div className="flex flex-wrap gap-1.5 text-[10px] font-bold">
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
                           {w.unlockAt && (
-                            <span className="px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
-                              ⏰ {new Date(w.unlockAt).toLocaleString("bn-BD", { dateStyle: "medium", timeStyle: "short" })}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                              <Clock className="w-3 h-3" />
+                              <span>{new Date(w.unlockAt).toLocaleString("bn-BD", { dateStyle: "medium", timeStyle: "short" })}</span>
                             </span>
                           )}
-                          {w.hasPasscode && <span className="px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300">🔑 কোড</span>}
+                          {w.hasPasscode && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-950 text-indigo-800 dark:text-indigo-300">
+                              <Key className="w-3 h-3" />
+                              <span>কোড</span>
+                            </span>
+                          )}
                           {w.selfDestruct && (
-                            <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300">
-                              🔥 {w.destroyed ? "মুছে গেছে" : "গোপন"}
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-800 dark:text-rose-300">
+                              <Flame className="w-3 h-3" />
+                              <span>{w.destroyed ? "মুছে গেছে" : "গোপন"}</span>
                             </span>
                           )}
-                          {w.hasPhoto && <span className="px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800">📸</span>}
-                          {w.hasVoice && <span className="px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800">🎙️</span>}
-                          {w.music && w.music !== "none" && <span className="px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800">🎵</span>}
+                          {w.hasPhoto && (
+                            <span className="inline-flex items-center p-1 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300" title="ছবি যুক্ত আছে">
+                              <Camera className="w-3 h-3" />
+                            </span>
+                          )}
+                          {w.hasVoice && (
+                            <span className="inline-flex items-center p-1 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300" title="ভয়েস রেকর্ড যুক্ত আছে">
+                              <Mic className="w-3 h-3" />
+                            </span>
+                          )}
+                          {w.music && w.music !== "none" && (
+                            <span className="inline-flex items-center p-1 rounded-full bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300" title="ব্যাকগ্রাউন্ড সুর যুক্ত আছে">
+                              <Music className="w-3 h-3" />
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between text-[11px] text-stone-400 pt-1">
-                          <span>
-                            👁️ {w.viewsCount || 0} বার খোলা হয়েছে
-                            {(w.replyCount ?? 0) > 0 && ` • 😍 ${w.replyCount}`}
+                          <span className="inline-flex items-center gap-1">
+                            <Eye className="w-3 h-3" />
+                            <span>{w.viewsCount || 0} বার খোলা হয়েছে</span>
+                            {(w.replyCount ?? 0) > 0 && (
+                              <span className="inline-flex items-center gap-0.5 ml-1 text-rose-500">
+                                • <Heart className="w-3 h-3 fill-rose-500" /> {w.replyCount}
+                              </span>
+                            )}
                           </span>
                           <span>
                             {w.createdAt
@@ -3170,10 +3888,11 @@ export default function AdminDashboardPage() {
                         <div className="flex items-center gap-1.5">
                           {w.selfDestruct && !w.destroyed ? (
                             <span
-                              className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300"
+                              className="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 inline-flex items-center gap-1"
                               title="খুললে চিঠিটি চিরতরে মুছে যাবে"
                             >
-                              🔥 গোপন চিঠি
+                              <Flame className="w-3 h-3" />
+                              <span>গোপন চিঠি</span>
                             </span>
                           ) : (
                             <Link

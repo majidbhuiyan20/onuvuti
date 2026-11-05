@@ -63,6 +63,10 @@ func NewRouter(deps RouterDeps) http.Handler {
 	mux.HandleFunc("POST /api/v1/admin/login", deps.AdminHandler.Login)
 	mux.HandleFunc("GET /api/v1/admin/dashboard", middleware.RequireAdmin(cfg, deps.AdminHandler.Dashboard))
 	mux.HandleFunc("GET /api/v1/admin/analytics", middleware.RequireAdmin(cfg, deps.AnalyticsHandler.GetAdminAnalytics))
+	mux.HandleFunc("GET /api/v1/admin/orders", middleware.RequireAdmin(cfg, deps.OrderHandler.ListAdminOrders))
+	if deps.UserHandler != nil {
+		mux.HandleFunc("GET /api/v1/admin/users", middleware.RequireAdmin(cfg, deps.UserHandler.ListAdminUsers))
+	}
 	mux.HandleFunc("PATCH /api/v1/admin/stories/{id}/approve", middleware.RequireAdmin(cfg, deps.AdminHandler.ApproveOrUpdateStory))
 	mux.HandleFunc("PATCH /api/v1/admin/stories/{id}/pin", middleware.RequireAdmin(cfg, deps.AdminHandler.TogglePinStory))
 	mux.HandleFunc("POST /api/v1/admin/stories", middleware.RequireAdmin(cfg, deps.AdminHandler.CreateStory))

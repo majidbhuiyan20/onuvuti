@@ -17,6 +17,7 @@ import { BLOG_CATEGORIES } from "@/data/blogData";
 import { getSlugByCategory } from "@/data/categoryData";
 import { AppUser } from "@/lib/goApi";
 import ThemeToggle from "@/components/ThemeToggle";
+import TopNoticeBanner from "@/components/TopNoticeBanner";
 
 interface HomeNavbarProps {
   activeCategory: string;
@@ -100,7 +101,9 @@ export default function HomeNavbar({
   };
 
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-[#FAF7F2]/95 dark:bg-[#0B0F17]/95 border-b border-stone-200/80 dark:border-stone-800 transition-colors relative">
+    <>
+      <TopNoticeBanner />
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-[#FAF7F2]/95 dark:bg-[#0B0F17]/95 border-b border-stone-200/80 dark:border-stone-800 transition-colors relative">
       {/* Subtle Romantic Header Background Glow */}
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.06] dark:opacity-[0.10] bg-cover bg-center overflow-hidden"
@@ -567,6 +570,7 @@ export default function HomeNavbar({
         </div>
       )}
     </header>
+    </>
   );
 }
 

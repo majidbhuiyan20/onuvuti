@@ -125,3 +125,12 @@ func (h *UserHandler) Me(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (h *UserHandler) ListAdminUsers(w http.ResponseWriter, r *http.Request) {
+	users := h.userSvc.ListUsers()
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":    true,
+		"users": users,
+		"count": len(users),
+	})
+}
+

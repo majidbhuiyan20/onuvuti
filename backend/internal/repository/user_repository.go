@@ -106,6 +106,44 @@ func (r *Repository) CreateOrUpdateUser(u models.User) models.User {
 	return u
 }
 
+func (r *Repository) ListUsers() []models.User {
+	if r.db != nil {
+		rows, err := r.db.Query(`
+			SELECT id, name, email, provider, avatar_url, created_at
+			FROM users
+			ORDER BY created_at DESC
+			LIMIT 300
+		`)
+		if err != nil {
+			log.Printf("⚠️ PostgreSQL ListUsers error: %v", err)
+			return []models.User{}
+		}
+		defer rows.Close()
+
+		var list []models.User
+		for rows.Next() {
+			var u models.User
+			if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Provider, &u.AvatarURL, &u.CreatedAt); err == nil {
+				list = append(list, u)
+			}
+		}
+		if list == nil {
+			list = []models.User{}
+		}
+		return list
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	var list []models.User
+	for _, u := range r.mem.Users {
+		copyU := u
+		copyU.PasswordHash = ""
+		list = append(list, copyU)
+	}
+	return list
+}
+
 func (r *Repository) ListStoriesByUserID(userID string) []models.Story {
 	if strings.TrimSpace(userID) == "" {
 		return []models.Story{}

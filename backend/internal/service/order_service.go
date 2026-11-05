@@ -40,6 +40,10 @@ func (s *OrderService) RecordBookOrder(order models.BookOrder) (*models.BookOrde
 	return s.CreatePendingOrder(order)
 }
 
+func (s *OrderService) ListOrders() []models.BookOrder {
+	return s.repo.ListOrders()
+}
+
 func (s *OrderService) GetOrder(id string) *models.BookOrder {
 	return s.repo.FindOrderByID(id)
 }

@@ -115,3 +115,30 @@ export interface BackendWishStats {
   byTheme: Record<string, number>;
 }
 
+export interface BackendBookOrder {
+  orderId: string;
+  invoiceId: string;
+  cusName: string;
+  cusPhone: string;
+  cusEmail: string;
+  amount: number;
+  currency: string;
+  transactionId: string;
+  paymentMethod: string;
+  status: "PAID" | "PENDING" | "FAILED" | "CANCELLED";
+  downloadToken: string;
+  downloadCount: number;
+  createdAt: string;
+  verifiedAt?: string;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  name: string;
+  email: string;
+  provider: string;
+  avatarUrl?: string;
+  createdAt: string;
+}
+
+

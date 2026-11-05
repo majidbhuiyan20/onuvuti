@@ -26,6 +26,10 @@ func NewUserService(repo *repository.Repository, cfg *config.Config) *UserServic
 	}
 }
 
+func (s *UserService) ListUsers() []models.User {
+	return s.repo.ListUsers()
+}
+
 func (s *UserService) hashPassword(password string) string {
 	h := sha256.Sum256([]byte("onuvuti-salt-2026:" + password + ":" + s.cfg.AdminTokenSecret))
 	return hex.EncodeToString(h[:])

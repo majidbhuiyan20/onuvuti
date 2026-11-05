@@ -18,6 +18,15 @@ func NewOrderHandler(orderSvc *service.OrderService) *OrderHandler {
 	return &OrderHandler{orderSvc: orderSvc}
 }
 
+func (h *OrderHandler) ListAdminOrders(w http.ResponseWriter, r *http.Request) {
+	orders := h.orderSvc.ListOrders()
+	response.JSON(w, http.StatusOK, map[string]any{
+		"ok":     true,
+		"orders": orders,
+		"count":  len(orders),
+	})
+}
+
 func (h *OrderHandler) RecordOrder(w http.ResponseWriter, r *http.Request) {
 	var order models.BookOrder
 	if err := json.NewDecoder(r.Body).Decode(&order); err != nil {
