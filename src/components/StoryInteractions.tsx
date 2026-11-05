@@ -16,6 +16,7 @@ import {
 import { sanitizeText } from "@/lib/security";
 import { GO_API_BASE_URL } from "@/lib/goApi";
 import StoryCardCustomizerModal from "@/components/StoryCardCustomizerModal";
+import { renderFormattedInline } from "@/lib/formatText";
 
 export interface CommentItem {
   id: string;
@@ -439,7 +440,7 @@ export default function StoryInteractions({
                   <span className="text-stone-400 dark:text-stone-500">{c.timeBn || "এইমাত্র"}</span>
                 </div>
                 <p className="text-xs sm:text-sm text-stone-700 dark:text-stone-300 leading-relaxed whitespace-pre-wrap">
-                  {c.text}
+                  {renderFormattedInline(c.text)}
                 </p>
               </div>
             ))

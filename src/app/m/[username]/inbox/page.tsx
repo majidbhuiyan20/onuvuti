@@ -37,6 +37,7 @@ import {
   SecretMessage,
   StoryThemeId,
 } from "@/features/secret/types";
+import { renderFormattedInline } from "@/lib/formatText";
 import {
   STORY_THEMES,
   renderStoryToCanvas,
@@ -390,7 +391,7 @@ function PrivateInboxContent() {
                   </span>
                 </div>
                 <p className="text-xs text-stone-500 font-medium">
-                  প্রম্পট: &ldquo;{inboxView.inbox.promptText}&rdquo;
+                  প্রম্পট: &ldquo;{renderFormattedInline(inboxView.inbox.promptText)}&rdquo;
                 </p>
               </div>
 
@@ -540,7 +541,7 @@ function PrivateInboxContent() {
                             title="সম্পূর্ণ চিঠিটি পড়ুন"
                           >
                             <p className="text-sm font-serif font-medium text-stone-800 dark:text-stone-100 leading-relaxed whitespace-pre-wrap line-clamp-3">
-                              &ldquo;{msg.content}&rdquo;
+                              &ldquo;{renderFormattedInline(msg.content)}&rdquo;
                             </p>
                             <span className="text-[11px] text-[#7E151E] dark:text-rose-400 font-bold block pt-2 group-hover:underline">
                               সম্পূর্ণ চিঠি খুলুন →
@@ -635,7 +636,7 @@ function PrivateInboxContent() {
               <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-xs">
                 <span className="font-bold text-stone-500">প্রশ্ন / বার্তা:</span>
                 <p className="mt-1 font-bold text-stone-800 dark:text-stone-100">
-                  {activeMessage.moodEmoji} &ldquo;{activeMessage.content}&rdquo;
+                  {activeMessage.moodEmoji} &ldquo;{renderFormattedInline(activeMessage.content)}&rdquo;
                 </p>
               </div>
 

@@ -30,6 +30,7 @@ import { BOOK_INFO } from "@/data/bookData";
 import StoryInteractions, { CommentItem } from "@/components/StoryInteractions";
 import ThemeToggle from "@/components/ThemeToggle";
 import { ambientSound } from "@/lib/ambientSound";
+import { renderStoryParagraph, renderFormattedInline } from "@/lib/formatText";
 
 export type ReaderTheme = "default" | "sepia" | "night" | "paper";
 export type FontSize = "sm" | "md" | "lg" | "xl";
@@ -464,13 +465,9 @@ export default function StoryReaderView({
 
             {/* Story Article Body */}
             <article
-              className={`rounded-3xl p-6 sm:p-10 border ${currentTheme.border} ${currentTheme.cardBg} shadow-xs space-y-6 ${fontClasses[fontSize]}`}
+              className={`rounded-3xl p-6 sm:p-10 border ${currentTheme.border} ${currentTheme.cardBg} shadow-xs space-y-5 ${fontClasses[fontSize]}`}
             >
-              {post.content.map((paragraph, idx) => (
-                <p key={idx} className="font-normal text-justify sm:text-left">
-                  {paragraph}
-                </p>
-              ))}
+              {post.content.map((paragraph, idx) => renderStoryParagraph(paragraph, idx))}
             </article>
 
             {/* Admin Editorial Reply Note */}
@@ -481,7 +478,7 @@ export default function StoryReaderView({
                   <span>অনুভূতি সম্পাদনা পর্ষদের মন্তব্য ও সহমর্মিতা</span>
                 </div>
                 <p className="text-sm sm:text-base text-[#142230] dark:text-stone-200 leading-relaxed font-medium">
-                  {post.adminNote}
+                  {renderFormattedInline(post.adminNote)}
                 </p>
               </div>
             )}

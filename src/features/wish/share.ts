@@ -1,5 +1,6 @@
 import type { WishTheme } from "@/data/birthdayTemplates";
 import type { WishFont } from "./types";
+import { stripMarkdown } from "@/lib/formatText";
 
 export const absoluteWishUrl = (id: string) =>
   `${window.location.origin}/wish/${id}`;
@@ -76,7 +77,8 @@ export async function downloadLetterPng(input: LetterImageInput): Promise<void> 
 
   const measure = document.createElement("canvas").getContext("2d")!;
   measure.font = `38px ${family}`;
-  const lines = wrapLines(measure, message, W - pad * 2);
+  const cleanMessage = stripMarkdown(message);
+  const lines = wrapLines(measure, cleanMessage, W - pad * 2);
 
   let photo: HTMLImageElement | null = null;
   if (photoUrl) {

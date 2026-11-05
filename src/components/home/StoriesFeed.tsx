@@ -18,6 +18,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { BLOG_CATEGORIES, BlogPost } from "@/data/blogData";
+import { renderFormattedInline } from "@/lib/formatText";
 
 interface StoriesFeedProps {
   posts: BlogPost[];
@@ -244,10 +245,10 @@ export default function StoriesFeed({
 
                 <div className="space-y-1.5">
                   <h3 className="text-sm sm:text-base font-extrabold text-[#142230] dark:text-white group-hover:text-[#7E151E] dark:group-hover:text-rose-400 transition leading-snug line-clamp-2">
-                    {post.title}
+                    {renderFormattedInline(post.title)}
                   </h3>
                   <p className="text-xs text-stone-600 dark:text-stone-400 line-clamp-2 leading-relaxed">
-                    {post.excerpt}
+                    {renderFormattedInline(post.excerpt)}
                   </p>
                 </div>
               </div>

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { getPublicInbox, sendSecretMessage } from "@/features/secret/api";
 import { SecretInboxPublic } from "@/features/secret/types";
+import { renderFormattedInline } from "@/lib/formatText";
 import LiveStoryShowcase from "@/features/secret/LiveStoryShowcase";
 import SecretFooter from "@/features/secret/SecretFooter";
 import EnvelopeCard, {
@@ -271,7 +272,7 @@ function PublicSecretMessageContent() {
               {/* Prompt Bubble */}
               <div className="mt-3.5 p-3.5 rounded-2xl bg-gradient-to-r from-rose-50 via-rose-100/60 to-rose-50 dark:from-rose-950/50 dark:via-rose-900/40 dark:to-rose-950/50 border border-rose-200 dark:border-rose-800/80 shadow-inner">
                 <p className="text-xs sm:text-sm font-bold text-rose-900 dark:text-rose-200 leading-snug">
-                  &ldquo;{inbox.promptText}&rdquo;
+                  &ldquo;{renderFormattedInline(inbox.promptText)}&rdquo;
                 </p>
               </div>
             </div>

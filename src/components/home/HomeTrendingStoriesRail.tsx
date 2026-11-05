@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { BlogPost } from "@/data/blogData";
+import { renderFormattedInline } from "@/lib/formatText";
 
 interface HomeTrendingStoriesRailProps {
   posts: BlogPost[];
@@ -122,11 +123,11 @@ export default function HomeTrendingStoriesRail({
 
                 {/* Title & Excerpt */}
                 <h3 className="font-serif font-black text-sm sm:text-base text-[#142230] dark:text-white group-hover:text-[#80131E] dark:group-hover:text-rose-400 transition-colors line-clamp-2 leading-snug">
-                  {post.title}
+                  {renderFormattedInline(post.title)}
                 </h3>
 
                 <p className="text-xs text-stone-600 dark:text-stone-300 line-clamp-2 leading-relaxed">
-                  {post.excerpt}
+                  {renderFormattedInline(post.excerpt)}
                 </p>
               </div>
 

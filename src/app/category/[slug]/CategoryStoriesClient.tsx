@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Loader2,
   Bookmark,
+  Leaf,
 } from "lucide-react";
 import { CategoryInfo, CATEGORIES_DATA } from "@/data/categoryData";
 import { BlogPost, StoryCategory } from "@/data/blogData";
@@ -31,6 +32,7 @@ import { validateImageUpload } from "@/lib/security";
 import { compressImageToDataUrl } from "@/lib/imageCompression";
 import ThemeToggle from "@/components/ThemeToggle";
 import SubmitStoryModal from "@/components/modals/SubmitStoryModal";
+import { renderFormattedInline } from "@/lib/formatText";
 
 interface Props {
   category: CategoryInfo;
@@ -311,9 +313,10 @@ export default function CategoryStoriesClient({ category }: Props) {
             </button>
             <Link
               href="/tips"
-              className="hidden md:inline-flex items-center gap-1 text-xs font-bold text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition"
+              className="hidden md:inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition"
             >
-              <span>🌿 ওয়েলনেস টিপস</span>
+              <Leaf className="w-3.5 h-3.5" />
+              <span>ওয়েলনেস টিপস</span>
             </Link>
             <ThemeToggle />
           </div>
@@ -505,13 +508,13 @@ export default function CategoryStoriesClient({ category }: Props) {
                           {/* Title */}
                           <Link href={`/blog/${post.slug}`}>
                             <h3 className="text-base sm:text-lg font-black text-[#142230] dark:text-white group-hover:text-[#7E151E] dark:group-hover:text-rose-400 transition leading-snug line-clamp-2">
-                              {post.title}
+                              {renderFormattedInline(post.title)}
                             </h3>
                           </Link>
 
                           {/* Excerpt */}
                           <p className="text-xs text-stone-600 dark:text-stone-300 line-clamp-3 leading-relaxed">
-                            {post.excerpt}
+                            {renderFormattedInline(post.excerpt)}
                           </p>
                         </div>
 
@@ -648,7 +651,7 @@ export default function CategoryStoriesClient({ category }: Props) {
             {/* Wellness Tips Promo Card */}
             <div className="rounded-3xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/40 p-5 space-y-3">
               <div className="flex items-center gap-2">
-                <span className="text-lg">🌿</span>
+                <Leaf className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <h4 className="text-sm font-black text-emerald-900 dark:text-emerald-200">
                   দৈনিক মন ও সম্পর্কের যত্ন
                 </h4>

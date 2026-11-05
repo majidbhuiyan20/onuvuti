@@ -5,6 +5,7 @@ import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { CommentItem } from "@/components/StoryInteractions";
 import StoryReaderView from "@/components/story/StoryReaderView";
 import { getGoApiBaseUrl } from "@/lib/goApi";
+import { stripMarkdown } from "@/lib/formatText";
 
 export const instant = false;
 
@@ -38,7 +39,7 @@ async function fetchStory(slug: string): Promise<StoryFetchResult | null> {
             id: s.id,
             slug: s.slug,
             title: s.title,
-            excerpt: s.excerpt || paragraphs[0] || "",
+            excerpt: stripMarkdown(s.excerpt || paragraphs[0] || ""),
             category: (s.category || "না বলা কথা") as StoryCategory,
             readTimeBn: s.readTimeBn || "৩ মিনিট পাঠ",
             dateBn: s.dateBn || "আজ",

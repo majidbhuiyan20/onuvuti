@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Gift, PenLine, BookOpen, User, LogIn } from "lucide-react";
+import { Home, Gift, PenLine, MessageSquareHeart, User, LogIn } from "lucide-react";
 import { AppUser } from "@/lib/goApi";
 
 interface MobileBottomNavProps {
@@ -24,7 +24,7 @@ export default function MobileBottomNav({
 
   const isHome = pathname === "/";
   const isWish = pathname === "/birthday-wish" || pathname.startsWith("/wish");
-  const isBook = pathname === "/sporsher-byakoron" || pathname === "/sporsher-bekoron";
+  const isSecret = pathname === "/m" || pathname.startsWith("/m");
 
   const handleProfileClick = () => {
     if (currentUser) {
@@ -92,25 +92,22 @@ export default function MobileBottomNav({
           </span>
         </div>
 
-        {/* 4. Book (Sporsher Byakoron) Tab */}
+        {/* 4. Benami Barta (Anonymous Q&A / Secret Messages) Tab */}
         <Link
-          href="/sporsher-byakoron"
+          href="/m"
           className={`flex flex-col items-center justify-center py-1 transition-colors cursor-pointer relative ${
-            isBook
+            isSecret
               ? "text-[#80131E] dark:text-rose-400 font-extrabold"
               : "text-stone-500 dark:text-stone-400 hover:text-stone-900 dark:hover:text-stone-200 font-medium"
           }`}
         >
           <div className="relative">
-            <BookOpen className="w-5 h-5" />
-            <span className="absolute -top-1.5 -right-3 text-[8px] font-black px-1 rounded-full bg-[#80131E] text-white leading-tight">
-              ১৯০৳
-            </span>
-            {isBook && (
+            <MessageSquareHeart className="w-5 h-5" />
+            {isSecret && (
               <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[#80131E] dark:bg-rose-400" />
             )}
           </div>
-          <span className="text-[10px] mt-1 tracking-tight">ই-বুক</span>
+          <span className="text-[10px] mt-1 tracking-tight">বেনামী বার্তা</span>
         </Link>
 
         {/* 5. User Profile / Account Tab */}

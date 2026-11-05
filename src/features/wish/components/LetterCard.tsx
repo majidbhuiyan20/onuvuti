@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Heart, Mic, FastForward } from "lucide-react";
 import type { WishTheme } from "@/data/birthdayTemplates";
+import { renderFormattedInline } from "@/lib/formatText";
 import { HANDWRITING_FONT } from "../share";
 import type { WishContent, WishPublic } from "../types";
 
@@ -124,7 +125,7 @@ export default function LetterCard({ wish, content, theme }: LetterCardProps) {
         className="text-base sm:text-lg leading-relaxed sm:leading-loose whitespace-pre-line font-medium opacity-90 my-4 pl-1 cursor-pointer select-text"
         title={isTyping ? "সম্পূর্ণ পড়তে ক্লিক করুন" : undefined}
       >
-        {content.message.slice(0, displayedLength)}
+        {renderFormattedInline(content.message.slice(0, displayedLength))}
         {isTyping && (
           <span className="inline-block w-1.5 h-4 bg-current ml-1 animate-pulse align-middle" />
         )}
