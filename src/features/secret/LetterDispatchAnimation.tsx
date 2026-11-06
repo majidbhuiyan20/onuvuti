@@ -112,38 +112,48 @@ export default function LetterDispatchAnimation({
 
           {/* THE 3D ENVELOPE */}
           <div
-            className={`relative w-full h-full rounded-2xl ${config.envelopeBg} border border-white/20 shadow-2xl overflow-hidden p-5 flex flex-col justify-between z-20 transition-all duration-500`}
+            className={`relative w-full h-full rounded-2xl ${config.gradientBg} border border-white/20 shadow-2xl overflow-hidden p-4 sm:p-5 flex flex-col justify-between z-20 transition-all duration-500`}
           >
+            {/* Inset Metallic Foil Border Frame */}
+            <div
+              className={`absolute inset-2 sm:inset-2.5 rounded-xl border ${config.foilBorder} pointer-events-none z-10`}
+            />
+
+            {/* Vertical Luxury Satin Ribbon Band */}
+            <div
+              className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-8 sm:w-10 ${config.ribbonGradient} border-x ${config.ribbonStitch} shadow-md pointer-events-none z-10`}
+            />
+
             {/* Top header on envelope */}
-            <div className="flex items-start justify-between relative z-10">
-              <span className="text-[10px] uppercase font-bold text-white/70 font-mono tracking-widest">
-                ONUVUTI POST
+            <div className="flex items-start justify-between relative z-20">
+              <span className="text-[9px] uppercase font-bold text-white/75 font-mono tracking-widest px-2 py-0.5 rounded-full bg-black/30 border border-white/15">
+                গোপন ডাক • 2026
               </span>
               <div
-                className={`w-8 h-10 border border-dashed ${config.stampBorder} bg-black/10 rounded-sm flex items-center justify-center p-1`}
+                className={`w-8 h-10 border border-dashed ${config.stampBorder} ${config.stampBg} rounded-sm flex items-center justify-center p-1 rotate-2 shadow-xs`}
               >
-                <ShieldCheck className="w-3.5 h-3.5 text-white/80" />
+                <ShieldCheck className="w-3.5 h-3.5 text-white/90" />
               </div>
             </div>
 
             {/* Recipient info on envelope front */}
-            <div className="text-center my-auto space-y-0.5 relative z-10">
-              <div className="text-[9px] uppercase tracking-widest text-white/60">
-                প্রাপক
+            <div className="text-center my-auto space-y-0.5 relative z-20">
+              <div className="text-[9px] uppercase tracking-widest text-white/65">
+                প্রাপকের ঠিকানা
               </div>
               <div
-                className={`text-base font-serif font-bold ${config.textColor} drop-shadow-xs line-clamp-1`}
+                className={`text-base font-serif font-bold ${config.textColor} drop-shadow-md line-clamp-1`}
               >
                 {recipientDisplayName}
               </div>
-              <div className="text-[10px] font-mono text-white/70">
+              <div className={`text-[10px] font-mono ${config.subTextColor}`}>
                 @{recipientUsername}
               </div>
             </div>
 
             {/* Bottom tag */}
-            <div className="flex items-center justify-between text-[9px] text-white/50 relative z-10 border-t border-white/10 pt-1.5">
-              <span>গোপনীয় চিঠি</span>
+            <div className="flex items-center justify-between text-[9px] text-white/60 relative z-20 border-t border-white/10 pt-1.5">
+              <span className="font-serif italic">অনুভূতি প্রকাশনা</span>
               <span>{seal.label}</span>
             </div>
 
@@ -156,7 +166,10 @@ export default function LetterDispatchAnimation({
             >
               <div
                 className={`w-full h-full ${config.flapBg} border-b border-black/30 shadow-md flex items-end justify-center pb-2`}
-                style={{ clipPath: "polygon(0 0, 100% 0, 50% 100%)" }}
+                style={{
+                  clipPath: "polygon(0 0, 100% 0, 50% 100%)",
+                  filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.45))",
+                }}
               />
             </div>
 
@@ -169,10 +182,10 @@ export default function LetterDispatchAnimation({
               }`}
             >
               <div
-                className={`w-14 h-14 rounded-full ${config.sealBg} border-2 ${config.sealBorder} ${config.sealGlow} flex items-center justify-center text-amber-200 shadow-xl`}
+                className={`w-14 h-14 rounded-full ${config.sealBg} border-2 ${config.sealBorder} ${config.sealGlow} flex items-center justify-center text-amber-200 shadow-2xl relative`}
               >
-                <div className="w-10 h-10 rounded-full border border-amber-300/50 flex items-center justify-center shadow-inner">
-                  <SealIcon className="w-5 h-5 text-amber-100 drop-shadow-md" />
+                <div className="w-10 h-10 rounded-full border border-amber-300/60 shadow-[inset_0_2px_4px_rgba(0,0,0,0.6)] bg-black/15 flex items-center justify-center">
+                  <SealIcon className={`w-5 h-5 ${config.sealText} drop-shadow-md`} />
                 </div>
               </div>
             </div>

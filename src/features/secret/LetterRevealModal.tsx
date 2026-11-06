@@ -21,7 +21,11 @@ import {
   Star,
 } from "lucide-react";
 import { SecretMessage, SecretInboxPublic } from "@/features/secret/types";
-import EnvelopeCard, { WAX_SEAL_ICONS } from "./EnvelopeCard";
+import EnvelopeCard, {
+  WAX_SEAL_ICONS,
+  ENVELOPE_THEMES,
+  EnvelopeThemeKey,
+} from "./EnvelopeCard";
 import { letterSound } from "@/lib/letterSound";
 import { renderFormattedInline } from "@/lib/formatText";
 import {
@@ -228,6 +232,11 @@ export default function LetterRevealModal({
       : WAX_SEAL_ICONS.crush;
   const SealIcon = seal.icon;
 
+  const themeConfig =
+    (message.cardTheme as EnvelopeThemeKey) in ENVELOPE_THEMES
+      ? ENVELOPE_THEMES[message.cardTheme as EnvelopeThemeKey]
+      : ENVELOPE_THEMES.crimson;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
       {/* Floating Ambient Stardust Particles based on message mood */}
@@ -312,7 +321,10 @@ export default function LetterRevealModal({
 
         {/* 2. REVEALED PARCHMENT LETTER STAGE */}
         {stage === "revealed" && (
-          <div className="w-full bg-[#FAF5E8] dark:bg-[#1A1612] text-stone-800 dark:text-stone-100 rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl p-5 sm:p-8 space-y-5 animate-in slide-in-from-bottom-8 duration-500 relative overflow-hidden">
+          <div className={`w-full bg-[#FAF5E8] dark:bg-[#1A1612] text-stone-800 dark:text-stone-100 rounded-3xl border-2 ${themeConfig.foilBorder} shadow-2xl p-5 sm:p-8 space-y-5 animate-in slide-in-from-bottom-8 duration-500 relative overflow-hidden`}>
+            {/* Red Vertical Diary Margin Line */}
+            <div className="absolute top-0 bottom-0 left-9 sm:left-12 w-[1.5px] bg-red-400/40 pointer-events-none z-10" />
+
             {/* Subtle vintage lined notebook texture */}
             <div
               className="absolute inset-0 opacity-[0.04] pointer-events-none"
@@ -322,18 +334,23 @@ export default function LetterRevealModal({
               }}
             />
 
+            {/* Faint Seal Icon Watermark in Center */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none opacity-[0.035] dark:opacity-[0.05] z-0">
+              <SealIcon className="w-56 h-56" />
+            </div>
+
             {/* Top Toolbar: Seal Info (Left) & Controls (Right) */}
-            <div className="flex items-center justify-between border-b border-stone-300/80 dark:border-stone-800 pb-3 relative z-10 gap-2">
+            <div className="flex items-center justify-between border-b border-stone-300/80 dark:border-stone-800 pb-3 relative z-10 gap-2 pl-6 sm:pl-8">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-[#7E151E] text-amber-200 flex items-center justify-center shadow-xs">
-                  <SealIcon className="w-4 h-4" />
+                <div className={`w-8 h-8 rounded-full ${themeConfig.sealBg} ${themeConfig.sealBorder} border text-amber-200 flex items-center justify-center shadow-xs`}>
+                  <SealIcon className="w-4 h-4 text-amber-100" />
                 </div>
                 <div>
                   <div className="text-xs font-bold text-[#7E151E] dark:text-rose-400">
                     {seal.label}
                   </div>
                   <div className="text-[10px] text-stone-500 dark:text-stone-400 font-mono">
-                    গোপন অনুভূতি
+                    {themeConfig.nameBn} • গোপন চিঠি
                   </div>
                 </div>
               </div>
@@ -400,12 +417,12 @@ export default function LetterRevealModal({
             </div>
 
             {/* Letter Salutation */}
-            <div className="space-y-3 relative z-10">
+            <div className="space-y-3 relative z-10 pl-6 sm:pl-8">
               <div className="flex items-center justify-between">
                 <div className="font-serif italic text-base sm:text-lg text-[#7E151E] dark:text-amber-200 font-bold">
                   প্রিয় {inbox.displayName},
                 </div>
-                <div className="text-right text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400">
+                <div className="text-right text-[10px] sm:text-[11px] text-stone-500 dark:text-stone-400 font-mono">
                   <span>{formatExactTime(message.createdAt)}</span> •{" "}
                   <span>{formatExactDate(message.createdAt)}</span>
                 </div>
@@ -413,7 +430,7 @@ export default function LetterRevealModal({
 
               {/* Letter Body (Parchment Styled with Ruled Lines & Typewriter Animation) */}
               <div
-                className={`p-4 sm:p-6 rounded-2xl bg-white/75 dark:bg-stone-900/70 border border-stone-200/90 dark:border-stone-800 shadow-inner relative transition-all ${
+                className={`p-4 sm:p-6 rounded-2xl bg-white/80 dark:bg-stone-900/70 border border-stone-200/90 dark:border-stone-800 shadow-inner relative transition-all ${
                   isLargeText
                     ? "text-base sm:text-lg leading-relaxed sm:leading-loose"
                     : "text-sm sm:text-base leading-relaxed sm:leading-loose"
@@ -423,12 +440,16 @@ export default function LetterRevealModal({
                     : "font-sans font-medium"
                 }`}
               >
-                <div className="text-stone-800 dark:text-stone-100 whitespace-pre-wrap select-text">
-                  &ldquo;
+                <div className="text-stone-800 dark:text-stone-100 whitespace-pre-wrap select-text leading-relaxed">
+                  <span className="text-2xl font-serif text-[#7E151E]/40 dark:text-amber-300/40 select-none mr-1">
+                    &ldquo;
+                  </span>
                   {renderFormattedInline(
                     parsed.cleanText.slice(0, typedLength)
                   )}
-                  &rdquo;
+                  <span className="text-2xl font-serif text-[#7E151E]/40 dark:text-amber-300/40 select-none ml-1">
+                    &rdquo;
+                  </span>
                   {/* Blinking calligraphy quill / pen cursor */}
                   {isTyping && (
                     <span className="inline-flex items-center ml-1 text-[#7E151E] dark:text-rose-400 animate-pulse">
@@ -452,8 +473,9 @@ export default function LetterRevealModal({
                 )}
               </div>
 
-              <div className="text-right font-serif italic text-xs text-stone-500 dark:text-stone-400 pt-1">
-                — একজন শুভাকাঙ্ক্ষী (পরিচয় গোপন)
+              <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 pt-1 font-serif italic">
+                <span className="opacity-60">— ◆ —</span>
+                <span>— এক অদৃশ্য শুভাকাঙ্ক্ষী (পরিচয় ১০০% গোপন)</span>
               </div>
             </div>
 

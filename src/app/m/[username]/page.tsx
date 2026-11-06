@@ -62,13 +62,66 @@ const CLUE_PRESETS = [
 const ENVELOPE_PALETTES: Array<{
   id: EnvelopeThemeKey;
   label: string;
+  tag: string;
   dotBg: string;
+  foilBorder: string;
 }> = [
-  { id: "crimson", label: "রয়েল ক্রিমসন", dotBg: "bg-[#7E151E]" },
-  { id: "midnight", label: "মিডনাইট নেভি", dotBg: "bg-[#0F1E36]" },
-  { id: "vintage", label: "ভিন্টেজ পার্চমেন্ট", dotBg: "bg-[#B07D4F]" },
-  { id: "emerald", label: "ফরেস্ট এমেরাল্ড", dotBg: "bg-[#114B37]" },
-  { id: "aurora", label: "পার্পল অরোরা", dotBg: "bg-[#4C1D95]" },
+  {
+    id: "crimson",
+    label: "রয়েল ক্রিমসন ভেলভেট",
+    tag: "স্বর্ণালী ফয়েল ও রুবি সিল",
+    dotBg: "bg-gradient-to-br from-[#800f1a] to-[#40050b]",
+    foilBorder: "border-amber-300/60",
+  },
+  {
+    id: "midnight",
+    label: "মিডনাইট স্টারডাস্ট",
+    tag: "গ্যালাক্সি নেভি ও সিলভার ফয়েল",
+    dotBg: "bg-gradient-to-br from-[#0e1d38] to-[#040812]",
+    foilBorder: "border-sky-300/60",
+  },
+  {
+    id: "vintage",
+    label: "প্রাচীন পার্চমেন্ট",
+    tag: "হস্তনির্মিত কাগজ ও টেরাকোটা",
+    dotBg: "bg-gradient-to-br from-[#A77242] to-[#5C3717]",
+    foilBorder: "border-amber-200/60",
+  },
+  {
+    id: "emerald",
+    label: "ইম্পেরিয়াল পান্না",
+    tag: "স্বর্ণলতা ও রাজকীয় পান্না",
+    dotBg: "bg-gradient-to-br from-[#0c3e2b] to-[#041710]",
+    foilBorder: "border-emerald-300/60",
+  },
+  {
+    id: "aurora",
+    label: "অ্যামেথিস্ট সিল্ক",
+    tag: "রাজকীয় বেগুনি ও মুক্তা",
+    dotBg: "bg-gradient-to-br from-[#45127d] to-[#1c0633]",
+    foilBorder: "border-purple-300/60",
+  },
+  {
+    id: "obsidian",
+    label: "ব্ল্যাক অবসিডিয়ান",
+    tag: "ম্যাট ব্ল্যাক ও খাঁটি সোনা",
+    dotBg: "bg-gradient-to-br from-[#212124] to-[#09090a]",
+    foilBorder: "border-amber-400/80",
+  },
+  {
+    id: "rose_quartz",
+    label: "রোজ কোয়ার্টজ",
+    tag: "রোমান্টিক গোলাপি ও শ্যাম্পেন",
+    dotBg: "bg-gradient-to-br from-[#7d1c44] to-[#38081c]",
+    foilBorder: "border-rose-300/60",
+  },
+  {
+    id: "royal_ivory",
+    label: "রয়্যাল আইভরি",
+    tag: "কাশ্মীরি নকশা ও ব্রোঞ্জ",
+    dotBg: "bg-gradient-to-br from-[#694e33] to-[#332111]",
+    foilBorder: "border-amber-300/60",
+  },
 ];
 
 function PublicSecretMessageContent() {
@@ -342,10 +395,13 @@ function PublicSecretMessageContent() {
                 </div>
               </div>
 
-              {/* Stationery Lined Letterpad */}
+              {/* Stationery Lined Letterpad with Luxury Red Margin */}
               <div className="rounded-3xl bg-[#FAF5E8] dark:bg-[#1A1613] border-2 border-[#D4AF37]/50 shadow-md p-5 sm:p-6 space-y-3 relative overflow-hidden">
+                {/* Red Vertical Diary Margin Line */}
+                <div className="absolute top-0 bottom-0 left-9 sm:left-12 w-[1.5px] bg-red-400/40 pointer-events-none" />
+
                 {/* Vintage Letterhead Top Bar */}
-                <div className="flex items-center justify-between border-b border-[#D4AF37]/40 pb-2.5">
+                <div className="flex items-center justify-between border-b border-[#D4AF37]/40 pb-2.5 pl-6 sm:pl-8">
                   <div className="flex items-center gap-1.5 text-xs font-serif italic font-bold text-[#7E151E] dark:text-amber-200">
                     <Feather className="w-4 h-4 text-[#7E151E] dark:text-amber-300" />
                     <span>প্রিয় {inbox.displayName},</span>
@@ -356,7 +412,7 @@ function PublicSecretMessageContent() {
                 </div>
 
                 {/* Ruled Paper Guidelines Background for Textarea */}
-                <div className="relative">
+                <div className="relative pl-6 sm:pl-8">
                   <textarea
                     required
                     rows={6}
@@ -373,7 +429,7 @@ function PublicSecretMessageContent() {
                 </div>
 
                 {/* Letter Signature Footnote */}
-                <div className="flex items-center justify-between pt-2 border-t border-[#D4AF37]/30 text-[10px] text-stone-400 dark:text-stone-500 font-serif italic">
+                <div className="flex items-center justify-between pt-2 border-t border-[#D4AF37]/30 text-[10px] text-stone-400 dark:text-stone-500 font-serif italic pl-6 sm:pl-8">
                   <span>অনুভূতির গোপন চিঠি</span>
                   <span>— এক অদৃশ্য শুভাকাঙ্ক্ষী</span>
                 </div>
@@ -433,19 +489,19 @@ function PublicSecretMessageContent() {
                 )}
               </div>
 
-              {/* Customizer 1: খামের রঙ নির্বাচন (Envelope Color Palette) */}
-              <div className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-4 sm:p-5 shadow-xs space-y-3">
+              {/* Customizer 1: রাজকীয় খাম ও স্টেশনারি নির্বাচন (Envelope Theme Selector) */}
+              <div className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-4 sm:p-5 shadow-xs space-y-3.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
                     <Palette className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
-                    <span>খামের রঙ নির্বাচন করুন:</span>
+                    <span>রাজকীয় খামের স্টাইল বেছে নিন:</span>
                   </label>
                   <span className="text-[11px] font-bold text-[#7E151E] dark:text-rose-400">
                     {ENVELOPE_THEMES[selectedTheme].nameBn}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {ENVELOPE_PALETTES.map((pal) => {
                     const isSelected = selectedTheme === pal.id;
                     return (
@@ -453,16 +509,36 @@ function PublicSecretMessageContent() {
                         key={pal.id}
                         type="button"
                         onClick={() => setSelectedTheme(pal.id)}
-                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                        className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
                           isSelected
-                            ? "border-[#7E151E] bg-rose-50/80 dark:bg-rose-950/40 text-[#7E151E] dark:text-rose-300 shadow-2xs"
-                            : "border-stone-200 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-900/60 text-stone-600 dark:text-stone-300 hover:bg-stone-100"
+                            ? "border-amber-400 dark:border-amber-500 bg-amber-50/70 dark:bg-amber-950/30 ring-2 ring-amber-400/40 shadow-sm"
+                            : "border-stone-200 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-900/50 hover:bg-stone-100 hover:border-stone-300"
                         }`}
                       >
-                        <span
-                          className={`w-3.5 h-3.5 rounded-full ${pal.dotBg} shrink-0 shadow-xs border border-white/50`}
-                        />
-                        <span className="text-[11px] truncate">{pal.label}</span>
+                        {/* Mini Envelope Swatch Preview */}
+                        <div
+                          className={`w-full h-8 rounded-lg ${pal.dotBg} border ${pal.foilBorder} mb-2 relative overflow-hidden shadow-xs flex items-center justify-center`}
+                        >
+                          {/* Mini vertical ribbon */}
+                          <div className="w-2.5 h-full bg-white/20 border-x border-white/20" />
+                          {/* Mini seal */}
+                          <div className="w-3.5 h-3.5 rounded-full bg-amber-400 border border-white shadow-xs absolute" />
+                        </div>
+
+                        <div className="space-y-0.5">
+                          <div className="text-[11px] font-bold text-stone-800 dark:text-stone-100 truncate">
+                            {pal.label}
+                          </div>
+                          <div className="text-[9.5px] text-stone-500 dark:text-stone-400 line-clamp-1">
+                            {pal.tag}
+                          </div>
+                        </div>
+
+                        {isSelected && (
+                          <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                            <Check className="w-2.5 h-2.5" />
+                          </div>
+                        )}
                       </button>
                     );
                   })}
@@ -470,12 +546,15 @@ function PublicSecretMessageContent() {
               </div>
 
               {/* Customizer 2: মোমের সিলমোহর ও অনুভূতির ধরন (Wax Seal & Category) */}
-              <div className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-4 sm:p-5 shadow-xs space-y-3">
+              <div className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-4 sm:p-5 shadow-xs space-y-3.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
                     <span>মোমের সিলমোহর ও অনুভূতি:</span>
                   </label>
+                  <span className="text-[11px] font-bold text-[#7E151E] dark:text-rose-400">
+                    {WAX_SEALS.find((s) => s.id === selectedCategory)?.label}
+                  </span>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -487,13 +566,22 @@ function PublicSecretMessageContent() {
                         key={cat.id}
                         type="button"
                         onClick={() => setSelectedCategory(cat.id)}
-                        className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+                        className={`p-2.5 rounded-2xl border text-xs font-bold transition flex items-center gap-2.5 cursor-pointer ${
                           isSelected
-                            ? "border-[#7E151E] bg-rose-50/80 dark:bg-rose-950/40 text-[#7E151E] dark:text-rose-300 shadow-2xs"
-                            : "border-stone-200 dark:border-stone-800 bg-stone-50/50 dark:bg-stone-900/60 text-stone-600 dark:text-stone-300 hover:bg-stone-100"
+                            ? "border-[#7E151E] bg-rose-50/80 dark:bg-rose-950/40 text-[#7E151E] dark:text-rose-300 shadow-2xs ring-1 ring-[#7E151E]/30"
+                            : "border-stone-200 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-900/60 text-stone-600 dark:text-stone-300 hover:bg-stone-100"
                         }`}
                       >
-                        <IconComponent className="w-3.5 h-3.5 shrink-0" />
+                        {/* 3D Wax Stamp Pill Token */}
+                        <div
+                          className={`w-7 h-7 rounded-full shrink-0 flex items-center justify-center border transition ${
+                            isSelected
+                              ? "bg-[#7E151E] text-amber-200 border-amber-300 shadow-sm"
+                              : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-300 border-stone-300 dark:border-stone-700"
+                          }`}
+                        >
+                          <IconComponent className="w-3.5 h-3.5" />
+                        </div>
                         <span className="text-[11px] truncate">{cat.label}</span>
                       </button>
                     );

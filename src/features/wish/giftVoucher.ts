@@ -30,3 +30,4 @@ export function formatGiftVoucherTag(voucher: GiftVoucherData): string {
     voucher.token ? ` | token=${voucher.token.trim()}` : ""
   }]`;
 }
+
