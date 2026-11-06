@@ -16,6 +16,7 @@ import {
 import type { WishTheme } from "@/data/birthdayTemplates";
 import { renderFormattedInline } from "@/lib/formatText";
 import { HANDWRITING_FONT } from "../share";
+import { detectOccasion } from "../occasionHelper";
 import type { WishContent, WishPublic } from "../types";
 
 interface LetterCardProps {
@@ -126,34 +127,21 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
   const handwritten = wish.fontStyle === "handwritten";
   const [showPhotoZoom, setShowPhotoZoom] = useState(false);
 
-  const isWedding =
-    wish.relationship?.includes("বিবাহ") ||
-    wish.theme === "wedding_royal" ||
-    content.message.includes("শুভ বিবাহ") ||
-    content.message.includes("পাত্র:");
-  const isAnniversary =
-    wish.relationship?.includes("বার্ষিকী") ||
-    wish.theme === "anniversary_gold" ||
-    content.message.includes("বিবাহবার্ষিকী");
-  const isLove =
-    wish.relationship?.includes("ভালোবাসার চিঠি") ||
-    wish.relationship?.includes("প্রস্তাব") ||
-    wish.theme === "rose";
+  const occasion = detectOccasion(wish, content.message);
+  const { isWedding, isAnniversary, isLove, isProposal } = occasion;
 
-  const cardTitle = isWedding
-    ? "শুভ বিবাহ নিমন্ত্রণপত্র"
-    : isAnniversary
-    ? "শুভ বিবাহবার্ষিকী"
-    : isLove
-    ? "এক টুকরো অনুভূতি"
-    : "শুভ জন্মদিন";
+  const cardTitle = occasion.headerTitle;
 
   const cardSubtitle = isWedding
     ? "আপনার ও আপনার পরিবারের সাদর উপস্থিতি কাম্য"
     : isAnniversary
     ? "চিরন্তন ভালোবাসা ও অটুট বন্ধনের শুভেচ্ছা"
+    : isLove
+    ? isProposal
+      ? "মনের গভীরের একান্ত অনুভূতি ও প্রস্তাব"
+      : "একটি পবিত্র ও স্নিগ্ধ অনুভূতির উপহার"
     : wish.relationship
-    ? `(${wish.relationship} এর জন্য বিশেষ চিঠি)`
+    ? `(${wish.relationship} এর জন্য বিশেষ শুভকামনা)`
     : "একটি পবিত্র অনুভূতির উপহার";
 
   // Typewriter effect
@@ -347,57 +335,123 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
           </div>
         )}
 
-        {/* Typewriter message body with diary ruling */}
+        {/* Inset Luxury Parchment Letter Sheet */}
         <div
-          onClick={handleSkipTyping}
-          className="relative text-base sm:text-lg leading-relaxed sm:leading-loose whitespace-pre-line font-medium opacity-95 my-5 px-2 sm:px-3 py-2 rounded-xl transition-all select-text cursor-pointer z-10"
-          style={
-            handwritten
-              ? {
-                  backgroundImage: `repeating-linear-gradient(to bottom, transparent, transparent 31px, ${theme.accentColor}18 31px, ${theme.accentColor}18 32px)`,
-                  lineHeight: "32px",
-                }
-              : undefined
-          }
-          title={isTyping ? "সম্পূর্ণ পড়তে ক্লিক করুন" : undefined}
+          className="relative my-7 rounded-2xl sm:rounded-3xl border transition-all duration-300 overflow-hidden shadow-sm z-10"
+          style={{
+            backgroundColor: "rgba(255, 255, 255, 0.45)",
+            borderColor: `${theme.accentColor}30`,
+            boxShadow: `inset 0 1px 3px rgba(255, 255, 255, 0.6), inset 0 2px 8px rgba(0, 0, 0, 0.04), 0 8px 24px -6px ${theme.accentColor}18`,
+          }}
         >
-          <span
-            className="text-4xl sm:text-5xl font-serif leading-none select-none opacity-20 float-left mr-2 -mt-1 font-black"
-            style={{ color: theme.accentColor }}
+          {/* Sheet Header Badge Bar */}
+          <div
+            className="flex items-center justify-between px-4 sm:px-6 py-2.5 border-b select-none"
+            style={{
+              borderColor: `${theme.accentColor}20`,
+              backgroundColor: `${theme.accentColor}0a`,
+            }}
           >
-            “
-          </span>
-
-          {renderFormattedInline(content.message.slice(0, displayedLength))}
-
-          {!isTyping && (
-            <span
-              className="text-4xl sm:text-5xl font-serif leading-none select-none opacity-20 inline-block ml-1 font-black align-bottom"
-              style={{ color: theme.accentColor }}
-            >
-              ”
-            </span>
-          )}
-
-          {isTyping && (
-            <span className="inline-block w-1.5 h-4 bg-current ml-1 animate-pulse align-middle" />
-          )}
-        </div>
-
-        {/* Fast-forward Button */}
-        {isTyping && (
-          <div className="flex justify-end pt-1 relative z-10">
-            <button
-              type="button"
-              onClick={handleSkipTyping}
-              className="text-xs font-bold px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 border border-stone-300/40 dark:border-stone-700/40 shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition"
-              style={{ color: theme.accentColor }}
-            >
-              <FastForward className="w-3.5 h-3.5" />
-              <span>একবারে সম্পূর্ণ পড়ুন</span>
-            </button>
+            <div className="flex items-center gap-1.5" style={{ color: theme.accentColor }}>
+              <Feather className="w-3.5 h-3.5 opacity-80" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">
+                {occasion.isWedding
+                  ? "শুভ পরিণয়ের পবিত্র বার্তা"
+                  : occasion.isAnniversary
+                  ? "চিরন্তন ভালোবাসার যুগল অধ্যায়"
+                  : occasion.isLove
+                  ? "মনের গহীন থেকে একান্ত অনুভূতি"
+                  : "জন্মলগ্নের বিশেষ আশীর্বাদ"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-stone-400 font-mono">
+                {content.message.length} টি বর্ণ
+              </span>
+            </div>
           </div>
-        )}
+
+          {/* Sheet Message Body */}
+          <div
+            onClick={handleSkipTyping}
+            className="relative p-5 sm:p-8 cursor-pointer select-text"
+            title={isTyping ? "সম্পূর্ণ পড়তে ক্লিক করুন" : undefined}
+          >
+            {/* If handwritten, authentic vintage diary styling with red vertical margin line */}
+            <div
+              className={
+                handwritten
+                  ? "border-l-2 border-rose-400/40 dark:border-rose-500/30 pl-4 sm:pl-5 ml-1"
+                  : ""
+              }
+              style={
+                handwritten
+                  ? {
+                      backgroundImage: `repeating-linear-gradient(to bottom, transparent, transparent 33px, ${theme.accentColor}18 33px, ${theme.accentColor}18 34px)`,
+                      lineHeight: "34px",
+                    }
+                  : undefined
+              }
+            >
+              <span
+                className="text-4xl sm:text-5xl font-serif leading-none select-none opacity-25 float-left mr-2.5 -mt-1 font-black"
+                style={{ color: theme.accentColor }}
+              >
+                “
+              </span>
+
+              <div className="text-base sm:text-lg leading-relaxed sm:leading-loose font-medium opacity-95">
+                {renderFormattedInline(content.message.slice(0, displayedLength))}
+
+                {!isTyping && (
+                  <span
+                    className="text-4xl sm:text-5xl font-serif leading-none select-none opacity-25 inline-block ml-1 font-black align-bottom"
+                    style={{ color: theme.accentColor }}
+                  >
+                    ”
+                  </span>
+                )}
+
+                {isTyping && (
+                  <span className="inline-block w-1.5 h-4 bg-current ml-1 animate-pulse align-middle" />
+                )}
+              </div>
+
+              {/* Concluding Decorative Flourish */}
+              {!isTyping && (
+                <div className="flex items-center justify-center gap-2 mt-5 opacity-40 select-none" style={{ color: theme.accentColor }}>
+                  <div className="h-px w-10 sm:w-16 bg-gradient-to-r from-transparent to-current" />
+                  <div className="w-1.5 h-1.5 rotate-45 bg-current" />
+                  <div className="h-px w-10 sm:w-16 bg-gradient-to-l from-transparent to-current" />
+                </div>
+              )}
+            </div>
+
+            {/* Typewriter live progress bar at bottom of the parchment */}
+            {isTyping && (
+              <div className="mt-4 pt-3 border-t border-stone-200/50 dark:border-stone-800/50 flex items-center justify-between gap-3">
+                <div className="flex-1 bg-stone-200/60 dark:bg-stone-700/60 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-150"
+                    style={{
+                      backgroundColor: theme.accentColor,
+                      width: `${Math.min(100, (displayedLength / content.message.length) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSkipTyping}
+                  className="shrink-0 text-[11px] font-bold px-3 py-1 rounded-full bg-white/70 dark:bg-stone-800 hover:bg-white dark:hover:bg-stone-700 border border-stone-300/50 dark:border-stone-600 shadow-xs cursor-pointer inline-flex items-center gap-1.5 transition"
+                  style={{ color: theme.accentColor }}
+                >
+                  <FastForward className="w-3 h-3" />
+                  <span>একবারে পড়ুন</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* Audio Message */}
         {content.voiceUrl && (

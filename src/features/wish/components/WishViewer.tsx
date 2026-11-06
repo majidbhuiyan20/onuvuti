@@ -18,7 +18,9 @@ import ReactionBox from "./ReactionBox";
 import ShareBar from "./ShareBar";
 import BirthdayCakeCeremony from "./BirthdayCakeCeremony";
 import WeddingInteractiveCard from "./WeddingInteractiveCard";
+import LoveProposalInteractiveCard from "./LoveProposalInteractiveCard";
 import StoryExportModal from "./StoryExportModal";
+import { detectOccasion } from "../occasionHelper";
 
 export default function WishViewer({ initialWish }: { initialWish: WishPublic }) {
   const [wish, setWish] = useState(initialWish);
@@ -218,15 +220,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
       );
     }
 
-    const isWedding =
-      wish.relationship?.includes("বিবাহ") ||
-      wish.theme === "wedding_royal" ||
-      (content?.message?.includes("শুভ বিবাহ") ?? false) ||
-      (content?.message?.includes("পাত্র:") ?? false);
-    const isAnniv =
-      wish.relationship?.includes("বার্ষিকী") ||
-      wish.theme === "anniversary_gold" ||
-      (content?.message?.includes("বিবাহবার্ষিকী") ?? false);
+    const occasion = detectOccasion(wish, content?.message);
 
     return (
       <div className="w-full max-w-xl animate-fade-in-up flex flex-col items-center">
@@ -245,7 +239,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
         />
 
         {/* Occasion Interactive Ceremony Card */}
-        {isWedding ? (
+        {occasion.isWedding ? (
           <div className="mt-8 w-full max-w-xl">
             <WeddingInteractiveCard
               wishId={wish.id}
@@ -256,7 +250,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
               onBless={handleBlowCandle}
             />
           </div>
-        ) : isAnniv ? (
+        ) : occasion.isAnniversary ? (
           <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 text-center shadow-xl">
             <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto mb-3 text-rose-300">
               <HeartHandshake className="w-6 h-6" />
@@ -283,6 +277,20 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
                 <p className="text-xs text-stone-300 mt-1">আপনাদের ভালোবাসার প্রতিটি প্রহর চিরনবীন থাকুক।</p>
               </div>
             )}
+          </div>
+        ) : occasion.isLove ? (
+          <div className="mt-8 w-full max-w-md">
+            <LoveProposalInteractiveCard
+              recipientName={wish.recipientName}
+              senderName={wish.senderName}
+              isProposal={occasion.isProposal}
+              accepted={candleBlown}
+              onAccept={handleBlowCandle}
+              onScrollToReply={() => {
+                const el = document.getElementById("reaction-box-section");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
           </div>
         ) : (
           <div className="mt-8 w-full max-w-md">
@@ -319,7 +327,9 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
           </div>
         )}
 
-        {!isWedding && <ReactionBox wishId={wish.id} senderName={wish.senderName} />}
+        <div id="reaction-box-section" className="w-full max-w-md">
+          {!occasion.isWedding && <ReactionBox wishId={wish.id} senderName={wish.senderName} />}
+        </div>
 
         {!wish.selfDestruct && (
           <div className="mt-6 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 shadow-xl">
@@ -354,10 +364,8 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
         </div>
 
         <div className="mt-8 w-full max-w-md bg-gradient-to-r from-rose-900/40 via-purple-900/40 to-amber-900/40 border border-white/20 rounded-3xl p-5 text-center shadow-xl">
-          <h3 className="text-base font-bold text-white mb-1">আপনিও কি প্রিয়জনকে এমন জন্মদিনের চিঠি পাঠাতে চান?</h3>
-          <p className="text-xs text-stone-300 mb-4">
-            খুব সহজেই তৈরি করুন এমন সুন্দর জাদুকরী খাম ও আবেগভরা চিঠি—১ ক্লিকে লিঙ্ক পাঠিয়ে চমকে দিন প্রিয়জনকে!
-          </p>
+          <h3 className="text-base font-bold text-white mb-1">{occasion.ctaTitle}</h3>
+          <p className="text-xs text-stone-300 mb-4">{occasion.ctaSubtitle}</p>
           <Link
             href="/birthday-wish"
             className="inline-flex items-center justify-center gap-2 w-full py-3 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-bold text-sm shadow-xl transition transform hover:scale-102"

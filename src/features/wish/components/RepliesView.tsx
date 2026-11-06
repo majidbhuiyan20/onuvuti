@@ -9,12 +9,15 @@ import {
   Check,
   Crown,
   HeartHandshake,
+  Heart,
+  Sparkles,
   Copy,
   ExternalLink,
   Mail,
   Eye,
 } from "lucide-react";
 import { wishApi } from "../api";
+import { detectOccasion } from "../occasionHelper";
 import type { WishPublic, WishReply } from "../types";
 
 interface ParsedGuest {
@@ -127,13 +130,16 @@ export default function RepliesView({ id, manageKey }: { id: string; manageKey: 
     void load();
   }, [load]);
 
+  const occasion = useMemo(() => {
+    return detectOccasion(wish, replies[0]?.text);
+  }, [wish, replies]);
+
   const isWedding = useMemo(() => {
     return (
-      wish?.relationship?.includes("বিবাহ") ||
-      wish?.theme === "wedding_royal" ||
+      occasion.isWedding ||
       replies.some((r) => r.text?.includes("[RSVP") || r.text?.includes("মেহমান:"))
     );
-  }, [wish, replies]);
+  }, [occasion.isWedding, replies]);
 
   const parsedGuests = useMemo(() => {
     const defaultName = wish?.recipientName || "মেহমান";
@@ -194,7 +200,7 @@ export default function RepliesView({ id, manageKey }: { id: string; manageKey: 
             href="/birthday-wish"
             className="text-xs font-bold text-[#7E151E] dark:text-rose-400 hover:underline"
           >
-            ← নিমন্ত্রণপত্র তৈরি পেজ
+            {wish ? occasion.backLinkLabel : "← চিঠি তৈরি পেজ"}
           </Link>
           <button
             type="button"
@@ -226,14 +232,22 @@ export default function RepliesView({ id, manageKey }: { id: string; manageKey: 
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs font-bold mb-2 border border-amber-200 dark:border-amber-800">
-                      {isWedding ? <Crown className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
-                      <span>{isWedding ? "শুভ বিবাহ নিমন্ত্রণ ও মেহমান ট্র্যাকার" : "চিঠির রিঅ্যাকশন ও রিপ্লাই"}</span>
+                      {isWedding ? (
+                        <Crown className="w-3.5 h-3.5" />
+                      ) : occasion.isAnniversary ? (
+                        <HeartHandshake className="w-3.5 h-3.5" />
+                      ) : occasion.isLove ? (
+                        <Heart className="w-3.5 h-3.5 fill-current text-rose-500" />
+                      ) : (
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      )}
+                      <span>{occasion.badgeTitle}</span>
                     </div>
                     <h1 className="text-xl sm:text-2xl font-black text-stone-900 dark:text-white">
-                      {wish.recipientName}-এর জন্য নিমন্ত্রণপত্র
+                      {occasion.repliesTitle}
                     </h1>
                     <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-                      প্রেরক: <strong className="text-stone-800 dark:text-stone-200">{wish.senderName}</strong>
+                      প্রেরক: <strong className="text-stone-800 dark:text-stone-200">{wish.senderName}</strong> • {occasion.repliesSubtitle}
                     </p>
                   </div>
 
@@ -323,10 +337,31 @@ export default function RepliesView({ id, manageKey }: { id: string; manageKey: 
                     )}
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <Stat label="বার খোলা হয়েছে" value={wish.viewsCount} />
-                    <Stat label="রিঅ্যাকশন" value={replies.length} />
-                    <Stat label="অবস্থা" value={wish.destroyed ? "মুছে গেছে" : wish.locked ? "বন্ধ" : "সক্রিয়"} />
+                  <div className="grid grid-cols-3 gap-2.5 text-center text-xs pt-3 border-t border-stone-200 dark:border-stone-800">
+                    <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/80 dark:border-stone-700">
+                      <div className="text-lg sm:text-xl font-black text-stone-800 dark:text-stone-200">
+                        {wish.viewsCount} বার
+                      </div>
+                      <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400 mt-0.5">
+                        {occasion.isLove ? "চিঠি পড়া হয়েছে" : "খাম খোলা হয়েছে"}
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+                      <div className="text-lg sm:text-xl font-black text-amber-900 dark:text-amber-200">
+                        {replies.length} টি
+                      </div>
+                      <div className="text-[10px] font-bold text-amber-700/80 dark:text-amber-300/80 mt-0.5">
+                        {occasion.isLove ? "অনুভূতি ও উত্তর" : occasion.isAnniversary ? "আশীর্বাদ বার্তা" : "শুভেচ্ছা বার্তা"}
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/50 border border-stone-200/80 dark:border-stone-700">
+                      <div className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400">
+                        {wish.destroyed ? "মুছে গেছে" : wish.locked ? "বন্ধ" : "সক্রিয়"}
+                      </div>
+                      <div className="text-[10px] font-bold text-stone-500 dark:text-stone-400 mt-0.5">
+                        চিঠির অবস্থা
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -373,16 +408,18 @@ export default function RepliesView({ id, manageKey }: { id: string; manageKey: 
               {/* Guests List */}
               {replies.length === 0 ? (
                 <div className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 p-8 text-center space-y-2">
-                  <HeartHandshake className="w-8 h-8 text-stone-400 mx-auto opacity-70" />
+                  {occasion.isWedding ? (
+                    <Crown className="w-8 h-8 text-stone-400 mx-auto opacity-70" />
+                  ) : occasion.isLove ? (
+                    <Heart className="w-8 h-8 text-rose-400 mx-auto opacity-70" />
+                  ) : (
+                    <HeartHandshake className="w-8 h-8 text-stone-400 mx-auto opacity-70" />
+                  )}
                   <p className="text-sm font-bold text-stone-700 dark:text-stone-200">
-                    {isWedding
-                      ? "এখনো কোনো মেহমান RSVP নিশ্চিত করেননি"
-                      : "এখনো কোনো রিঅ্যাকশন আসেনি"}
+                    {occasion.emptyStateTitle}
                   </p>
                   <p className="text-xs text-stone-500 max-w-sm mx-auto">
-                    {isWedding
-                      ? "আমন্ত্রিত মেহমানরা চিঠি খুলে তাদের উপস্থিতি নিশ্চিত করলে এখানে বিস্তারিত সংখ্যা ও তালিকা দেখা যাবে।"
-                      : "প্রাপক চিঠি খুলে রিঅ্যাকশন বা বার্তা পাঠালে এখানে তা সংরক্ষিত হবে।"}
+                    {occasion.emptyStateDesc}
                   </p>
                 </div>
               ) : (

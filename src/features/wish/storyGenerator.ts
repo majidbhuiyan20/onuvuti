@@ -291,14 +291,22 @@ export async function generateStoryCanvas(input: StoryCardInput): Promise<HTMLCa
   // 5. Header Section
   const isWedding = theme.id === "wedding_royal" || relationship?.includes("বিবাহ");
   const isAnniv = theme.id === "anniversary_gold" || relationship?.includes("বার্ষিকী");
-  const isLove = theme.id === "rose" || relationship?.includes("ভালোবাসা");
+  const isLove =
+    theme.id === "rose" ||
+    relationship?.includes("ভালোবাসা") ||
+    relationship?.includes("প্রস্তাব") ||
+    relationship?.includes("ক্রাশ") ||
+    relationship?.includes("মনের মানুষ") ||
+    relationship?.includes("না বলা কথা");
 
   const storyTag = isWedding
     ? "শুভ বিবাহ নিমন্ত্রণ"
     : isAnniv
     ? "শুভ বিবাহবার্ষিকী"
     : isLove
-    ? "এক টুকরো গোপন অনুভূতি"
+    ? relationship?.includes("প্রস্তাব")
+      ? "ভালোবাসার প্রস্তাব"
+      : "এক টুকরো গোপন অনুভূতি"
     : "জন্মদিনের বিশেষ উপহার";
 
   const storyTitle = isWedding
@@ -306,7 +314,9 @@ export async function generateStoryCanvas(input: StoryCardInput): Promise<HTMLCa
     : isAnniv
     ? "চিরন্তন বন্ধনের শুভেচ্ছা"
     : isLove
-    ? "হৃদয়ের না বলা অনুভূতি"
+    ? relationship?.includes("প্রস্তাব")
+      ? "হৃদয়ের না-বলা প্রস্তাব"
+      : "হৃদয়ের না বলা অনুভূতি"
     : "শুভ জন্মদিন!";
 
   // Bismillah header for wedding cards
@@ -584,12 +594,36 @@ export async function shareStoryCardFile(input: StoryCardInput): Promise<boolean
 
   const file = new File([blob], `story-wish-${input.recipient}.png`, { type: "image/png" });
 
+  const isWedding = input.theme.id === "wedding_royal" || input.relationship?.includes("বিবাহ");
+  const isAnniv = input.theme.id === "anniversary_gold" || input.relationship?.includes("বার্ষিকী");
+  const isLove =
+    input.theme.id === "rose" ||
+    input.relationship?.includes("ভালোবাসা") ||
+    input.relationship?.includes("প্রস্তাব") ||
+    input.relationship?.includes("ক্রাশ");
+
+  const shareTitle = isWedding
+    ? `শুভ বিবাহ নিমন্ত্রণপত্র - ${input.recipient}`
+    : isAnniv
+    ? `বিবাহবার্ষিকীর চিঠি - ${input.recipient}`
+    : isLove
+    ? `ভালোবাসার চিঠি - ${input.recipient}`
+    : `জন্মদিনের স্টোরি কার্ড - ${input.recipient}`;
+
+  const shareText = isWedding
+    ? `সম্মানিত ${input.recipient}-এর জন্য শুভ পরিণয়ের নিমন্ত্রণপত্র!`
+    : isAnniv
+    ? `প্রিয় ${input.recipient}-এর জন্য বিবাহবার্ষিকীর বিশেষ চিঠি!`
+    : isLove
+    ? `প্রিয় ${input.recipient}-এর জন্য হৃদয়ের গোপন অনুভূতির চিঠি!`
+    : `প্রিয় ${input.recipient}-এর জন্য জন্মদিনের বিশেষ অনুভূতির চিঠি!`;
+
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
       await navigator.share({
         files: [file],
-        title: `জন্মদিনের স্টোরি কার্ড - ${input.recipient}`,
-        text: `প্রিয় ${input.recipient}-এর জন্য জন্মদিনের বিশেষ অনুভূতির চিঠি!`,
+        title: shareTitle,
+        text: shareText,
       });
       return true;
     } catch {
