@@ -390,18 +390,18 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
       <canvas ref={confettiRef} className="fixed inset-0 pointer-events-none z-50 w-full h-full" />
 
       {/* Floating Ambient Stardust and Light Orbs */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
-        <div className="absolute top-10 left-10 w-72 h-72 rounded-full bg-rose-500/20 blur-3xl animate-pulse" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-amber-500/20 blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 rounded-full bg-purple-500/15 blur-3xl" />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-50">
+        <div className="absolute top-10 left-10 w-80 h-80 rounded-full bg-rose-500/25 blur-3xl animate-pulse" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-amber-500/25 blur-3xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full bg-amber-400/15 blur-3xl" />
       </div>
 
       <header className="relative z-20 max-w-4xl mx-auto w-full px-4 pt-6 flex items-center justify-between">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 bg-black/40 hover:bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 text-xs text-stone-200 transition"
+          className="inline-flex items-center gap-2 bg-black/40 hover:bg-black/60 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-xs text-stone-200 transition"
         >
-          <span>← অনুভূতি হোম</span>
+          <span className="text-amber-300/90 font-medium">← অনুভূতি হোম</span>
         </Link>
 
         <button
