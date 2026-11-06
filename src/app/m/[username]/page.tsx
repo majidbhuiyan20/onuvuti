@@ -43,6 +43,22 @@ const WAX_SEALS = [
   { id: "birthday", label: "বার্থডে উইশ", icon: Cake },
 ];
 
+const WRITING_IDEAS = [
+  "তোমাকে প্রথম যেদিন দেখেছিলাম...",
+  "যদি একদিন তোমাকে সাহস করে বলতে পারতাম...",
+  "তোমার সেই মিষ্টি হাসিটা...",
+  "জানি কখনো এক হওয়া হবে না, তবুও...",
+  "আজকের দিনে তোমাকে শুধু এটুকু জানাতে চাই...",
+  "আমার জীবনের সবচেয়ে সুন্দর স্মৃতি তুমি...",
+];
+
+const CLUE_PRESETS = [
+  "আমরা একই প্রতিষ্ঠানে পড়েছি",
+  "তুমি আমাকে সোশ্যাল মিডিয়ায় চেনো",
+  "আমাদের মধ্যে দেখা হয়েছে",
+  "আমার নামের প্রথম অক্ষর: ",
+];
+
 const ENVELOPE_PALETTES: Array<{
   id: EnvelopeThemeKey;
   label: string;
@@ -65,6 +81,8 @@ function PublicSecretMessageContent() {
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const [content, setContent] = useState("");
+  const [clueText, setClueText] = useState("");
+  const [showClueInput, setShowClueInput] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("crush");
   const [selectedTheme, setSelectedTheme] = useState<EnvelopeThemeKey>("crimson");
 
@@ -115,8 +133,13 @@ function PublicSecretMessageContent() {
     setIsDispatching(true);
 
     try {
+      const finalClue = clueText.trim();
+      const payloadContent = finalClue
+        ? `${content.trim()}\n\n[সংকেত: ${finalClue}]`
+        : content.trim();
+
       await sendSecretMessage(username, {
-        content: content.trim(),
+        content: payloadContent,
         moodEmoji: selectedCategory,
         cardTheme: selectedTheme,
       });
@@ -293,6 +316,32 @@ function PublicSecretMessageContent() {
                 </div>
               )}
 
+              {/* Writing Ideas / Prompts Carousel Pills */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-stone-600 dark:text-stone-300">
+                  <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
+                  <span>লেখার আইডিয়া / শুরু করতে ট্যাপ করুন:</span>
+                </div>
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                  {WRITING_IDEAS.map((idea) => (
+                    <button
+                      key={idea}
+                      type="button"
+                      onClick={() => {
+                        if (!content) {
+                          setContent(idea + " ");
+                        } else {
+                          setContent((prev) => prev.trim() + " " + idea + " ");
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-full bg-white dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 text-[11px] font-bold text-stone-700 dark:text-stone-200 hover:border-[#7E151E] hover:text-[#7E151E] dark:hover:text-rose-300 transition shrink-0 cursor-pointer shadow-2xs"
+                    >
+                      {idea}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Stationery Lined Letterpad */}
               <div className="rounded-3xl bg-[#FAF5E8] dark:bg-[#1A1613] border-2 border-[#D4AF37]/50 shadow-md p-5 sm:p-6 space-y-3 relative overflow-hidden">
                 {/* Vintage Letterhead Top Bar */}
@@ -328,6 +377,60 @@ function PublicSecretMessageContent() {
                   <span>অনুভূতির গোপন চিঠি</span>
                   <span>— এক অদৃশ্য শুভাকাঙ্ক্ষী</span>
                 </div>
+              </div>
+
+              {/* Sender Clue / Detective Hint (Optional) */}
+              <div className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-4 sm:p-5 shadow-xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>প্রেরকের ক্লু বা সংকেত (ঐচ্ছিক):</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowClueInput((prev) => !prev)}
+                    className="text-[11px] font-bold text-[#7E151E] dark:text-rose-400 hover:underline cursor-pointer"
+                  >
+                    {showClueInput ? "ক্লু বন্ধ করুন" : "+ ক্লু যোগ করুন"}
+                  </button>
+                </div>
+
+                {showClueInput && (
+                  <div className="space-y-2.5 pt-1 animate-in fade-in duration-200">
+                    <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                      প্রাপক যেন আপনাকে অনুমান করার চেষ্টা করতে পারে, এমন একটি ছোট ক্লু বেছে নিন বা লিখুন:
+                    </p>
+
+                    <div className="flex flex-wrap gap-1.5">
+                      {CLUE_PRESETS.map((p) => {
+                        const isSelected = clueText === p;
+                        return (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setClueText(isSelected ? "" : p)}
+                            className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                              isSelected
+                                ? "bg-amber-100 dark:bg-amber-950/70 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700 shadow-2xs"
+                                : "bg-stone-50 dark:bg-stone-800/60 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:bg-stone-100"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <input
+                      type="text"
+                      maxLength={100}
+                      value={clueText}
+                      onChange={(e) => setClueText(e.target.value)}
+                      placeholder="অথবা নিজের মতো কোনো ক্লু লিখুন..."
+                      className="w-full rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-900 px-3.5 py-2 text-xs font-medium text-stone-800 dark:text-stone-100 outline-none focus:border-[#7E151E]"
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Customizer 1: খামের রঙ নির্বাচন (Envelope Color Palette) */}

@@ -18,6 +18,7 @@ import {
   Volume2,
   VolumeX,
   FastForward,
+  Star,
 } from "lucide-react";
 import { SecretMessage, SecretInboxPublic } from "@/features/secret/types";
 import EnvelopeCard, { WAX_SEAL_ICONS } from "./EnvelopeCard";
@@ -37,6 +38,8 @@ interface LetterRevealModalProps {
   onOpenReply: (msg: SecretMessage) => void;
   onDeleteMessage?: (msgId: string) => void;
   isInitialUnopened?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: (msgId: string) => void;
 }
 
 type RevealStage = "sealed" | "opening" | "unfolding" | "revealed";
@@ -49,6 +52,8 @@ export default function LetterRevealModal({
   onOpenReply,
   onDeleteMessage,
   isInitialUnopened = false,
+  isFavorite = false,
+  onToggleFavorite,
 }: LetterRevealModalProps) {
   const [stage, setStage] = useState<RevealStage>(
     isInitialUnopened ? "sealed" : "revealed"
@@ -67,6 +72,16 @@ export default function LetterRevealModal({
 
   const postcardCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
+  // Parse custom sender clue if present
+  const parsed = React.useMemo(() => {
+    if (!message?.content) return { cleanText: "", clue: undefined };
+    const match = message.content.match(/^([\s\S]*?)(?:\n\n\[সংকেত:\s*(.+?)\])?$/);
+    if (match && match[2]) {
+      return { cleanText: match[1].trim(), clue: match[2].trim() };
+    }
+    return { cleanText: message.content, clue: undefined };
+  }, [message?.content]);
+
   // Sync state when new message is loaded
   useEffect(() => {
     if (isOpen && message) {
@@ -76,23 +91,23 @@ export default function LetterRevealModal({
         setIsTyping(false);
       } else {
         setStage("revealed");
-        setTypedLength(message.content.length);
+        setTypedLength(parsed.cleanText.length);
         setIsTyping(false);
       }
     }
-  }, [isOpen, isInitialUnopened, message?.id]);
+  }, [isOpen, isInitialUnopened, message?.id, parsed.cleanText.length]);
 
   // Typewriter Engine
   useEffect(() => {
-    if (stage !== "revealed" || !message) return;
+    if (stage !== "revealed" || !parsed.cleanText) return;
 
-    if (typedLength >= message.content.length) {
+    if (typedLength >= parsed.cleanText.length) {
       setIsTyping(false);
       return;
     }
 
     setIsTyping(true);
-    const char = message.content[typedLength] || "";
+    const char = parsed.cleanText[typedLength] || "";
     // Variable natural typing speed
     const delay = char === " " ? 20 : char === "\n" ? 70 : 26;
 
@@ -102,7 +117,7 @@ export default function LetterRevealModal({
         if (soundEnabled && next % 3 === 0) {
           letterSound.playPenScratch();
         }
-        if (next >= message.content.length) {
+        if (next >= parsed.cleanText.length) {
           setIsTyping(false);
           if (soundEnabled) {
             letterSound.playLetterCompleteChime();
@@ -113,7 +128,7 @@ export default function LetterRevealModal({
     }, delay);
 
     return () => clearTimeout(timer);
-  }, [stage, typedLength, message?.content, soundEnabled]);
+  }, [stage, typedLength, parsed.cleanText, soundEnabled]);
 
   if (!isOpen || !message || !inbox) return null;
 
@@ -145,7 +160,7 @@ export default function LetterRevealModal({
   };
 
   const handleSkipTyping = () => {
-    setTypedLength(message.content.length);
+    setTypedLength(parsed.cleanText.length);
     setIsTyping(false);
   };
 
@@ -163,7 +178,7 @@ export default function LetterRevealModal({
         canvas: postcardCanvasRef.current,
         recipientDisplayName: inbox.displayName,
         recipientUsername: inbox.username,
-        messageContent: message.content,
+        messageContent: parsed.cleanText,
         sealLabel: seal.label,
         createdAt: message.createdAt,
       });
@@ -362,6 +377,25 @@ export default function LetterRevealModal({
                     <VolumeX className="w-3.5 h-3.5 text-stone-400" />
                   )}
                 </button>
+
+                {onToggleFavorite && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleFavorite(message.id)}
+                    className={`p-1.5 rounded-lg border transition cursor-pointer ${
+                      isFavorite
+                        ? "bg-amber-100 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-300"
+                        : "bg-white/70 dark:bg-stone-800 border-stone-300 dark:border-stone-700 text-stone-400 hover:text-amber-500"
+                    }`}
+                    title={isFavorite ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় যুক্ত করুন"}
+                  >
+                    <Star
+                      className={`w-3.5 h-3.5 ${
+                        isFavorite ? "fill-amber-500 text-amber-500" : ""
+                      }`}
+                    />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -392,7 +426,7 @@ export default function LetterRevealModal({
                 <div className="text-stone-800 dark:text-stone-100 whitespace-pre-wrap select-text">
                   &ldquo;
                   {renderFormattedInline(
-                    message.content.slice(0, typedLength)
+                    parsed.cleanText.slice(0, typedLength)
                   )}
                   &rdquo;
                   {/* Blinking calligraphy quill / pen cursor */}
@@ -424,7 +458,7 @@ export default function LetterRevealModal({
             </div>
 
             {/* Sender Hints & Curiosity Meter */}
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/25 space-y-1.5 relative z-10">
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-500/5 border border-amber-500/25 space-y-2 relative z-10">
               <div className="flex items-center justify-between text-[11px] font-bold text-amber-900 dark:text-amber-200">
                 <span className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
@@ -434,6 +468,22 @@ export default function LetterRevealModal({
                   ১০০% গোপন ও ব্যক্তিগত
                 </span>
               </div>
+
+              {/* Detective Clue Drop from Sender */}
+              {parsed.clue && (
+                <div className="p-2.5 rounded-xl bg-amber-100/90 dark:bg-amber-950/70 border border-amber-300/80 dark:border-amber-800 text-xs text-amber-950 dark:text-amber-200 flex items-start gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-700 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider block text-amber-800 dark:text-amber-400 font-mono">
+                      প্রেরকের বিশেষ ক্লু / সংকেত:
+                    </span>
+                    <span className="font-serif italic font-bold text-xs sm:text-sm">
+                      &ldquo;{parsed.clue}&rdquo;
+                    </span>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-2 text-[11px] text-stone-600 dark:text-stone-300 font-medium">
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3 h-3 text-stone-400" />
