@@ -237,7 +237,12 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
           </div>
         )}
 
-        <LetterCard wish={wish} content={content} theme={theme} />
+        <LetterCard
+          wish={wish}
+          content={content}
+          theme={theme}
+          isMusicPlaying={soundEnabled && wish.music !== "none"}
+        />
 
         {/* Occasion Interactive Ceremony Card */}
         {isWedding ? (

@@ -801,39 +801,65 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
                     color: selectedTheme.textColor,
                     borderColor: `${selectedTheme.accentColor}40`,
                     fontFamily: previewFont,
+                    backgroundImage:
+                      fontStyle === "handwritten"
+                        ? `repeating-linear-gradient(to bottom, transparent, transparent 23px, ${selectedTheme.accentColor}15 23px, ${selectedTheme.accentColor}15 24px)`
+                        : undefined,
                   }}
                 >
+                  {/* Inner dashed inlay */}
+                  <div
+                    className="absolute inset-2 rounded-xl pointer-events-none border border-dashed opacity-25"
+                    style={{ borderColor: selectedTheme.accentColor }}
+                  />
+
                   <div>
-                    <div className="flex items-center justify-between border-b border-stone-200/60 pb-1.5 mb-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-70" style={{ color: selectedTheme.accentColor }}>
+                    <div className="flex items-center justify-between border-b border-stone-200/60 pb-1.5 mb-2 relative z-10">
+                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-75" style={{ color: selectedTheme.accentColor }}>
                         {currentOccasion.headerTitle}
                       </span>
                       {selectedOccasion === "wedding" ? (
                         <Crown className="w-3.5 h-3.5 opacity-80" style={{ color: selectedTheme.accentColor }} />
+                      ) : selectedOccasion === "anniversary" ? (
+                        <HeartHandshake className="w-3.5 h-3.5 opacity-80" style={{ color: selectedTheme.accentColor }} />
                       ) : (
                         <Heart className="w-3 h-3 fill-current opacity-60" style={{ color: selectedTheme.accentColor }} />
                       )}
                     </div>
                     {selectedOccasion === "wedding" && (
-                      <p className="font-serif text-[11px] text-center tracking-widest opacity-85 mb-1.5 select-none" style={{ color: selectedTheme.accentColor }}>
+                      <p className="font-serif text-[10px] text-center tracking-widest opacity-85 mb-1 select-none" style={{ color: selectedTheme.accentColor }}>
                         بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
                       </p>
                     )}
-                    <p className="text-xs font-bold mb-1">
+                    <p className="text-xs font-bold mb-1 relative z-10">
                       {selectedOccasion === "wedding"
                         ? `সম্মানিত ${recipientName.trim() || "অতিথি"},`
                         : `প্রিয় ${recipientName.trim() || "অনন্যা"},`}
                     </p>
-                    <p className="text-[11px] leading-relaxed line-clamp-3 opacity-85">
+                    <p className="text-[11px] leading-relaxed line-clamp-3 opacity-90 relative z-10">
+                      <span className="text-xs font-serif opacity-30 mr-1 font-bold">“</span>
                       {message.trim() || "আপনার ভালোবাসার চিঠি ও শুভেচ্ছার কথা..."}
+                      <span className="text-xs font-serif opacity-30 ml-1 font-bold">”</span>
                     </p>
                   </div>
 
-                  <div className="border-t border-stone-200/60 pt-1 text-right mt-2">
-                    <span className="text-[9px] opacity-60 block">ভালোবাসা ও শুভকামনায়,</span>
-                    <span className="text-[11px] font-bold" style={{ color: selectedTheme.accentColor }}>
-                      — {senderName.trim() || "আপনার নাম"}
-                    </span>
+                  <div className="border-t border-stone-200/60 pt-1 flex items-center justify-between mt-2 relative z-10">
+                    <div
+                      className="w-7 h-7 rounded-full border border-dashed flex items-center justify-center text-[6px] font-bold uppercase rotate-[-6deg]"
+                      style={{
+                        borderColor: `${selectedTheme.accentColor}50`,
+                        color: selectedTheme.accentColor,
+                        backgroundColor: `${selectedTheme.accentColor}12`,
+                      }}
+                    >
+                      SEALED
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[9px] opacity-60 block">ভালোবাসা ও শুভকামনায়,</span>
+                      <span className="text-[11px] font-bold" style={{ color: selectedTheme.accentColor }}>
+                        — {senderName.trim() || "আপনার নাম"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
