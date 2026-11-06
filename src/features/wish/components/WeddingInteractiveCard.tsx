@@ -33,6 +33,7 @@ export default function WeddingInteractiveCard({
   onBless,
 }: WeddingInteractiveCardProps) {
   // RSVP State
+  const [responderName, setResponderName] = useState<string>("");
   const [attendance, setAttendance] = useState<string>("সপরিবারে উপস্থিত থাকব");
   const [guestCount, setGuestCount] = useState<string>("২ জন");
   const [blessingText, setBlessingText] = useState("");
@@ -83,7 +84,9 @@ export default function WeddingInteractiveCard({
     setSubmittingRsvp(true);
     setRsvpError("");
 
-    const rsvpSummary = `[RSVP নিমন্ত্রণপত্র]: ${attendance} | মেহমান: ${guestCount}${
+    const finalName = responderName.trim() || recipientName;
+    const finalCount = attendance.includes("থাকতে পারছি না") ? "০ জন" : guestCount;
+    const rsvpSummary = `[RSVP]: ${finalName} | ${attendance} | মেহমান: ${finalCount}${
       blessingText.trim() ? `\nদোয়া ও বার্তা: “${blessingText.trim()}”` : ""
     }`;
 
@@ -240,6 +243,21 @@ export default function WeddingInteractiveCard({
               অনুষ্ঠানে আপনার অংশগ্রহণ নিশ্চিত করে নিমন্ত্রণকারী পরিবারকে আয়োজনে সহায়তা করুন:
             </p>
 
+            {/* Guest / Family Name */}
+            <div>
+              <label className="text-[11px] font-bold text-stone-300 mb-1 flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5 text-stone-400" />
+                <span>আপনার নাম বা পরিবারের নাম</span>
+              </label>
+              <input
+                type="text"
+                value={responderName}
+                onChange={(e) => setResponderName(e.target.value)}
+                placeholder={`যেমন: ${recipientName.replace(/^(জনাব\s*|বেগম\s*|প্রিয়\s*)/i, "").trim() || "চৌধুরী"} পরিবার`}
+                className="w-full px-3.5 py-2 rounded-xl bg-black/30 border border-white/15 text-xs sm:text-sm text-white placeholder:text-stone-400 outline-none focus:ring-2 focus:ring-amber-400"
+              />
+            </div>
+
             {/* Attendance Choice */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
@@ -262,29 +280,31 @@ export default function WeddingInteractiveCard({
               ))}
             </div>
 
-            {/* Guest Count Selection */}
-            <div>
-              <label className="text-[11px] font-bold text-stone-300 mb-1.5 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5 text-stone-400" />
-                <span>কতজন অতিথি উপস্থিত থাকবেন?</span>
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {["১ জন", "২ জন", "৩ জন", "৪ জন", "সপরিবারে"].map((cnt) => (
-                  <button
-                    key={cnt}
-                    type="button"
-                    onClick={() => setGuestCount(cnt)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
-                      guestCount === cnt
-                        ? "bg-[#7E151E] text-white border border-rose-400 shadow-xs"
-                        : "bg-black/20 border border-white/10 text-stone-300 hover:bg-black/40"
-                    }`}
-                  >
-                    {cnt}
-                  </button>
-                ))}
+            {/* Guest Count Selection (only if attending) */}
+            {!attendance.includes("থাকতে পারছি না") && (
+              <div className="animate-fade-in">
+                <label className="text-[11px] font-bold text-stone-300 mb-1.5 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-stone-400" />
+                  <span>কতজন অতিথি উপস্থিত থাকবেন?</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {["১ জন", "২ জন", "৩ জন", "৪ জন", "সপরিবারে"].map((cnt) => (
+                    <button
+                      key={cnt}
+                      type="button"
+                      onClick={() => setGuestCount(cnt)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
+                        guestCount === cnt
+                          ? "bg-[#7E151E] text-white border border-rose-400 shadow-xs"
+                          : "bg-black/20 border border-white/10 text-stone-300 hover:bg-black/40"
+                      }`}
+                    >
+                      {cnt}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Optional Personal Note */}
             <div>
@@ -323,3 +343,4 @@ export default function WeddingInteractiveCard({
     </div>
   );
 }
+

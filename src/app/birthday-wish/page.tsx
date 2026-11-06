@@ -355,7 +355,7 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
                     href={`/wish/${w.id}/replies?key=${encodeURIComponent(w.manageKey)}`}
                     className="shrink-0 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 hover:opacity-95 text-white font-bold text-[11px] flex items-center gap-1 transition"
                   >
-                    <span>রিঅ্যাকশন দেখুন</span>
+                    <span>মেহমান ও উত্তর দেখুন</span>
                   </Link>
                 </div>
               ))}

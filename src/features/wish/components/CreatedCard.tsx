@@ -99,15 +99,15 @@ export default function CreatedCard({
         <ShareBar url={shareUrl} text={inviteText(recipientName)} />
 
         <div className="pt-1 space-y-3">
-          <CopyField label="শুধু আপনার জন্য: রিঅ্যাকশন দেখার গোপন লিঙ্ক (সংরক্ষণ করে রাখুন)" value={reactionsUrl} />
+          <CopyField label="শুধু আপনার জন্য: মেহমানদের উপস্থিতি (RSVP) ও উত্তর দেখার গোপন লিঙ্ক (সংরক্ষণ করে রাখুন)" value={reactionsUrl} />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Link
               href={`/wish/${wish.id}/replies?key=${encodeURIComponent(wish.manageKey)}`}
               target="_blank"
               className="py-3 px-4 rounded-xl bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-800 dark:text-stone-100 font-bold text-xs flex items-center justify-center gap-2 hover:border-[#7E151E] transition"
             >
-              <BarChart3 className="w-4 h-4" />
-              <span>রিঅ্যাকশন দেখুন</span>
+              <BarChart3 className="w-4 h-4 text-[#7E151E] dark:text-rose-400" />
+              <span>মেহমান ও RSVP দেখুন</span>
             </Link>
             {!selfDestruct && !hasPasscode && !scheduledLabel && (
               <Link
