@@ -12,11 +12,16 @@ import {
   Music,
   Feather,
   HeartHandshake,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import type { WishTheme } from "@/data/birthdayTemplates";
 import { renderFormattedInline } from "@/lib/formatText";
 import { HANDWRITING_FONT } from "../share";
 import { detectOccasion } from "../occasionHelper";
+import { parsePhotoList } from "./PhotoPicker";
+import { parseGiftVoucher } from "../giftVoucher";
+import DigitalGiftBox from "./DigitalGiftBox";
 import type { WishContent, WishPublic } from "../types";
 
 interface LetterCardProps {
@@ -127,7 +132,14 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
   const handwritten = wish.fontStyle === "handwritten";
   const [showPhotoZoom, setShowPhotoZoom] = useState(false);
 
-  const occasion = detectOccasion(wish, content.message);
+  const { cleanMessage, voucher } = React.useMemo(
+    () => parseGiftVoucher(content.message),
+    [content.message]
+  );
+  const photos = React.useMemo(() => parsePhotoList(content.photoUrl), [content.photoUrl]);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  const occasion = detectOccasion(wish, cleanMessage);
   const { isWedding, isAnniversary, isLove, isProposal } = occasion;
 
   const cardTitle = occasion.headerTitle;
@@ -152,7 +164,7 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
     setDisplayedLength(0);
     setIsTyping(true);
     let idx = 0;
-    const msgLength = content.message.length;
+    const msgLength = cleanMessage.length;
     const timer = setInterval(() => {
       idx += 1;
       setDisplayedLength(idx);
@@ -162,10 +174,10 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
       }
     }, 28);
     return () => clearInterval(timer);
-  }, [content.message]);
+  }, [cleanMessage]);
 
   const handleSkipTyping = () => {
-    setDisplayedLength(content.message.length);
+    setDisplayedLength(cleanMessage.length);
     setIsTyping(false);
   };
 
@@ -294,8 +306,8 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
           </p>
         </div>
 
-        {/* Tactile Vintage Polaroid Frame */}
-        {content.photoUrl && (
+        {/* Tactile Vintage Polaroid Frame / Memory Album */}
+        {photos.length > 0 && (
           <div className="my-7 mx-auto max-w-sm flex flex-col items-center relative z-10">
             {/* Metallic Gold Paper Clip */}
             <div className="absolute -top-3.5 left-7 z-20 w-6 h-10 pointer-events-none drop-shadow-md">
@@ -312,24 +324,83 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
             {/* Washi Tape Accent */}
             <div className="w-28 h-6 -mb-3 z-10 relative bg-amber-200/80 dark:bg-amber-900/50 backdrop-blur-xs border border-amber-300/50 shadow-xs rotate-[-2deg] rounded-xs" />
 
-            <figure
-              onClick={() => setShowPhotoZoom(true)}
-              className="w-full rotate-[-1deg] hover:rotate-0 transition-transform duration-300 bg-white dark:bg-stone-900 p-3 pb-7 rounded-xl shadow-2xl border border-stone-200/90 dark:border-stone-800 cursor-pointer group relative"
-            >
+            <figure className="w-full rotate-[-1deg] hover:rotate-0 transition-transform duration-300 bg-white dark:bg-stone-900 p-3 pb-6 rounded-xl shadow-2xl border border-stone-200/90 dark:border-stone-800 group relative">
               <div className="relative overflow-hidden rounded-md bg-stone-100 dark:bg-stone-800">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={content.photoUrl}
-                  alt="স্মৃতির ছবি"
-                  className="w-full h-auto object-cover max-h-80 group-hover:scale-102 transition duration-500"
+                  src={photos[photoIndex]}
+                  alt={`স্মৃতির ছবি ${photoIndex + 1}`}
+                  onClick={() => setShowPhotoZoom(true)}
+                  className="w-full h-auto object-cover max-h-80 group-hover:scale-102 transition duration-500 cursor-pointer"
                 />
-                <div className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition shadow">
+
+                {/* Zoom button */}
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoZoom(true)}
+                  className="absolute bottom-2 right-2 p-1.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition shadow cursor-pointer"
+                  title="বড় করে দেখুন"
+                >
                   <Maximize2 className="w-3.5 h-3.5" />
-                </div>
+                </button>
+
+                {/* Carousel controls if multiple photos */}
+                {photos.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPhotoIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1));
+                      }}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition cursor-pointer shadow-md"
+                      title="পূর্ববর্তী ছবি"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPhotoIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0));
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition cursor-pointer shadow-md"
+                      title="পরবর্তী ছবি"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </>
+                )}
               </div>
-              <figcaption className="text-center text-[11px] text-stone-500 dark:text-stone-400 mt-3 font-serif italic flex items-center justify-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-amber-500" />
-                <span>স্মৃতির একটি প্রিয় মুহূর্ত • বড় করে দেখতে ক্লিক করুন</span>
+
+              {/* Caption & Dots */}
+              <figcaption className="text-center text-[11px] text-stone-500 dark:text-stone-400 mt-3 font-serif italic space-y-1.5">
+                <div className="flex items-center justify-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  <span>
+                    {photos.length > 1
+                      ? `স্মৃতির অ্যালবাম (${photoIndex + 1} / ${photos.length}) • স্লাইড করুন`
+                      : "স্মৃতির একটি প্রিয় মুহূর্ত • বড় করে দেখতে ক্লিক করুন"}
+                  </span>
+                </div>
+
+                {/* Dot Indicators */}
+                {photos.length > 1 && (
+                  <div className="flex items-center justify-center gap-1.5 pt-1">
+                    {photos.map((_, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setPhotoIndex(i)}
+                        className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
+                          i === photoIndex
+                            ? "w-4 bg-amber-500 shadow-xs"
+                            : "bg-stone-300 dark:bg-stone-600 hover:bg-stone-400"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
               </figcaption>
             </figure>
           </div>
@@ -366,7 +437,7 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-stone-400 font-mono">
-                {content.message.length} টি বর্ণ
+                {cleanMessage.length} টি বর্ণ
               </span>
             </div>
           </div>
@@ -401,7 +472,7 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
               </span>
 
               <div className="text-base sm:text-lg leading-relaxed sm:leading-loose font-medium opacity-95">
-                {renderFormattedInline(content.message.slice(0, displayedLength))}
+                {renderFormattedInline(cleanMessage.slice(0, displayedLength))}
 
                 {!isTyping && (
                   <span
@@ -435,7 +506,7 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
                     className="h-full rounded-full transition-all duration-150"
                     style={{
                       backgroundColor: theme.accentColor,
-                      width: `${Math.min(100, (displayedLength / content.message.length) * 100)}%`,
+                      width: `${Math.min(100, (displayedLength / cleanMessage.length) * 100)}%`,
                     }}
                   />
                 </div>
@@ -452,6 +523,15 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
             )}
           </div>
         </div>
+
+        {/* Digital Salami / E-Gift Voucher Box */}
+        {voucher && (
+          <DigitalGiftBox
+            voucher={voucher}
+            senderName={wish.senderName}
+            accentColor={theme.accentColor}
+          />
+        )}
 
         {/* Audio Message */}
         {content.voiceUrl && (
@@ -520,25 +600,57 @@ export default function LetterCard({ wish, content, theme, isMusicPlaying = fals
       </article>
 
       {/* Lightbox Photo Zoom Modal */}
-      {showPhotoZoom && content.photoUrl && (
+      {showPhotoZoom && photos.length > 0 && (
         <div
           onClick={() => setShowPhotoZoom(false)}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fade-in cursor-zoom-out"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fade-in cursor-zoom-out"
         >
-          <div className="relative max-w-2xl max-h-[90vh]">
+          <div
+            className="relative max-w-3xl max-h-[90vh] flex flex-col items-center"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={() => setShowPhotoZoom(false)}
-              className="absolute -top-10 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition cursor-pointer"
+              className="absolute -top-11 right-0 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition cursor-pointer"
+              title="বন্ধ করুন"
             >
               <X className="w-5 h-5" />
             </button>
+
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={content.photoUrl}
-              alt="স্মৃতির ছবি পূর্ণরূপ"
-              className="w-auto h-auto max-h-[85vh] max-w-full rounded-2xl shadow-2xl border border-white/20"
+              src={photos[photoIndex]}
+              alt={`স্মৃতির ছবি ${photoIndex + 1}`}
+              className="w-auto h-auto max-h-[80vh] max-w-full rounded-2xl shadow-2xl border border-white/20 object-contain"
             />
+
+            {/* Navigation controls if multiple photos */}
+            {photos.length > 1 && (
+              <div className="flex items-center justify-between w-full mt-3 px-2">
+                <button
+                  type="button"
+                  onClick={() => setPhotoIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1))}
+                  className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>আগের ছবি</span>
+                </button>
+
+                <span className="text-xs text-white/80 font-bold font-mono">
+                  {photoIndex + 1} / {photos.length}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setPhotoIndex((prev) => (prev < photos.length - 1 ? prev + 1 : 0))}
+                  className="px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+                >
+                  <span>পরের ছবি</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

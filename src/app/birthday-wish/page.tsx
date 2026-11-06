@@ -33,6 +33,7 @@ import { wishApi } from "@/features/wish/api";
 import { localInputToIso } from "@/features/wish/media";
 import { HANDWRITING_FONT } from "@/features/wish/share";
 import type { CreatedWish, WishFont, WishMusic } from "@/features/wish/types";
+import { formatGiftVoucherTag } from "@/features/wish/giftVoucher";
 import CreatedCard from "@/features/wish/components/CreatedCard";
 import MusicPicker from "@/features/wish/components/MusicPicker";
 import PhotoPicker from "@/features/wish/components/PhotoPicker";
@@ -81,6 +82,13 @@ export default function BirthdayWishCreatorPage() {
   const [photoUrl, setPhotoUrl] = useState("");
   const [voiceUrl, setVoiceUrl] = useState("");
   const [special, setSpecial] = useState<SpecialOptionsValue>(EMPTY_SPECIAL);
+
+  // Digital Salami & Gift Voucher State
+  const [includeGift, setIncludeGift] = useState(false);
+  const [giftTitle, setGiftTitle] = useState("");
+  const [giftAmount, setGiftAmount] = useState("");
+  const [giftNote, setGiftNote] = useState("");
+  const [giftToken, setGiftToken] = useState("");
 
   // Quick Wedding Details Helper State
   const [showWeddingHelper, setShowWeddingHelper] = useState(false);
@@ -202,12 +210,28 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
       return setErrorMsg("চিঠি খোলার সময় ভবিষ্যতের হতে হবে");
     }
 
+    let finalMessage = message.trim();
+    if (includeGift && (giftTitle.trim() || giftAmount.trim())) {
+      finalMessage += formatGiftVoucherTag({
+        title:
+          giftTitle.trim() ||
+          (selectedOccasion === "wedding"
+            ? "বিয়ের প্রীতি উপহার"
+            : selectedOccasion === "love"
+            ? "ভালোবাসার উপহার"
+            : "মিষ্টি সালামি"),
+        amount: giftAmount.trim(),
+        note: giftNote.trim(),
+        token: giftToken.trim() || undefined,
+      });
+    }
+
     setLoading(true);
     const result = await wishApi.create({
       recipientName: recipientName.trim(),
       senderName: senderName.trim(),
       relationship: relationship.trim(),
-      message: message.trim(),
+      message: finalMessage,
       theme: selectedThemeId,
       fontStyle,
       music,
@@ -694,6 +718,106 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
               <MusicPicker value={music} onChange={setMusic} />
             </div>
 
+            {/* Digital Salami / E-Gift Voucher */}
+            <div className="rounded-2xl border border-amber-300/50 dark:border-amber-700/50 p-4 bg-amber-50/40 dark:bg-amber-950/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5 cursor-pointer">
+                  <Gift className="w-4 h-4 text-amber-500" />
+                  <span>ডিজিটাল সালামি বা শুভেচ্ছা উপহার (ঐচ্ছিক)</span>
+                </label>
+                <input
+                  type="checkbox"
+                  checked={includeGift}
+                  onChange={(e) => setIncludeGift(e.target.checked)}
+                  className="w-4 h-4 accent-[#7E151E] cursor-pointer"
+                />
+              </div>
+
+              {includeGift && (
+                <div className="space-y-3 pt-2 border-t border-amber-200/60 dark:border-amber-800/40 animate-fade-in">
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                    চিঠির শেষে একটি থ্রি-ডি উপহার বক্স থাকবে, ট্যাপ করলে ফিতা খুলে আপনার উপহারের বিবরণ ফুটে উঠবে।
+                  </p>
+
+                  {/* Preset Quick Chips */}
+                  <div className="flex flex-wrap gap-1.5 text-xs">
+                    {[
+                      "মিষ্টি সালামি",
+                      "জন্মদিনের বিশেষ উপহার",
+                      "ভালোবাসার সারপ্রাইজ",
+                      "বিয়ের প্রীতি উপহার",
+                    ].map((title) => (
+                      <button
+                        key={title}
+                        type="button"
+                        onClick={() => setGiftTitle(title)}
+                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition cursor-pointer border ${
+                          giftTitle === title
+                            ? "bg-amber-500 text-white border-amber-600 shadow-xs"
+                            : "bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700"
+                        }`}
+                      >
+                        {title}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block mb-1">
+                        উপহারের নাম / টাইটেল
+                      </span>
+                      <input
+                        type="text"
+                        value={giftTitle}
+                        onChange={(e) => setGiftTitle(e.target.value)}
+                        placeholder="যেমন: ঈদের মিষ্টি সালামি"
+                        className={fieldCls}
+                      />
+                    </div>
+                    <div>
+                      <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block mb-1">
+                        উপহারের পরিমাণ বা আইটেম
+                      </span>
+                      <input
+                        type="text"
+                        value={giftAmount}
+                        onChange={(e) => setGiftAmount(e.target.value)}
+                        placeholder="যেমন: ৫০০ টাকা / এক কাপ কফি"
+                        className={fieldCls}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block mb-1">
+                      উপহারের সাথে মিষ্টি বার্তা বা দোয়া
+                    </span>
+                    <input
+                      type="text"
+                      value={giftNote}
+                      onChange={(e) => setGiftNote(e.target.value)}
+                      placeholder="যেমন: তোমার জন্য আমার ছোট্ট একটি উপহার ও অনেক দোয়া!"
+                      className={fieldCls}
+                    />
+                  </div>
+
+                  <div>
+                    <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block mb-1">
+                      বিকাশ / নগদ নম্বর বা কুপন কোড (ঐচ্ছিক - প্রাপক ১ ক্লিকে কপি করতে পারবেন)
+                    </span>
+                    <input
+                      type="text"
+                      value={giftToken}
+                      onChange={(e) => setGiftToken(e.target.value)}
+                      placeholder="যেমন: বিকাশ: 017XXXXXXXX"
+                      className={fieldCls}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Special options */}
             <div>
               <label className={`${labelCls} mb-2 flex items-center gap-1.5`}>
@@ -899,6 +1023,12 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
                   <span className="px-2 py-0.5 rounded-full bg-white/10 flex items-center gap-1">
                     <Flame className="w-3 h-3 text-rose-300" />
                     <span>একবার পাঠ্য</span>
+                  </span>
+                )}
+                {includeGift && (
+                  <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 flex items-center gap-1">
+                    <Gift className="w-3 h-3 text-amber-300" />
+                    <span>উপহার যুক্ত ({giftTitle || "সালামি"})</span>
                   </span>
                 )}
               </div>
