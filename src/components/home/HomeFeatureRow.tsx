@@ -10,6 +10,10 @@ import {
   BookOpen,
   HelpCircle,
   PenLine,
+  Mail,
+  Sparkles,
+  ArrowRight,
+  Check,
 } from "lucide-react";
 import { BlogPost } from "@/data/blogData";
 import { BackendPoll, BackendQuote } from "@/lib/goApi";
@@ -43,6 +47,7 @@ export default function HomeFeatureRow({
   const [selectedOptionId, setSelectedOptionId] = useState<string>("");
   const [hasVotedTodayPoll, setHasVotedTodayPoll] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
+  const [activeCard2Tab, setActiveCard2Tab] = useState<"chithi" | "poll">("chithi");
 
   // Synchronize active quote state from backend
   useEffect(() => {
@@ -135,10 +140,10 @@ export default function HomeFeatureRow({
           {activeQuote ? (
             <div className="p-4 sm:p-5 rounded-2xl bg-[#FFF6F3] dark:bg-[#1A1F2C] border border-[#FADCD5] dark:border-stone-800 relative">
               <span className="text-3xl sm:text-4xl font-serif text-[#7E151E]/40 dark:text-rose-400/30 leading-none select-none block">
-                ❝
+                &ldquo;
               </span>
               <p className="text-sm font-bold text-[#142230] dark:text-stone-200 leading-relaxed font-serif pt-1 line-clamp-3">
-                “{activeQuote.quote}”
+                &ldquo;{activeQuote.quote}&rdquo;
               </p>
               <span className="text-xs text-stone-500 dark:text-stone-400 font-medium block pt-3 truncate">
                 — {activeQuote.author}
@@ -179,8 +184,8 @@ export default function HomeFeatureRow({
               />
               <span>
                 {localReactCount} জন অনুভব করেছেন
-                {isQuoteReacted ? " ✓" : ""}
               </span>
+              {isQuoteReacted && <Check className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-300 ml-0.5" />}
             </button>
           ) : (
             <button
@@ -195,7 +200,7 @@ export default function HomeFeatureRow({
         </div>
       </div>
 
-      {/* Card 2: আজকের প্রশ্ন (100% Backend-Driven Reader Poll) */}
+      {/* Card 2: গোপন চিঠি অথবা আজকের প্রশ্ন */}
       <div
         id="home-poll-section"
         className="rounded-3xl bg-white dark:bg-[#111827] border border-stone-200/90 dark:border-stone-800 p-5 sm:p-6 flex flex-col justify-between shadow-xs hover:shadow-md transition min-h-[290px]"
@@ -203,22 +208,83 @@ export default function HomeFeatureRow({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-black text-[#142230] dark:text-white">
-              <BarChart2 className="w-4 h-4 text-[#7E151E] dark:text-rose-400" />
-              <span>আজকের প্রশ্ন</span>
+              {activeCard2Tab === "chithi" ? (
+                <>
+                  <Mail className="w-4 h-4 text-[#7E151E] dark:text-rose-400" />
+                  <span>গোপন চিঠির বাক্স</span>
+                </>
+              ) : (
+                <>
+                  <BarChart2 className="w-4 h-4 text-[#7E151E] dark:text-rose-400" />
+                  <span>আজকের প্রশ্ন</span>
+                </>
+              )}
             </div>
-            <span className="text-xs font-bold text-[#7E151E] dark:text-rose-400">
-              জরিপ →
-            </span>
+
+            {/* Tab Switcher if activePoll exists */}
+            {activePoll ? (
+              <div className="flex items-center gap-1 p-0.5 rounded-lg bg-stone-100 dark:bg-stone-800 text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setActiveCard2Tab("chithi")}
+                  className={`px-2 py-0.5 rounded-md transition cursor-pointer ${
+                    activeCard2Tab === "chithi"
+                      ? "bg-white dark:bg-stone-700 text-[#7E151E] dark:text-rose-300 shadow-2xs"
+                      : "text-stone-500 hover:text-stone-700"
+                  }`}
+                >
+                  চিঠি
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveCard2Tab("poll")}
+                  className={`px-2 py-0.5 rounded-md transition cursor-pointer ${
+                    activeCard2Tab === "poll"
+                      ? "bg-white dark:bg-stone-700 text-[#7E151E] dark:text-rose-300 shadow-2xs"
+                      : "text-stone-500 hover:text-stone-700"
+                  }`}
+                >
+                  জরিপ
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/m"
+                className="text-xs font-bold text-[#7E151E] dark:text-rose-400 hover:underline"
+              >
+                ইনবক্স →
+              </Link>
+            )}
           </div>
 
-          {/* If backend provides active poll */}
-          {activePoll ? (
+          {activeCard2Tab === "chithi" ? (
+            /* Chithi Showcase */
+            <div className="space-y-3">
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-[#FAF5E8] to-[#F5ECE0] dark:from-[#1E1813] dark:to-[#171410] border border-amber-300/60 dark:border-amber-900/40 relative">
+                <span className="text-xs font-serif font-bold text-[#7E151E] dark:text-amber-200 block mb-1">
+                  প্রিয় অনুভূতি,
+                </span>
+                <p className="text-xs sm:text-sm font-serif italic text-stone-800 dark:text-stone-200 leading-relaxed line-clamp-3">
+                  &ldquo;আমাকে যা বলতে চাও কিন্তু সামনাসামনি বলতে পারোনি, পরিচয় গোপন রেখে নিশ্চিন্তে বলে যাও...&rdquo;
+                </p>
+                <div className="flex items-center justify-between text-[11px] text-stone-500 dark:text-stone-400 pt-2 border-t border-amber-200/60 dark:border-amber-900/40 mt-2 font-serif">
+                  <span>— ১০০% পরিচয়হীন চিঠি</span>
+                  <span className="text-[10px] text-amber-800 dark:text-amber-300 font-sans font-bold">
+                    NGL স্টিকার
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">
+                ইনস্টাগ্রাম ও ফেসবুক স্টোরির জন্য রেডিমেড স্টিকার কার্ড ডাউনলোড করুন।
+              </p>
+            </div>
+          ) : activePoll ? (
+            /* Active Poll View */
             <>
               <h3 className="text-sm sm:text-base font-extrabold text-[#142230] dark:text-white leading-snug">
                 {activePoll.question}
               </h3>
 
-              {/* Radio Choices / Results */}
               <div className="space-y-2">
                 {activePoll.options.map((item) => {
                   const percent =
@@ -272,13 +338,9 @@ export default function HomeFeatureRow({
               </div>
             </>
           ) : (
-            /* Clean Empty State when backend has not set any active poll */
             <div className="py-7 text-center space-y-2 border border-dashed border-stone-200 dark:border-stone-800 rounded-2xl px-4 bg-stone-50/50 dark:bg-stone-900/30">
               <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 font-medium">
                 আজকের কোনো সক্রিয় জরিপ বা প্রশ্ন নেই।
-              </p>
-              <p className="text-[11px] text-stone-400 dark:text-stone-500">
-                নতুন কোনো মতামত জরিপ শুরু হলে আপনি এখানে নিজের ভোট দিতে পারবেন।
               </p>
             </div>
           )}
@@ -286,19 +348,33 @@ export default function HomeFeatureRow({
 
         {/* Bottom Row */}
         <div className="pt-3 mt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
-          {activePoll ? (
+          {activeCard2Tab === "chithi" ? (
+            <Link
+              href="/m"
+              className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-[#7E151E] hover:bg-[#680f18] text-white shadow-2xs inline-flex items-center justify-center gap-1.5 transition cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>নিজের বেনামী লিংক তৈরি করুন</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          ) : activePoll ? (
             <>
               <button
                 type="button"
                 disabled={hasVotedTodayPoll || isVoting}
                 onClick={handleVoteSubmit}
-                className="px-4 py-2 rounded-full bg-[#7E151E] hover:bg-[#680f18] text-white text-xs font-bold disabled:opacity-50 cursor-pointer disabled:cursor-default transition"
+                className="px-4 py-2 rounded-full bg-[#7E151E] hover:bg-[#680f18] text-white text-xs font-bold disabled:opacity-50 cursor-pointer disabled:cursor-default transition inline-flex items-center gap-1.5"
               >
-                {hasVotedTodayPoll
-                  ? "ভোট সম্পন্ন ✓"
-                  : isVoting
-                  ? "ভোট হচ্ছে..."
-                  : "ভোট দিন →"}
+                {hasVotedTodayPoll ? (
+                  <>
+                    <span>ভোট সম্পন্ন</span>
+                    <Check className="w-3.5 h-3.5" />
+                  </>
+                ) : isVoting ? (
+                  "ভোট হচ্ছে..."
+                ) : (
+                  "ভোট দিন →"
+                )}
               </button>
 
               <div className="text-[11px] font-semibold text-stone-500 dark:text-stone-400">

@@ -258,10 +258,24 @@ export default function StoriesFeed({
                   <span className="font-semibold text-stone-700 dark:text-stone-300 truncate">
                     — {post.author}
                   </span>
-                  <span className="inline-flex items-center gap-1 text-[11px] text-stone-400 dark:text-stone-500 shrink-0">
-                    <Calendar className="w-3 h-3 text-[#C59B27]" />
-                    {post.dateBn}
-                  </span>
+                  <div className="flex items-center gap-2.5 shrink-0">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-stone-400 dark:text-stone-500">
+                      <Clock className="w-3 h-3 text-stone-400" />
+                      <span>
+                        {Math.max(
+                          1,
+                          Math.ceil(
+                            ((post.content || post.excerpt || "").length) / 400
+                          )
+                        )}{" "}
+                        মিনিট পড়া
+                      </span>
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] text-stone-400 dark:text-stone-500">
+                      <Calendar className="w-3 h-3 text-[#C59B27]" />
+                      {post.dateBn}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-1">

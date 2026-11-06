@@ -22,6 +22,8 @@ import DailyWellnessCard from "@/components/DailyWellnessCard";
 import HomeNavbar from "@/components/home/HomeNavbar";
 import HomeHero from "@/components/home/HomeHero";
 import HomeQuickActions from "@/components/home/HomeQuickActions";
+import HomeSpecialFeaturesRail from "@/components/home/HomeSpecialFeaturesRail";
+import HomeChithiWall from "@/components/home/HomeChithiWall";
 import HomeMoodSelector from "@/components/home/HomeMoodSelector";
 import HomeTrendingStoriesRail from "@/components/home/HomeTrendingStoriesRail";
 import BookSpotlightBanner from "@/components/home/BookSpotlightBanner";
@@ -741,6 +743,9 @@ export default function OnuvutiBlogHomePage() {
           onSurpriseRandom={handleSurpriseRandomStory}
         />
 
+        {/* 3 Flagship Special Features Spotlight (গোপন চিঠি, বার্থডে উইশ ও ই-বুক) */}
+        <HomeSpecialFeaturesRail />
+
         {/* 100% Dynamic Editor's Pick Card (Backend-Driven, Zero Dummy Data) */}
         <EditorsPickCard
           posts={posts}
@@ -788,6 +793,9 @@ export default function OnuvutiBlogHomePage() {
                 setCurrentPage(1);
               }}
             />
+
+            {/* Live Confession / Chithi Wall (বেনামী অনুভূতির চিরকুট দেয়াল) */}
+            <HomeChithiWall />
 
             {/* Horizontal Trending Stories Carousel Rail */}
             <HomeTrendingStoriesRail posts={posts} />

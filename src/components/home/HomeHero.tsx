@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sparkles, PenLine, ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { Sparkles, PenLine, ArrowRight, MessageSquareHeart } from "lucide-react";
 
 interface HomeHeroProps {
   onOpenSubmit: () => void;
@@ -87,11 +88,11 @@ export default function HomeHero({ onOpenSubmit }: HomeHeroProps) {
             {slide.subtext}
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-2.5 pt-2">
             <button
               type="button"
               onClick={onOpenSubmit}
-              className="px-6 py-3 rounded-full bg-[#7E151E] hover:bg-[#680f18] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-102 transition cursor-pointer"
+              className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-full bg-[#7E151E] hover:bg-[#680f18] text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-lg hover:shadow-xl hover:scale-102 transition cursor-pointer"
             >
               <PenLine className="w-4 h-4" />
               <span>নিজের গল্প লিখুন</span>
@@ -99,11 +100,19 @@ export default function HomeHero({ onOpenSubmit }: HomeHeroProps) {
 
             <a
               href="#stories-feed"
-              className="px-6 py-3 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-md border border-stone-300 dark:border-stone-700 text-[#142230] dark:text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 hover:border-[#7E151E] hover:text-[#7E151E] dark:hover:text-rose-400 transition cursor-pointer shadow-xs"
+              className="px-5 py-2.5 sm:px-6 sm:py-3 rounded-full bg-white/90 dark:bg-stone-800/90 backdrop-blur-md border border-stone-300 dark:border-stone-700 text-[#142230] dark:text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 hover:border-[#7E151E] hover:text-[#7E151E] dark:hover:text-rose-400 transition cursor-pointer shadow-xs"
             >
               <span>গল্প পড়ুন</span>
               <ArrowRight className="w-4 h-4" />
             </a>
+
+            <Link
+              href="/m"
+              className="px-4 py-2.5 sm:py-3 rounded-full bg-[#FAF0DC]/90 dark:bg-[#1E293B]/90 backdrop-blur-md border border-[#C59B27]/50 text-[#7E151E] dark:text-rose-300 hover:border-[#7E151E] font-bold text-xs sm:text-sm inline-flex items-center gap-1.5 transition cursor-pointer shadow-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#C59B27]" />
+              <span>গোপন বার্তা পাঠান</span>
+            </Link>
           </div>
 
           {/* Interactive Romantic Slide Controls */}
@@ -131,14 +140,22 @@ export default function HomeHero({ onOpenSubmit }: HomeHeroProps) {
 
         {/* Right Preview Accent Badge for Desktop */}
         <div className="hidden lg:flex lg:col-span-4 justify-end pr-8">
-          <div className="bg-white/40 dark:bg-black/30 backdrop-blur-md border border-white/40 dark:border-white/10 rounded-2xl p-4 shadow-xl max-w-xs text-right">
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[#7E151E] dark:text-rose-300 block mb-1">
-              অনুভূতির রোমান্টিক কর্নার
-            </span>
-            <p className="text-xs text-stone-700 dark:text-stone-200 font-serif leading-relaxed italic">
-              “কিছু দৃশ্য চোখে নয়, মনের গভীরে ছবি হয়ে থেকে যায়।”
+          <Link
+            href="/m"
+            className="bg-white/70 dark:bg-stone-900/70 hover:bg-white/90 dark:hover:bg-stone-900/90 backdrop-blur-md border border-white/60 dark:border-white/10 rounded-2xl p-4 shadow-xl max-w-xs transition transform hover:scale-102 group cursor-pointer block text-left space-y-1.5"
+          >
+            <div className="flex items-center gap-1.5 text-[11px] font-black tracking-wide text-[#7E151E] dark:text-rose-300">
+              <MessageSquareHeart className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
+              <span>বেনামী বার্তা ও গোপন চিঠি</span>
+            </div>
+            <p className="text-xs text-stone-700 dark:text-stone-200 font-serif leading-relaxed italic line-clamp-2">
+              “আমাকে যা বলতে চাও কিন্তু সামনাসামনি বলতে পারোনি, গোপনে বলো...”
             </p>
-          </div>
+            <span className="text-[10px] font-bold text-[#7E151E] dark:text-rose-400 inline-flex items-center gap-1 pt-0.5 group-hover:underline">
+              <span>নিজের লিংক তৈরি করুন</span>
+              <ArrowRight className="w-3 h-3" />
+            </span>
+          </Link>
         </div>
       </div>
     </section>
