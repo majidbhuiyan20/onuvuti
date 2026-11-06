@@ -17,6 +17,7 @@ import PasscodeForm from "./PasscodeForm";
 import ReactionBox from "./ReactionBox";
 import ShareBar from "./ShareBar";
 import BirthdayCakeCeremony from "./BirthdayCakeCeremony";
+import WeddingInteractiveCard from "./WeddingInteractiveCard";
 import StoryExportModal from "./StoryExportModal";
 
 export default function WishViewer({ initialWish }: { initialWish: WishPublic }) {
@@ -240,32 +241,15 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
 
         {/* Occasion Interactive Ceremony Card */}
         {isWedding ? (
-          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 text-center shadow-xl">
-            <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center mx-auto mb-3 text-amber-300">
-              <Crown className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold text-white mb-1">নবদম্পতির নতুন জীবনের সূচনা</h3>
-            <p className="text-xs text-stone-300 mb-4 max-w-xs mx-auto">
-              বরের ও কনের ভবিষ্যৎ দিনগুলো যেন অপার বরকত ও আনন্দে ভরে ওঠে—আপনার আন্তরিক দোয়া ও শুভেচ্ছা জানান।
-            </p>
-            {!candleBlown ? (
-              <button
-                type="button"
-                onClick={handleBlowCandle}
-                className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-white bg-gradient-to-r from-amber-500 to-[#7E151E] hover:opacity-95 px-5 py-2.5 rounded-full border border-amber-400/30 cursor-pointer shadow-lg animate-pulse"
-              >
-                <Sparkles className="w-4 h-4 text-amber-200" />
-                <span>দোয়া ও শুভাশিস বর্ষণ করুন</span>
-              </button>
-            ) : (
-              <div className="animate-fade-in-up py-1">
-                <p className="text-sm font-bold text-amber-300 flex items-center justify-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>বারাকাল্লাহু লাকুমা ওয়া বারাকা আলাইকুমা!</span>
-                </p>
-                <p className="text-xs text-stone-300 mt-1">আপনার হৃদয়নিংড়ানো শুভকামনা নবদম্পতির কাছে পৌঁছে গেছে।</p>
-              </div>
-            )}
+          <div className="mt-8 w-full max-w-xl">
+            <WeddingInteractiveCard
+              wishId={wish.id}
+              senderName={wish.senderName}
+              recipientName={wish.recipientName}
+              message={content.message}
+              blessed={candleBlown}
+              onBless={handleBlowCandle}
+            />
           </div>
         ) : isAnniv ? (
           <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 text-center shadow-xl">
@@ -330,7 +314,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
           </div>
         )}
 
-        <ReactionBox wishId={wish.id} senderName={wish.senderName} />
+        {!isWedding && <ReactionBox wishId={wish.id} senderName={wish.senderName} />}
 
         {!wish.selfDestruct && (
           <div className="mt-6 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 shadow-xl">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Heart, Mic, FastForward, Sparkles, Maximize2, X } from "lucide-react";
+import { Heart, Mic, FastForward, Sparkles, Maximize2, X, Crown } from "lucide-react";
 import type { WishTheme } from "@/data/birthdayTemplates";
 import { renderFormattedInline } from "@/lib/formatText";
 import { HANDWRITING_FONT } from "../share";
@@ -93,11 +93,22 @@ export default function LetterCard({ wish, content, theme }: LetterCardProps) {
 
         {/* Header Crest */}
         <div className="text-center pb-5 mb-6 border-b border-stone-200/80">
+          {isWedding && (
+            <div className="mb-2.5">
+              <p className="font-serif text-lg sm:text-2xl tracking-widest opacity-90 select-none drop-shadow-xs" style={{ color: theme.accentColor }}>
+                بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+              </p>
+              <span className="text-[10px] uppercase tracking-widest text-stone-500 font-semibold block mt-0.5">
+                পরম করুণাময় সৃষ্টিকর্তার অশেষ কৃপায়
+              </span>
+            </div>
+          )}
+
           <div
             className="inline-flex items-center justify-center w-11 h-11 rounded-full mb-2 shadow-xs"
             style={{ backgroundColor: `${theme.accentColor}18`, color: theme.accentColor }}
           >
-            <Heart className="w-5 h-5 fill-current" />
+            {isWedding ? <Crown className="w-5 h-5" /> : <Heart className="w-5 h-5 fill-current" />}
           </div>
           <h2 className="text-xl sm:text-2xl font-black tracking-wide" style={{ color: theme.accentColor }}>
             {cardTitle}

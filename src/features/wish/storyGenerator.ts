@@ -149,6 +149,50 @@ function drawHeartCrest(ctx: CanvasRenderingContext2D, cx: number, cy: number, c
   ctx.restore();
 }
 
+/** Draws a royal crown crest on canvas for wedding invitations */
+function drawWeddingCrownCrest(ctx: CanvasRenderingContext2D, cx: number, cy: number) {
+  ctx.save();
+  // Outer gold circle
+  ctx.strokeStyle = "rgba(251, 191, 36, 0.7)";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 64, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Inner fill
+  ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+  ctx.beginPath();
+  ctx.arc(cx, cy, 60, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Crown shape
+  ctx.fillStyle = "#fbbf24";
+  ctx.shadowColor = "rgba(251, 191, 36, 0.8)";
+  ctx.shadowBlur = 20;
+
+  ctx.beginPath();
+  ctx.moveTo(cx - 36, cy + 24);
+  ctx.lineTo(cx - 44, cy - 14);
+  ctx.lineTo(cx - 18, cy + 4);
+  ctx.lineTo(cx, cy - 28);
+  ctx.lineTo(cx + 18, cy + 4);
+  ctx.lineTo(cx + 44, cy - 14);
+  ctx.lineTo(cx + 36, cy + 24);
+  ctx.closePath();
+  ctx.fill();
+
+  // Crown jewels
+  ctx.fillStyle = "#ffffff";
+  [-44, -18, 0, 18, 44].forEach((dx) => {
+    const dy = dx === 0 ? -32 : Math.abs(dx) === 18 ? 0 : -18;
+    ctx.beginPath();
+    ctx.arc(cx + dx, cy + dy, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.restore();
+}
+
 /**
  * Generates an HD 1080x1920 Instagram/Facebook Story Canvas
  */
@@ -264,6 +308,18 @@ export async function generateStoryCanvas(input: StoryCardInput): Promise<HTMLCa
     : isLove
     ? "হৃদয়ের না বলা অনুভূতি"
     : "শুভ জন্মদিন!";
+
+  // Bismillah header for wedding cards
+  if (isWedding) {
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(253, 230, 138, 0.95)";
+    ctx.font = `bold 28px serif`;
+    ctx.shadowColor = "rgba(251, 191, 36, 0.5)";
+    ctx.shadowBlur = 10;
+    ctx.fillText("بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ", W / 2, 95);
+    ctx.restore();
+  }
 
   // Top Pill
   ctx.save();
@@ -397,8 +453,12 @@ export async function generateStoryCanvas(input: StoryCardInput): Promise<HTMLCa
     messageBoxTop = 935;
     messageBoxHeight = 630;
   } else {
-    // No photo: draw festive cake or heart crest
-    if (isWedding || isAnniv || isLove) {
+    // No photo: draw festive cake or wedding crown or heart crest
+    if (isWedding) {
+      drawWeddingCrownCrest(ctx, W / 2, 480);
+      messageBoxTop = 640;
+      messageBoxHeight = 920;
+    } else if (isAnniv || isLove) {
       drawHeartCrest(ctx, W / 2, 480, "#f43f5e");
       messageBoxTop = 640;
       messageBoxHeight = 920;

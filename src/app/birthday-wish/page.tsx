@@ -82,6 +82,15 @@ export default function BirthdayWishCreatorPage() {
   const [voiceUrl, setVoiceUrl] = useState("");
   const [special, setSpecial] = useState<SpecialOptionsValue>(EMPTY_SPECIAL);
 
+  // Quick Wedding Details Helper State
+  const [showWeddingHelper, setShowWeddingHelper] = useState(false);
+  const [groomName, setGroomName] = useState("");
+  const [brideName, setBrideName] = useState("");
+  const [weddingDate, setWeddingDate] = useState("");
+  const [weddingTime, setWeddingTime] = useState("");
+  const [weddingVenue, setWeddingVenue] = useState("");
+  const [weddingContact, setWeddingContact] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [myWishes, setMyWishes] = useState<MyWishItem[]>([]);
@@ -138,6 +147,36 @@ export default function BirthdayWishCreatorPage() {
   const displayedTemplates = occasionTemplates.filter(
     (t) => selectedTemplateCategory === "all" || t.category === selectedTemplateCategory
   );
+
+  const handleApplyWeddingHelper = () => {
+    const g = groomName.trim() || "[বরের নাম]";
+    const b = brideName.trim() || "[কনের নাম]";
+    const d = weddingDate.trim() || "[তারিখ লিখুন]";
+    const t = weddingTime.trim() || "সন্ধ্যা ৭:০০ ঘটিকা";
+    const v = weddingVenue.trim() || "[ভেন্যুর নাম ও পূর্ণাঙ্গ ঠিকানা]";
+    const c = weddingContact.trim();
+
+    const generated = `পরম করুণাময় সৃষ্টিকর্তার অশেষ কৃপায়—
+আমাদের পারিবারিক জীবনে শুরু হতে যাচ্ছে এক পবিত্র ও আনন্দঘন নতুন অধ্যায়। 
+
+পাত্র: ${g}
+ও
+পাত্রী: ${b}
+
+শুভ বিবাহ ও প্রীতিভোজ অনুষ্ঠান:
+তারিখ: ${d}
+সময়: ${t}
+ভেন্যু: ${v}
+
+এই আনন্দঘন শুভলগ্নে আপনার ও আপনার পরিবারের সাদর উপস্থিতি এবং নবদম্পতির আগামীর সুন্দর জীবনের জন্য দোয়া ও আশীর্বাদ আমাদের একান্ত কাম্য।
+
+বিনীত ও নিমন্ত্রণকারী—
+${senderName.trim() || "[পরিবারের নাম]"}
+${c ? `মোবাইল: ${c}` : ""}`.trim();
+
+    setMessage(generated);
+    setShowWeddingHelper(false);
+  };
 
   const handleCreateWish = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -462,6 +501,101 @@ export default function BirthdayWishCreatorPage() {
 
             {/* Message + writing style */}
             <div>
+              {selectedOccasion === "wedding" && (
+                <div className="mb-4 p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-300/60 dark:border-amber-800/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <span className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                        সহজে বিয়ের কার্ড সাজান (কুইক ফিল্ডার)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowWeddingHelper((v) => !v)}
+                      className="text-[11px] font-bold text-[#7E151E] dark:text-rose-400 hover:underline cursor-pointer"
+                    >
+                      {showWeddingHelper ? "ফর্ম লুকান" : "তথ্য পূরণ করুন"}
+                    </button>
+                  </div>
+
+                  {showWeddingHelper && (
+                    <div className="space-y-3 pt-2 text-xs animate-fade-in">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">পাত্রের নাম (Groom)</label>
+                          <input
+                            type="text"
+                            value={groomName}
+                            onChange={(e) => setGroomName(e.target.value)}
+                            placeholder="যেমন: তানভীর আহমেদ"
+                            className={fieldCls}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">পাত্রীর নাম (Bride)</label>
+                          <input
+                            type="text"
+                            value={brideName}
+                            onChange={(e) => setBrideName(e.target.value)}
+                            placeholder="যেমন: সুমাইয়া রহমান"
+                            className={fieldCls}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">তারিখ (Date)</label>
+                          <input
+                            type="text"
+                            value={weddingDate}
+                            onChange={(e) => setWeddingDate(e.target.value)}
+                            placeholder="যেমন: ২৫শে ডিসেম্বর, ২০২৬"
+                            className={fieldCls}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">সময় (Time)</label>
+                          <input
+                            type="text"
+                            value={weddingTime}
+                            onChange={(e) => setWeddingTime(e.target.value)}
+                            placeholder="যেমন: সন্ধ্যা ৭:০০ ঘটিকা"
+                            className={fieldCls}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">ভেন্যুর নাম ও ঠিকানা (Venue)</label>
+                        <input
+                          type="text"
+                          value={weddingVenue}
+                          onChange={(e) => setWeddingVenue(e.target.value)}
+                          placeholder="যেমন: সেনাকুঞ্জ কনভেনশন সেন্টার, ঢাকা সেনানিবাস"
+                          className={fieldCls}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-semibold text-stone-600 dark:text-stone-300 block mb-1">যোগাযোগের নম্বর (Phone)</label>
+                        <input
+                          type="text"
+                          value={weddingContact}
+                          onChange={(e) => setWeddingContact(e.target.value)}
+                          placeholder="যেমন: 017XXXXXXXX"
+                          className={fieldCls}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleApplyWeddingHelper}
+                        className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-600 to-[#7E151E] text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-xs hover:opacity-95"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+                        <span>কার্ডের বয়ান স্বয়ংক্রিয়ভাবে সাজিয়ে নিন</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="flex items-center justify-between mb-1.5 gap-2 flex-wrap">
                 <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
                   {selectedOccasion === "wedding"
@@ -674,8 +808,17 @@ export default function BirthdayWishCreatorPage() {
                       <span className="text-[10px] font-bold uppercase tracking-wider opacity-70" style={{ color: selectedTheme.accentColor }}>
                         {currentOccasion.headerTitle}
                       </span>
-                      <Heart className="w-3 h-3 fill-current opacity-60" style={{ color: selectedTheme.accentColor }} />
+                      {selectedOccasion === "wedding" ? (
+                        <Crown className="w-3.5 h-3.5 opacity-80" style={{ color: selectedTheme.accentColor }} />
+                      ) : (
+                        <Heart className="w-3 h-3 fill-current opacity-60" style={{ color: selectedTheme.accentColor }} />
+                      )}
                     </div>
+                    {selectedOccasion === "wedding" && (
+                      <p className="font-serif text-[11px] text-center tracking-widest opacity-85 mb-1.5 select-none" style={{ color: selectedTheme.accentColor }}>
+                        بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
+                      </p>
+                    )}
                     <p className="text-xs font-bold mb-1">
                       {selectedOccasion === "wedding"
                         ? `সম্মানিত ${recipientName.trim() || "অতিথি"},`
