@@ -28,6 +28,11 @@ import {
   Star,
   QrCode,
   Filter,
+  ExternalLink,
+  ShieldCheck,
+  CheckCircle2,
+  MessageSquareHeart,
+  Heart,
 } from "lucide-react";
 import {
   getPrivateInbox,
@@ -477,47 +482,133 @@ function PrivateInboxContent() {
         ) : (
           /* Inbox View */
           <div className="space-y-6">
-            {/* Header Summary Banner */}
-            <div className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-black text-[#142230] dark:text-white">
-                    {inboxView.inbox.displayName}
-                  </h1>
-                  <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-[11px] font-bold">
-                    {inboxView.messages.length}টি বার্তা
-                  </span>
+            {/* 1. Profile Identity Hero Banner */}
+            <div className="bg-gradient-to-br from-white via-[#FAF7F2] to-[#FFF5E6] dark:from-[#111827] dark:via-[#161F30] dark:to-[#18130C] rounded-3xl border-2 border-stone-200/90 dark:border-stone-800 p-6 sm:p-7 shadow-sm space-y-5 relative overflow-hidden">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative z-10">
+                <div className="flex items-start gap-4">
+                  {/* Monogram Initial Avatar */}
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-[#7E151E] to-rose-700 text-amber-200 shadow-md flex items-center justify-center font-serif font-black text-2xl sm:text-3xl shrink-0 border-2 border-amber-400/40">
+                    {(inboxView.inbox.displayName || username || "U").charAt(0).toUpperCase()}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h1 className="text-xl sm:text-2xl font-black text-[#142230] dark:text-white">
+                        {inboxView.inbox.displayName}
+                      </h1>
+                      <span className="text-xs font-mono font-bold text-stone-400 dark:text-stone-500">
+                        (@{inboxView.inbox.username})
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[10px] font-black text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1">
+                        <ShieldCheck className="w-3 h-3" />
+                        <span>সক্রিয় এনক্রিপ্টেড ইনবক্স</span>
+                      </span>
+                    </div>
+
+                    {/* Prompt Quote Pill */}
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/80 dark:bg-stone-900/80 border border-stone-200 dark:border-stone-700/80 text-xs text-stone-700 dark:text-stone-300 font-medium shadow-2xs">
+                      <span className="font-bold text-[#7E151E] dark:text-rose-400">প্রম্পট:</span>
+                      <span className="italic font-serif">
+                        &ldquo;{renderFormattedInline(inboxView.inbox.promptText)}&rdquo;
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <p className="text-xs text-stone-500 font-medium">
-                  প্রম্পট: &ldquo;{renderFormattedInline(inboxView.inbox.promptText)}&rdquo;
-                </p>
+
+                {/* Header Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">
+                  <Link
+                    href={`/m/${username}`}
+                    target="_blank"
+                    className="px-3.5 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-700 shadow-2xs"
+                    title="বন্ধুরা চিঠি পাঠানোর সময় যেমন দেখবে"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-stone-500" />
+                    <span>পাবলিক ভিউ</span>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setIsQRCodeModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-700 shadow-2xs"
+                    title="শেয়ারেবল কিউআর কার্ড"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>কিউআর কার্ড</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsStickerModalOpen(true)}
+                    className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 text-white shadow-xs text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer hover:opacity-95"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>স্টোরি স্টিকার</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyShareLink}
+                    className="px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer hover:bg-rose-100"
+                  >
+                    {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copiedLink ? "কপি হয়েছে" : "লিংক কপি"}</span>
+                  </button>
+                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-                <button
-                  type="button"
-                  onClick={() => setIsQRCodeModalOpen(true)}
-                  className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition inline-flex items-center justify-center gap-1.5 cursor-pointer hover:bg-stone-100 dark:hover:bg-stone-700"
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>কিউআর কার্ড</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsStickerModalOpen(true)}
-                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 text-white shadow-xs text-xs font-bold transition inline-flex items-center justify-center gap-1.5 cursor-pointer hover:opacity-95"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>স্টোরি স্টিকার কার্ড</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCopyShareLink}
-                  className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800 text-xs font-bold transition inline-flex items-center justify-center gap-1.5 cursor-pointer hover:bg-rose-100"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>লিংক কপি</span>
-                </button>
+              {/* 2. Mini Stats Dashboard Row */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-stone-200/70 dark:border-stone-800 relative z-10">
+                <div className="p-3 rounded-2xl bg-white/70 dark:bg-stone-900/60 border border-stone-200/60 dark:border-stone-800 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] font-bold text-stone-500">মোট চিঠি</span>
+                    <div className="text-lg font-black text-stone-800 dark:text-stone-100">
+                      {allMessages.length}টি
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 flex items-center justify-center">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-white/70 dark:bg-stone-900/60 border border-stone-200/60 dark:border-stone-800 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] font-bold text-stone-500">না খোলা সিল</span>
+                    <div className="text-lg font-black text-amber-600 dark:text-amber-400">
+                      {unopenedCount}টি
+                    </div>
+                  </div>
+                  <div
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                      unopenedCount > 0
+                        ? "bg-amber-100 dark:bg-amber-950/70 text-amber-600 dark:text-amber-300 animate-pulse"
+                        : "bg-stone-100 dark:bg-stone-800 text-stone-400"
+                    }`}
+                  >
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-white/70 dark:bg-stone-900/60 border border-stone-200/60 dark:border-stone-800 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] font-bold text-stone-500">উত্তর দেওয়া</span>
+                    <div className="text-lg font-black text-emerald-600 dark:text-emerald-400">
+                      {repliedCount}টি
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-300 flex items-center justify-center">
+                    <CheckCircle2 className="w-4 h-4" />
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-white/70 dark:bg-stone-900/60 border border-stone-200/60 dark:border-stone-800 flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <span className="text-[11px] font-bold text-stone-500">পছন্দের চিঠি</span>
+                    <div className="text-lg font-black text-amber-500">
+                      {favoritesCount}টি
+                    </div>
+                  </div>
+                  <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/70 text-amber-500 flex items-center justify-center">
+                    <Star className="w-4 h-4 fill-amber-500" />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -644,21 +735,26 @@ function PrivateInboxContent() {
                           : WAX_SEAL_ICONS.crush;
                       const SealIcon = seal.icon;
 
+                      const clueMatch = msg.content.match(/^([\s\S]*?)(?:\n\n\[সংকেত:\s*(.+?)\])?$/);
+                      const cleanLetterText = clueMatch ? clueMatch[1].trim() : msg.content;
+                      const senderClue = clueMatch && clueMatch[2] ? clueMatch[2].trim() : null;
+
                       if (!isOpened) {
                         /* 1. Unopened Sealed Vintage Envelope Card */
                         return (
                           <div
                             key={msg.id}
-                            className="rounded-3xl border-2 border-amber-500/40 dark:border-amber-500/20 bg-gradient-to-br from-[#FFFBF2] via-white to-[#FFF5E6] dark:from-[#1C1710] dark:via-[#111827] dark:to-[#18130C] p-5 shadow-md hover:shadow-lg transition flex flex-col justify-between space-y-4 relative overflow-hidden"
+                            className="rounded-3xl border-2 border-amber-500/50 dark:border-amber-500/30 bg-gradient-to-br from-[#FFFBF2] via-white to-[#FFF5E6] dark:from-[#1C1710] dark:via-[#111827] dark:to-[#18130C] p-5 sm:p-6 shadow-md hover:shadow-xl transition flex flex-col justify-between space-y-4 relative overflow-hidden group"
                           >
                             <div className="flex items-center justify-between">
-                              <span className="px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-bold text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
+                              <span className="px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-xs font-black text-amber-800 dark:text-amber-300 flex items-center gap-1.5 shadow-2xs">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping inline-block" />
                                 <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                                 <span>সিলমোহরকৃত নতুন চিঠি</span>
                               </span>
 
                               <div className="flex items-center gap-2">
-                                <span className="text-[11px] text-stone-400 flex items-center gap-1">
+                                <span className="text-[11px] text-stone-400 flex items-center gap-1 font-mono">
                                   <Clock className="w-3 h-3" />
                                   <span>{formatRelativeTime(msg.createdAt)}</span>
                                 </span>
@@ -667,10 +763,10 @@ function PrivateInboxContent() {
                                   type="button"
                                   onClick={(e) => toggleFavorite(msg.id, e)}
                                   title={favoriteIds[msg.id] ? "পছন্দ থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
-                                  className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
+                                  className="p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
                                 >
                                   <Star
-                                    className={`w-3.5 h-3.5 ${
+                                    className={`w-4 h-4 ${
                                       favoriteIds[msg.id]
                                         ? "fill-amber-500 text-amber-500"
                                         : "text-stone-300 dark:text-stone-600 hover:text-amber-500"
@@ -683,7 +779,7 @@ function PrivateInboxContent() {
                             {/* Interactive Envelope Preview */}
                             <div
                               onClick={() => handleOpenLetterModal(msg, true)}
-                              className="py-2 flex justify-center cursor-pointer group"
+                              className="py-3 flex justify-center cursor-pointer group/env"
                               title="চিঠিটি খুলতে স্পর্শ করুন"
                             >
                               <EnvelopeCard
@@ -694,15 +790,15 @@ function PrivateInboxContent() {
                                 isOpened={false}
                                 showClickHint={false}
                                 size="sm"
-                                className="group-hover:scale-102 transition duration-200"
+                                className="group-hover/env:scale-103 transition duration-200 drop-shadow-md"
                               />
                             </div>
 
-                            <div className="flex items-center gap-2 pt-1 border-t border-stone-200/70 dark:border-stone-800">
+                            <div className="flex items-center gap-2 pt-2 border-t border-stone-200/70 dark:border-stone-800">
                               <button
                                 type="button"
                                 onClick={() => handleOpenLetterModal(msg, true)}
-                                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-900 text-xs font-extrabold shadow-sm transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 via-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-stone-900 text-xs font-black shadow-sm transition flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                               >
                                 <Sparkles className="w-3.5 h-3.5 text-stone-900" />
                                 <span>মোমের সিল ভেঙে পড়ুন</span>
@@ -725,22 +821,22 @@ function PrivateInboxContent() {
                       return (
                         <div
                           key={msg.id}
-                          className="bg-white dark:bg-[#111827] rounded-3xl border border-stone-200 dark:border-stone-800 p-5 shadow-xs hover:shadow-md transition flex flex-col justify-between space-y-4"
+                          className="bg-[#FAF5E8]/80 dark:bg-[#1A1612] rounded-3xl border-2 border-[#D4AF37]/50 dark:border-[#D4AF37]/30 hover:border-[#D4AF37] dark:hover:border-[#D4AF37] p-5 sm:p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-4 relative overflow-hidden"
                         >
-                          <div className="space-y-3">
+                          <div className="space-y-3 relative z-10">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
+                                <span className="px-2.5 py-1 rounded-full bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-xs font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5 shadow-2xs">
                                   <SealIcon className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
                                   <span>{seal.label}</span>
                                 </span>
-                                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
                                   খোলা হয়েছে
                                 </span>
                               </div>
 
                               <div className="flex items-center gap-2">
-                                <span className="text-[11px] text-stone-400 flex items-center gap-1">
+                                <span className="text-[11px] text-stone-400 flex items-center gap-1 font-mono">
                                   <Clock className="w-3 h-3" />
                                   <span>{formatRelativeTime(msg.createdAt)}</span>
                                 </span>
@@ -749,10 +845,10 @@ function PrivateInboxContent() {
                                   type="button"
                                   onClick={(e) => toggleFavorite(msg.id, e)}
                                   title={favoriteIds[msg.id] ? "পছন্দ থেকে সরান" : "পছন্দের তালিকায় রাখুন"}
-                                  className="p-1 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
+                                  className="p-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
                                 >
                                   <Star
-                                    className={`w-3.5 h-3.5 ${
+                                    className={`w-4 h-4 ${
                                       favoriteIds[msg.id]
                                         ? "fill-amber-500 text-amber-500"
                                         : "text-stone-300 dark:text-stone-600 hover:text-amber-500"
@@ -762,70 +858,79 @@ function PrivateInboxContent() {
                               </div>
                             </div>
 
-                          {/* Letter Content Preview (Clickable to reveal full modal) */}
-                          <div
-                            onClick={() => handleOpenLetterModal(msg, false)}
-                            className="p-4 rounded-2xl bg-[#FAF5E8]/60 dark:bg-stone-900/60 border border-stone-200/80 dark:border-stone-800/80 cursor-pointer hover:border-[#D4AF37] transition group"
-                            title="সম্পূর্ণ চিঠিটি পড়ুন"
-                          >
-                            <p className="text-sm font-serif font-medium text-stone-800 dark:text-stone-100 leading-relaxed whitespace-pre-wrap line-clamp-3">
-                              &ldquo;{renderFormattedInline(msg.content)}&rdquo;
-                            </p>
-                            <span className="text-[11px] text-[#7E151E] dark:text-rose-400 font-bold block pt-2 group-hover:underline">
-                              সম্পূর্ণ চিঠি খুলুন →
-                            </span>
+                            {/* Sender Clue Badge if Attached */}
+                            {senderClue && (
+                              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-950 dark:text-amber-200 text-xs font-bold">
+                                <Sparkles className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                                <span>প্রেরকের সংকেত: &ldquo;{senderClue}&rdquo;</span>
+                              </div>
+                            )}
+
+                            {/* Letter Content Preview (Clickable to reveal full modal) */}
+                            <div
+                              onClick={() => handleOpenLetterModal(msg, false)}
+                              className="p-4 sm:p-5 rounded-2xl bg-white/90 dark:bg-stone-900/90 border border-stone-200/90 dark:border-stone-800/90 cursor-pointer hover:border-[#D4AF37] transition group space-y-2 shadow-2xs"
+                              title="সম্পূর্ণ চিঠিটি পড়ুন"
+                            >
+                              <p className="text-sm sm:text-base font-serif font-bold text-stone-900 dark:text-stone-100 leading-relaxed whitespace-pre-wrap line-clamp-4">
+                                &ldquo;{renderFormattedInline(cleanLetterText)}&rdquo;
+                              </p>
+                              <div className="text-[11px] text-[#7E151E] dark:text-rose-400 font-black flex items-center gap-1 group-hover:translate-x-1 transition pt-1">
+                                <span>সম্পূর্ণ চিঠি ও পার্চমেন্ট খুলুন</span>
+                                <span>→</span>
+                              </div>
+                            </div>
+
+                            {/* Existing Reply if any */}
+                            {msg.replyText && (
+                              <div className="p-3.5 rounded-2xl bg-rose-50/80 dark:bg-rose-950/40 border border-rose-200/80 dark:border-rose-800/70 space-y-1">
+                                <div className="text-[11px] font-black text-[#7E151E] dark:text-rose-400 flex items-center gap-1.5">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                  <span>আপনার উত্তর:</span>
+                                </div>
+                                <p className="text-xs sm:text-sm font-medium text-stone-800 dark:text-stone-200 leading-relaxed">
+                                  {msg.replyText}
+                                </p>
+                              </div>
+                            )}
                           </div>
 
-                          {/* Existing Reply if any */}
-                          {msg.replyText && (
-                            <div className="p-3.5 rounded-2xl bg-rose-50/70 dark:bg-rose-950/30 border border-rose-200/70 dark:border-rose-800/60 space-y-1">
-                              <div className="text-[11px] font-bold text-rose-800 dark:text-rose-300 flex items-center gap-1.5">
-                                <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                <span>আপনার উত্তর:</span>
-                              </div>
-                              <p className="text-xs font-medium text-stone-700 dark:text-stone-200 leading-relaxed">
-                                {msg.replyText}
-                              </p>
-                            </div>
-                          )}
+                          {/* Card Action Buttons */}
+                          <div className="pt-2 border-t border-stone-200/70 dark:border-stone-800 flex items-center justify-between gap-2 relative z-10">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenLetterModal(msg, false)}
+                              className="py-2 px-3 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <Mail className="w-3.5 h-3.5" />
+                              <span>চিঠি পড়ুন</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleOpenReplyModal(msg)}
+                              className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 hover:from-[#680f18] hover:to-rose-800 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>
+                                {msg.replyText
+                                  ? "স্টোরি এডিট"
+                                  : "উত্তর ও স্টোরি কার্ড"}
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMessage(msg.id)}
+                              title="বার্তা মুছে ফেলুন"
+                              className="p-2 text-stone-400 hover:text-red-600 transition cursor-pointer rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
-
-                        {/* Card Action Buttons */}
-                        <div className="pt-2 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenLetterModal(msg, false)}
-                            className="py-2 px-3 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer"
-                          >
-                            <Mail className="w-3.5 h-3.5" />
-                            <span>চিঠি পড়ুন</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleOpenReplyModal(msg)}
-                            className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#7E151E] to-rose-700 hover:from-[#680f18] hover:to-rose-800 text-white text-xs font-bold shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>
-                              {msg.replyText
-                                ? "স্টোরি এডিট"
-                                : "উত্তর ও স্টোরি কার্ড"}
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteMessage(msg.id)}
-                            title="বার্তা মুছে ফেলুন"
-                            className="p-2 text-stone-400 hover:text-red-600 transition cursor-pointer rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               )}
             </div>
