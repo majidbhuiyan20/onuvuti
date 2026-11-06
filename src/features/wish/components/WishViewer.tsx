@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { WISH_THEMES, WishTheme } from "@/data/birthdayTemplates";
-import { Flame, RotateCcw, Send, Volume2, VolumeX, Wind, Sparkles, Crown, HeartHandshake } from "lucide-react";
+import { Flame, RotateCcw, Send, Volume2, VolumeX, Sparkles, Crown, HeartHandshake } from "lucide-react";
 import { wishApi } from "../api";
 import { burstConfetti, floatBalloons } from "../confetti";
 import { playChime, primeAudio, startMusic, type MusicHandle } from "../music";
@@ -16,6 +16,8 @@ import LetterCard from "./LetterCard";
 import PasscodeForm from "./PasscodeForm";
 import ReactionBox from "./ReactionBox";
 import ShareBar from "./ShareBar";
+import BirthdayCakeCeremony from "./BirthdayCakeCeremony";
+import StoryExportModal from "./StoryExportModal";
 
 export default function WishViewer({ initialWish }: { initialWish: WishPublic }) {
   const [wish, setWish] = useState(initialWish);
@@ -30,6 +32,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [clockOffsetMs, setClockOffsetMs] = useState(0);
   const [isClient, setIsClient] = useState(false);
+  const [showStoryModal, setShowStoryModal] = useState(false);
 
   const confettiRef = useRef<HTMLCanvasElement | null>(null);
   const balloonRef = useRef<HTMLCanvasElement | null>(null);
@@ -141,8 +144,8 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
     if (candleBlown) return;
     setCandleBlown(true);
     if (soundEnabled) playChime("blow");
-    burstConfetti(confettiRef.current, 120);
-    floatBalloons(balloonRef.current, 10);
+    burstConfetti(confettiRef.current, 130);
+    floatBalloons(balloonRef.current, 12);
   };
 
   const closeEnvelope = () => {
@@ -235,9 +238,9 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
 
         <LetterCard wish={wish} content={content} theme={theme} />
 
-        {/* Occasion Interactive Card */}
+        {/* Occasion Interactive Ceremony Card */}
         {isWedding ? (
-          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 text-center shadow-xl">
+          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 text-center shadow-xl">
             <div className="w-12 h-12 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center mx-auto mb-3 text-amber-300">
               <Crown className="w-6 h-6" />
             </div>
@@ -265,7 +268,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
             )}
           </div>
         ) : isAnniv ? (
-          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 text-center shadow-xl">
+          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-6 text-center shadow-xl">
             <div className="w-12 h-12 rounded-full bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto mb-3 text-rose-300">
               <HeartHandshake className="w-6 h-6" />
             </div>
@@ -293,60 +296,37 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
             )}
           </div>
         ) : (
-          <div className="mt-8 w-full max-w-md bg-white/10 backdrop-blur-md border border-white/15 rounded-3xl p-5 text-center shadow-xl">
-            <div
-              onClick={handleBlowCandle}
-              className="cursor-pointer group inline-flex flex-col items-center mb-3 transition transform hover:scale-105 active:scale-95"
-            >
-              <div className="relative flex flex-col items-center">
-                {!candleBlown ? (
-                  <div className="relative mb-1">
-                    <div className="w-4 h-6 rounded-full bg-gradient-to-t from-amber-500 via-orange-400 to-yellow-200 animate-pulse shadow-lg shadow-amber-400/80" />
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1.5 h-3 bg-white rounded-full opacity-80" />
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center mb-1 text-stone-300 animate-fade-in">
-                    <Wind className="w-5 h-5" />
-                  </div>
-                )}
-                <div className="w-2.5 h-7 bg-gradient-to-r from-pink-300 via-white to-pink-300 rounded-xs shadow-xs" />
-              </div>
-              <div className="w-24 h-6 bg-pink-400 rounded-t-lg border-b-2 border-pink-500 flex items-center justify-around px-2 shadow-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
-                <span className="w-1.5 h-1.5 rounded-full bg-white opacity-80" />
-              </div>
-              <div className="w-32 h-8 bg-amber-100 rounded-b-xl border-t border-pink-300 flex items-center justify-around px-2 shadow-md">
-                <span className="w-2 h-2 rounded-full bg-rose-400" />
-                <span className="w-2 h-2 rounded-full bg-amber-400" />
-                <span className="w-2 h-2 rounded-full bg-indigo-400" />
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              </div>
-            </div>
+          <div className="mt-8 w-full max-w-md">
+            <BirthdayCakeCeremony
+              recipientName={wish.recipientName}
+              isBlown={candleBlown}
+              onBlow={handleBlowCandle}
+              onRelight={() => setCandleBlown(false)}
+            />
+          </div>
+        )}
 
-            {!candleBlown ? (
-              <div>
-                <button
-                  type="button"
-                  onClick={handleBlowCandle}
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-amber-300 hover:text-amber-200 transition bg-amber-500/20 hover:bg-amber-500/30 px-4 py-1.5 rounded-full border border-amber-400/40 cursor-pointer animate-pulse"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                  <span>একটি ইচ্ছা মনে রেখে মোমবাতিতে ফুঁ দিন (ট্যাপ করুন)</span>
-                </button>
-                <p className="text-[11px] text-stone-300 mt-1.5">
-                  মোমবাতিতে চাপ দিলে আপনার অনুভূতি বাতাসে ছড়িয়ে পড়বে
-                </p>
-              </div>
-            ) : (
-              <div className="animate-fade-in-up">
-                <p className="text-sm font-bold text-amber-300 flex items-center justify-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  <span>আপনার মনের সব ইচ্ছা পূরণ হোক!</span>
-                </p>
-                <p className="text-xs text-stone-300 mt-1">প্রতিটি ক্ষণ ভরে উঠুক অনাবিল আনন্দে ও ভালোবাসায়।</p>
-              </div>
-            )}
+        {/* Dedicated 1080x1920 Instagram & Facebook Story Keepsake Card */}
+        {!wish.selfDestruct && (
+          <div className="mt-6 w-full max-w-md bg-gradient-to-r from-amber-500/15 via-rose-500/15 to-purple-500/15 backdrop-blur-md border border-amber-300/30 rounded-3xl p-5 shadow-xl text-center animate-fade-in">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-bold mb-2">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>সোশ্যাল মিডিয়া স্টোরি ও স্মৃতি</span>
+            </div>
+            <h3 className="text-base font-bold text-white mb-1">
+              ফেসবুক ও ইনস্টাগ্রাম স্টোরি কার্ড
+            </h3>
+            <p className="text-xs text-stone-300 mb-4 max-w-xs mx-auto">
+              আপনার এই সুন্দর চিঠি ও স্মৃতি দিয়ে ১ ক্লিকেই তৈরি করুন ১০৮০x১৯২০ সাইজের হাই-রেজুলিউশন স্টোরি ইমেজ!
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowStoryModal(true)}
+              className="w-full py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-600 hover:from-amber-400 hover:to-rose-500 text-white font-bold text-xs sm:text-sm shadow-xl transition transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-amber-200" />
+              <span>১০৮০x১৯২০ স্টোরি কার্ড প্রিভিউ ও সেভ করুন</span>
+            </button>
           </div>
         )}
 
@@ -377,9 +357,9 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
           <button
             type="button"
             onClick={closeEnvelope}
-            className="inline-flex items-center gap-1.5 text-xs text-stone-300 hover:text-white px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 transition border border-white/10 cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs text-stone-300 hover:text-white px-3.5 py-1.5 rounded-full bg-white/5 hover:bg-white/10 transition border border-white/10 cursor-pointer"
           >
-            <RotateCcw className="w-3 h-3" />
+            <RotateCcw className="w-3.5 h-3.5" />
             <span>পুনরায় খাম বন্ধ করুন</span>
           </button>
         </div>
@@ -397,6 +377,23 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
             <span>নিজের জন্য এমন একটি চিঠি তৈরি করুন →</span>
           </Link>
         </div>
+
+        {/* 1080x1920 Story Export Modal */}
+        {showStoryModal && content && (
+          <StoryExportModal
+            isOpen={showStoryModal}
+            onClose={() => setShowStoryModal(false)}
+            input={{
+              theme,
+              recipient: wish.recipientName,
+              sender: wish.senderName,
+              message: content.message,
+              font: wish.fontStyle,
+              photoUrl: content.photoUrl,
+              relationship: wish.relationship,
+            }}
+          />
+        )}
       </div>
     );
   };
@@ -408,6 +405,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
       <canvas ref={balloonRef} className="fixed inset-0 pointer-events-none z-40 w-full h-full" />
       <canvas ref={confettiRef} className="fixed inset-0 pointer-events-none z-50 w-full h-full" />
 
+      {/* Floating Ambient Stardust and Light Orbs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
         <div className="absolute top-10 left-10 w-72 h-72 rounded-full bg-rose-500/20 blur-3xl animate-pulse" />
         <div className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-amber-500/20 blur-3xl animate-pulse delay-1000" />

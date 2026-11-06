@@ -46,10 +46,10 @@ export async function generateMetadata({
   }
 
   return {
-    title: `🎂 প্রিয় ${wish.recipientName}, তোমার জন্য একটি বিশেষ চিঠি এসেছে! | অনুভূতি`,
+    title: `প্রিয় ${wish.recipientName}, তোমার জন্য একটি বিশেষ চিঠি এসেছে! | অনুভূতি`,
     description: `${wish.senderName} তোমার জন্য অনুভূতির পাতায় একটি জাদুকরী খামে মোড়ানো জন্মদিনের চিঠি পাঠিয়েছে। খামটি খুলতে ট্যাপ করো...`,
     openGraph: {
-      title: `🎂 প্রিয় ${wish.recipientName}, তোমার জন্য একটি বিশেষ চিঠি এসেছে!`,
+      title: `প্রিয় ${wish.recipientName}, তোমার জন্য একটি বিশেষ চিঠি এসেছে!`,
       description: `${wish.senderName} তোমার জন্য একটি উপহার পাঠিয়েছে। খামটি খুলে দেখতে ট্যাপ করো...`,
       type: "website",
     },

@@ -70,6 +70,8 @@ export default function BirthdayWishCreatorPage() {
   const [recipientName, setRecipientName] = useState("");
   const [senderName, setSenderName] = useState("");
   const [relationship, setRelationship] = useState(currentOccasion.relations[0]);
+  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState("all");
+  const [previewTab, setPreviewTab] = useState<"envelope" | "letter">("envelope");
   const [message, setMessage] = useState(
     BIRTHDAY_TEMPLATES.find((t) => t.occasion === "birthday")?.fullMessage || BIRTHDAY_TEMPLATES[0].fullMessage
   );
@@ -102,6 +104,7 @@ export default function BirthdayWishCreatorPage() {
 
   const handleOccasionChange = (occId: OccasionType) => {
     setSelectedOccasion(occId);
+    setSelectedTemplateCategory("all");
     const occ = OCCASIONS.find((o) => o.id === occId);
     if (!occ) return;
 
@@ -120,8 +123,20 @@ export default function BirthdayWishCreatorPage() {
 
   const handleSelectTemplate = (tmpl: BirthdayTemplate) => setMessage(tmpl.fullMessage);
 
-  const availableTemplates = BIRTHDAY_TEMPLATES.filter(
+  const occasionTemplates = BIRTHDAY_TEMPLATES.filter(
     (t) => !t.occasion || t.occasion === selectedOccasion
+  );
+
+  const categories = React.useMemo(() => {
+    const set = new Set<string>();
+    occasionTemplates.forEach((t) => {
+      if (t.category) set.add(t.category);
+    });
+    return Array.from(set);
+  }, [occasionTemplates]);
+
+  const displayedTemplates = occasionTemplates.filter(
+    (t) => selectedTemplateCategory === "all" || t.category === selectedTemplateCategory
   );
 
   const handleCreateWish = async (e: React.FormEvent) => {
@@ -390,11 +405,43 @@ export default function BirthdayWishCreatorPage() {
                   রেডিমেড বয়ান ও চিঠি (১ ক্লিকে বেছে নিন)
                 </label>
                 <span className="text-[11px] text-stone-400">
-                  {availableTemplates.length}টি টেমপ্লেট
+                  {displayedTemplates.length}টি টেমপ্লেট
                 </span>
               </div>
+
+              {/* Category Filter Chips */}
+              {categories.length > 1 && (
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTemplateCategory("all")}
+                    className={`px-3 py-1 rounded-full text-[11px] font-bold transition cursor-pointer ${
+                      selectedTemplateCategory === "all"
+                        ? "bg-[#7E151E] text-white shadow-xs"
+                        : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200"
+                    }`}
+                  >
+                    সব ({occasionTemplates.length})
+                  </button>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedTemplateCategory(cat)}
+                      className={`px-3 py-1 rounded-full text-[11px] font-bold transition cursor-pointer ${
+                        selectedTemplateCategory === cat
+                          ? "bg-[#7E151E] text-white shadow-xs"
+                          : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200"
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {availableTemplates.map((tmpl) => (
+                {displayedTemplates.map((tmpl) => (
                   <button
                     key={tmpl.id}
                     type="button"
@@ -549,42 +596,104 @@ export default function BirthdayWishCreatorPage() {
             </button>
           </form>
 
-          {/* Live Preview Envelope */}
+          {/* Live Preview Envelope & Letter */}
           <div className="lg:col-span-5 sticky top-24 space-y-4">
             <div className="bg-stone-900 rounded-3xl p-6 text-white shadow-xl border border-stone-800 text-center">
-              <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400 block mb-3">
-                লাইভ প্রিভিউ (Live Preview)
-              </span>
-
-              <div
-                className="w-full aspect-[16/11] rounded-2xl relative shadow-2xl border flex flex-col items-center justify-center p-4 transition-all duration-300"
-                style={{
-                  backgroundColor: selectedTheme.envelopeColor,
-                  borderColor: selectedTheme.envelopeBorder,
-                }}
-              >
-                <div
-                  className="absolute top-0 left-0 w-full h-full border-b border-white/20"
-                  style={{
-                    clipPath: "polygon(0 0, 50% 55%, 100% 0)",
-                    backgroundColor: "rgba(255,255,255,0.08)",
-                  }}
-                />
-                <span className="text-[10px] uppercase tracking-wider text-white/60 block">To:</span>
-                <p className="text-base font-bold text-white drop-shadow">
-                  {recipientName.trim() || currentOccasion.recipientPlaceholder.replace("যেমন: ", "")}
-                </p>
-                <p className="text-xs text-white/70 mt-0.5">
-                  From: {senderName.trim() || currentOccasion.senderPlaceholder.replace("যেমন: ", "")}
-                </p>
-
-                <div
-                  className="absolute bottom-3 w-11 h-11 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg border-2 border-amber-300/60 ring-2 ring-black/20 text-center px-1"
-                  style={{ backgroundColor: selectedTheme.sealColor }}
-                >
-                  {selectedTheme.sealText}
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400">
+                  লাইভ প্রিভিউ (Live Preview)
+                </span>
+                <div className="inline-flex rounded-full bg-stone-800 p-0.5 border border-stone-700">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab("envelope")}
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition cursor-pointer ${
+                      previewTab === "envelope"
+                        ? "bg-amber-400 text-stone-900 shadow-xs"
+                        : "text-stone-300 hover:text-white"
+                    }`}
+                  >
+                    খাম (Envelope)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab("letter")}
+                    className={`px-3 py-1 rounded-full text-[10px] font-bold transition cursor-pointer ${
+                      previewTab === "letter"
+                        ? "bg-amber-400 text-stone-900 shadow-xs"
+                        : "text-stone-300 hover:text-white"
+                    }`}
+                  >
+                    চিঠি (Letter)
+                  </button>
                 </div>
               </div>
+
+              {previewTab === "envelope" ? (
+                <div
+                  className="w-full aspect-[16/11] rounded-2xl relative shadow-2xl border flex flex-col items-center justify-center p-4 transition-all duration-300"
+                  style={{
+                    backgroundColor: selectedTheme.envelopeColor,
+                    borderColor: selectedTheme.envelopeBorder,
+                  }}
+                >
+                  <div
+                    className="absolute top-0 left-0 w-full h-full border-b border-white/20"
+                    style={{
+                      clipPath: "polygon(0 0, 50% 55%, 100% 0)",
+                      backgroundColor: "rgba(255,255,255,0.08)",
+                    }}
+                  />
+                  <span className="text-[10px] uppercase tracking-wider text-white/60 block">To:</span>
+                  <p className="text-base font-bold text-white drop-shadow">
+                    {recipientName.trim() || currentOccasion.recipientPlaceholder.replace("যেমন: ", "")}
+                  </p>
+                  <p className="text-xs text-white/70 mt-0.5">
+                    From: {senderName.trim() || currentOccasion.senderPlaceholder.replace("যেমন: ", "")}
+                  </p>
+
+                  <div
+                    className="absolute bottom-3 w-11 h-11 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg border-2 border-amber-300/60 ring-2 ring-black/20 text-center px-1"
+                    style={{ backgroundColor: selectedTheme.sealColor }}
+                  >
+                    {selectedTheme.sealText}
+                  </div>
+                </div>
+              ) : (
+                <div
+                  className="w-full aspect-[16/11] rounded-2xl relative shadow-2xl border p-4 text-left flex flex-col justify-between overflow-hidden transition-all duration-300"
+                  style={{
+                    backgroundColor: selectedTheme.letterBg,
+                    color: selectedTheme.textColor,
+                    borderColor: `${selectedTheme.accentColor}40`,
+                    fontFamily: previewFont,
+                  }}
+                >
+                  <div>
+                    <div className="flex items-center justify-between border-b border-stone-200/60 pb-1.5 mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider opacity-70" style={{ color: selectedTheme.accentColor }}>
+                        {currentOccasion.headerTitle}
+                      </span>
+                      <Heart className="w-3 h-3 fill-current opacity-60" style={{ color: selectedTheme.accentColor }} />
+                    </div>
+                    <p className="text-xs font-bold mb-1">
+                      {selectedOccasion === "wedding"
+                        ? `সম্মানিত ${recipientName.trim() || "অতিথি"},`
+                        : `প্রিয় ${recipientName.trim() || "অনন্যা"},`}
+                    </p>
+                    <p className="text-[11px] leading-relaxed line-clamp-3 opacity-85">
+                      {message.trim() || "আপনার ভালোবাসার চিঠি ও শুভেচ্ছার কথা..."}
+                    </p>
+                  </div>
+
+                  <div className="border-t border-stone-200/60 pt-1 text-right mt-2">
+                    <span className="text-[9px] opacity-60 block">ভালোবাসা ও শুভকামনায়,</span>
+                    <span className="text-[11px] font-bold" style={{ color: selectedTheme.accentColor }}>
+                      — {senderName.trim() || "আপনার নাম"}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="mt-4 flex flex-wrap justify-center gap-1.5 text-[10px] font-bold">
                 {photoUrl && (
