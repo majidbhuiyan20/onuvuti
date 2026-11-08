@@ -93,19 +93,30 @@ export function proxy(request: NextRequest) {
     }
   }
 
-  // 3. Attach strict security headers to every response
+  // 3. Attach security headers
   const response = NextResponse.next();
-  response.headers.set("X-Frame-Options", "DENY");
+  const isEbookAdminRoute = pathname.startsWith("/api/admin/ebook");
+
+  if (isEbookAdminRoute) {
+    response.headers.set("X-Frame-Options", "SAMEORIGIN");
+    response.headers.set(
+      "Content-Security-Policy",
+      "frame-ancestors 'self'; base-uri 'self'; object-src 'self';"
+    );
+  } else {
+    response.headers.set("X-Frame-Options", "DENY");
+    response.headers.set(
+      "Content-Security-Policy",
+      "frame-ancestors 'none'; base-uri 'self'; object-src 'none';"
+    );
+  }
+
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("X-XSS-Protection", "1; mode=block");
   response.headers.set(
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=(), payment=()"
-  );
-  response.headers.set(
-    "Content-Security-Policy",
-    "frame-ancestors 'none'; base-uri 'self'; object-src 'none';"
   );
 
   return response;

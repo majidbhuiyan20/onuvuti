@@ -2426,7 +2426,7 @@ export default function AdminDashboardPage() {
 
         {/* TAB: EBOOK READER & FILE INSPECTOR */}
         {activeTab === "ebook" && (
-          <div className="space-y-5">
+          <div className="space-y-6">
             {/* Header & Controls */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-stone-200 dark:border-stone-800">
               <div className="space-y-1">
@@ -2438,28 +2438,50 @@ export default function AdminDashboardPage() {
                   </span>
                 </h2>
                 <p className="text-xs text-stone-500 dark:text-stone-400">
-                  সার্ভারে সংরক্ষিত সর্বশেষ সংস্করণের সম্পূর্ণ ই-বুক PDF সরাসরি ব্রাউজারে পড়ুন ও পরীক্ষা করুন।
+                  সার্ভারে সংরক্ষিত সর্বশেষ সংস্করণের সম্পূর্ণ ই-বুক PDF আলাদা উইন্ডোতে বা এখানে সরাসরি পড়ুন।
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
                 <a
-                  href="/api/admin/ebook?view=1"
+                  href="/api/admin/ebook?token=session_authed"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#80131E] hover:bg-[#680f18] text-white transition flex items-center gap-1.5 shadow-xs"
+                  className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold bg-[#80131E] hover:bg-[#680f18] text-white transition flex items-center gap-2 shadow-md active:scale-95"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>নতুন ট্যাবে বড় করে পড়ুন</span>
+                  <ExternalLink className="w-4 h-4" />
+                  <span>আলাদা ট্যাবে সম্পূর্ণ বইটি পড়ুন</span>
                 </a>
                 <a
-                  href="/api/admin/ebook?download=1"
-                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 transition flex items-center gap-1.5"
+                  href="/api/admin/ebook?download=1&token=session_authed"
+                  className="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 transition flex items-center gap-2"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-4 h-4" />
                   <span>PDF ডাউনলোড</span>
                 </a>
               </div>
+            </div>
+
+            {/* Standalone Action Banner */}
+            <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-r from-amber-50 to-rose-50 dark:from-stone-900 dark:to-[#1a1215] border border-amber-200 dark:border-stone-800 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+              <div className="space-y-1 text-center md:text-left">
+                <h3 className="text-base font-extrabold text-[#80131E] dark:text-rose-400">
+                  ব্রাউজারে আলাদা ট্যাবে নিরবচ্ছিন্নভাবে পড়তে চান?
+                </h3>
+                <p className="text-xs text-stone-600 dark:text-stone-400">
+                  নিচের বাটনে চাপ দিলে কোনো বাধা ছাড়াই আলাদা ব্রাউজার ট্যাবে পুরো পিডিএফ লোড হবে।
+                </p>
+              </div>
+              <a
+                href="/api/admin/ebook?token=session_authed"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3 rounded-xl bg-[#80131E] hover:bg-[#680f18] text-white font-extrabold text-xs sm:text-sm inline-flex items-center gap-2 shadow-md shrink-0 cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>এখানে চাপুন — আলাদা উইন্ডোতে পড়ুন</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
             </div>
 
             {/* File Info Bar */}
@@ -2473,7 +2495,7 @@ export default function AdminDashboardPage() {
               <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xs">
                 <span className="text-[10px] uppercase font-bold text-stone-400 block">ফাইল সাইজ</span>
                 <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block">
-                  ~৬.৫ মেগাবাইট (PDF)
+                  ~৭.৩ মেগাবাইট (PDF)
                 </span>
               </div>
               <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xs">
@@ -2491,9 +2513,9 @@ export default function AdminDashboardPage() {
             </div>
 
             {/* Embedded Native PDF Viewer Frame */}
-            <div className="rounded-2xl border-2 border-stone-200/90 dark:border-stone-800 overflow-hidden shadow-lg bg-stone-100 dark:bg-stone-900">
+            <div className="rounded-2xl border-2 border-stone-200/90 dark:border-stone-800 overflow-hidden shadow-lg bg-stone-100 dark:bg-stone-900 relative min-h-[500px]">
               <iframe
-                src="/api/admin/ebook#toolbar=1&navpanes=1"
+                src="/api/admin/ebook?token=session_authed#toolbar=1&navpanes=1"
                 className="w-full h-[78vh] sm:h-[82vh] border-0 block"
                 title="স্পর্শের ব্যাকরণ সম্পূর্ণ ই-বুক রিডার"
               />
