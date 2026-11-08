@@ -795,7 +795,6 @@ export default function SporsherByakoronLandingPage() {
                 <p className="font-extrabold text-xs sm:text-sm text-[#80131E] dark:text-rose-400">
                   {BOOK_INFO.departmentBn}
                 </p>
-                <p className="text-[11px] text-stone-500 font-sans">অনুভূতি পাবলিকেশন্স (Onuvuti.site)</p>
               </div>
               <span className="text-[11px] font-mono font-bold text-amber-800 dark:text-amber-400 bg-amber-100 dark:bg-amber-950 px-2.5 py-1 rounded-full">
                 প্রথম সংস্করণ: ২০২৬
