@@ -69,8 +69,8 @@ export function isDeveloperOrAdmin(): boolean {
  */
 export function callFbq(...args: any[]) {
   if (typeof window !== "undefined") {
-    if (isDeveloperOrAdmin()) {
-      // Developer / Admin mode: silence Meta Pixel
+    // Never send tracking events from the admin dashboard
+    if (window.location.pathname.startsWith("/admin")) {
       return;
     }
     if (typeof window.fbq === "function") {
@@ -124,8 +124,8 @@ async function logInternalEvent(data: {
  */
 export function trackPageView(path?: string) {
   if (typeof window === "undefined") return;
-  if (isDeveloperOrAdmin()) return;
   const currentPath = path || window.location.pathname + window.location.search;
+  if (currentPath.startsWith("/admin")) return;
 
   if (window._fbq_last_page === currentPath) {
     return;
@@ -151,7 +151,6 @@ export function trackViewContent(params?: {
   value?: number;
   currency?: string;
 }) {
-  if (isDeveloperOrAdmin()) return;
   const contentName = params?.content_name || "স্পর্শের ব্যাকরণ (ই-বুক)";
   const contentIds = params?.content_ids || ["sporsher-byakoron"];
   const contentType = params?.content_type || "product";
@@ -187,7 +186,6 @@ export function trackInitiateCheckout(params?: {
   value?: number;
   currency?: string;
 }) {
-  if (isDeveloperOrAdmin()) return;
   const contentName = params?.content_name || "স্পর্শের ব্যাকরণ (ই-বুক)";
   const contentIds = params?.content_ids || ["sporsher-byakoron"];
   const contentType = params?.content_type || "product";
@@ -224,7 +222,6 @@ export function trackPurchase(params: {
   content_name?: string;
   content_ids?: string[];
 }) {
-  if (isDeveloperOrAdmin()) return;
   const orderId = String(params.order_id).trim();
   if (!orderId) return;
 
@@ -264,7 +261,6 @@ export function trackCompleteRegistration(params?: {
   method?: string;
   status?: string;
 }) {
-  if (isDeveloperOrAdmin()) return;
   const method = params?.method || "manual";
 
   const eventData = {
@@ -289,7 +285,6 @@ export function trackLead(params?: {
   content_name?: string;
   category?: string;
 }) {
-  if (isDeveloperOrAdmin()) return;
   const contentName = params?.content_name || "Story Submission";
   const category = params?.category || "general";
 

@@ -71,24 +71,11 @@ export default function RootLayout({
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
 
-              var isDev = false;
-              try {
-                if (window.location.search.indexOf('force_pixel_test=true') === -1) {
-                  isDev = window.location.pathname.indexOf('/admin') === 0 ||
-                          localStorage.getItem('onuvuti_is_admin') === 'true' ||
-                          sessionStorage.getItem('onuvuti_admin_authed') === 'true' ||
-                          document.cookie.indexOf('onuvuti_is_admin=true') !== -1 ||
-                          window.location.search.indexOf('dev_mode=true') !== -1;
-                }
-              } catch(e) {}
-
-              if (!isDev) {
-                fbq('init', '1519039830282848');
+              fbq('init', '1519039830282848');
+              if (window.location.pathname.indexOf('/admin') !== 0) {
                 fbq('track', 'PageView');
-                window._fbq_initialized = true;
-              } else {
-                console.info('[Meta Pixel] Developer / Admin session detected: Tracking silenced.');
               }
+              window._fbq_initialized = true;
             `,
           }}
         />

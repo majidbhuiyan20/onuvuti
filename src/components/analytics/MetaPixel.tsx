@@ -11,8 +11,8 @@ function RouteTracker() {
   const isFirstMount = useRef(true);
 
   useEffect(() => {
-    // Completely silence tracking for admin paths or developer / admin sessions
-    if (pathname.startsWith("/admin") || isDeveloperOrAdmin()) {
+    // Never track admin dashboard pages
+    if (pathname.startsWith("/admin")) {
       return;
     }
 
@@ -32,16 +32,6 @@ function RouteTracker() {
 
 export default function MetaPixel() {
   useEffect(() => {
-    // If the visitor is an admin/developer, revoke consent to guarantee no automated beacons are sent
-    if (isDeveloperOrAdmin()) {
-      if (typeof window !== "undefined" && window.fbq) {
-        try {
-          window.fbq("consent", "revoke");
-        } catch {}
-      }
-      return;
-    }
-
     // Optionally check if tracking is disabled in backend config
     async function checkBackendConfig() {
       try {
