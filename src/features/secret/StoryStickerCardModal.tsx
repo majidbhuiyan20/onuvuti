@@ -150,7 +150,7 @@ export default function StoryStickerCardModal({
                   <Palette className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
                   <span>কালার ও ব্যাকগ্রাউন্ড থিম বেছে নিন:</span>
                 </label>
-                <div className="grid grid-cols-2 gap-1.5">
+                <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
                   {(Object.keys(STORY_THEMES) as StoryThemeId[]).map((tId) => {
                     const theme = STORY_THEMES[tId];
                     const isSelected = selectedTheme === tId;

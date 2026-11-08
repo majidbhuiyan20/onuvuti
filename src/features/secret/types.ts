@@ -56,18 +56,37 @@ export interface SavedInboxMeta {
 
 export type StoryThemeId =
   | "crimson"
+  | "obsidian_gold"
+  | "cyber_neon"
+  | "rose_quartz"
   | "midnight"
-  | "sunset"
+  | "polaroid"
+  | "dark_academia"
   | "vintage"
   | "emerald"
   | "birthday_cake"
   | "birthday_royal"
   | "aurora"
-  | "polaroid";
+  | "sunset";
 
 export interface StoryTheme {
   id: StoryThemeId;
   nameBn: string;
+  tagBn?: string;
+  category?: "royal" | "modern" | "vintage" | "festive";
+  styleType?:
+    | "royal_seal"
+    | "obsidian_gold"
+    | "cyber_neon"
+    | "rose_quartz"
+    | "midnight_stars"
+    | "polaroid_tape"
+    | "dark_academia"
+    | "vintage_papyrus"
+    | "emerald_botanical"
+    | "aurora_glass"
+    | "sunset_glow"
+    | "birthday_confetti";
   bgGradient: string[];
   questionBg: string;
   questionBorder: string;
@@ -78,5 +97,7 @@ export interface StoryTheme {
   badgeBg: string;
   badgeText: string;
   footerColor: string;
+  accentColor?: string;
+  foilBorder?: string;
 }
 

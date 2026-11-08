@@ -62,6 +62,15 @@ import SecretFooter from "@/features/secret/SecretFooter";
 
 type FilterTab = "all" | "unopened" | "replied" | "favorites";
 
+const QUICK_REPLIES = [
+  "অনেক ধন্যবাদ ও শুভকামনা!",
+  "ক্লুটা কিন্তু দারুণ ছিল!",
+  "তুমি কে, খুব জানতে ইচ্ছে করছে!",
+  "কথাটা সারাজীবন মনে থাকবে",
+  "একদিন সামনে এসে বলো না!",
+  "সত্যিই মনটা ভালো হয়ে গেল",
+];
+
 function PrivateInboxContent() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -89,6 +98,9 @@ function PrivateInboxContent() {
   const [activeMessage, setActiveMessage] = useState<SecretMessage | null>(null);
   const [replyInput, setReplyInput] = useState("");
   const [selectedTheme, setSelectedTheme] = useState<StoryThemeId>("crimson");
+  const [storyCategoryTab, setStoryCategoryTab] = useState<
+    "all" | "royal" | "modern" | "vintage" | "festive"
+  >("all");
   const [savingReply, setSavingReply] = useState(false);
   const [sharingStory, setSharingStory] = useState(false);
 
@@ -967,18 +979,45 @@ function PrivateInboxContent() {
               </div>
 
               {/* Question Preview */}
-              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-xs">
-                <span className="font-bold text-stone-500">প্রশ্ন / বার্তা:</span>
-                <p className="mt-1 font-bold text-stone-800 dark:text-stone-100">
-                  {activeMessage.moodEmoji} &ldquo;{renderFormattedInline(activeMessage.content)}&rdquo;
+              <div className="p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 text-xs space-y-1">
+                <span className="font-bold text-stone-500 dark:text-stone-400">
+                  প্রশ্ন / বার্তা:
+                </span>
+                <p className="font-serif italic font-bold text-sm text-stone-800 dark:text-stone-100 leading-snug">
+                  &ldquo;{renderFormattedInline(activeMessage.content)}&rdquo;
                 </p>
               </div>
 
               {/* Reply Input */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
-                  আপনার উত্তর লিখুন:
-                </label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                    আপনার উত্তর লিখুন:
+                  </label>
+                  <span className="text-[11px] font-mono text-stone-400">
+                    {replyInput.length}/500 বর্ণ
+                  </span>
+                </div>
+
+                {/* Quick Reply Presets */}
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400">
+                    দ্রুত উত্তর দিতে ট্যাপ করুন:
+                  </span>
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                    {QUICK_REPLIES.map((qr) => (
+                      <button
+                        key={qr}
+                        type="button"
+                        onClick={() => setReplyInput(qr)}
+                        className="px-2.5 py-1 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-stone-700 dark:text-stone-300 hover:text-[#7E151E] dark:hover:text-rose-300 text-[11px] font-bold border border-stone-200 dark:border-stone-700 whitespace-nowrap transition cursor-pointer shrink-0 shadow-2xs"
+                      >
+                        {qr}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <textarea
                   rows={3}
                   maxLength={500}
@@ -989,49 +1028,111 @@ function PrivateInboxContent() {
                 />
               </div>
 
-              {/* Theme Picker */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
-                  <span>স্টোরি থিম নির্বাচন করুন:</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {(Object.keys(STORY_THEMES) as StoryThemeId[]).map((tid) => {
-                    const t = STORY_THEMES[tid];
-                    const isSelected = selectedTheme === tid;
-                    return (
-                      <button
-                        key={tid}
-                        type="button"
-                        onClick={() => setSelectedTheme(tid)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition border flex items-center gap-2 cursor-pointer ${
-                          isSelected
-                            ? "border-[#7E151E] bg-rose-50 dark:bg-rose-950/60 text-[#7E151E] dark:text-rose-300 shadow-xs"
-                            : "border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 text-stone-600 dark:text-stone-300"
-                        }`}
-                      >
-                        <span
-                          className="w-3.5 h-3.5 rounded-full border border-white/40 shadow-xs shrink-0"
-                          style={{
-                            background: `linear-gradient(135deg, ${t.bgGradient[0]}, ${t.bgGradient[1]})`,
-                          }}
-                        />
-                        <span>{t.nameBn}</span>
-                      </button>
-                    );
-                  })}
+              {/* Theme Picker with Category Tabs & Luxury Swatches */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1.5">
+                    <Palette className="w-3.5 h-3.5 text-[#7E151E] dark:text-rose-400" />
+                    <span>ইউনিক কার্ড ডিজাইন বেছে নিন:</span>
+                  </label>
+                  <span className="text-[11px] font-bold text-[#7E151E] dark:text-rose-400">
+                    {STORY_THEMES[selectedTheme]?.nameBn}
+                  </span>
+                </div>
+
+                {/* Theme Category Filter Pills */}
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
+                  {[
+                    { id: "all" as const, label: "সব ডিজাইন" },
+                    { id: "royal" as const, label: "রাজকীয় ও লাক্সারি" },
+                    { id: "modern" as const, label: "মডার্ন ও নিয়ন" },
+                    { id: "vintage" as const, label: "ভিন্টেজ ও স্মৃতি" },
+                    { id: "festive" as const, label: "বার্থডে ও উৎসব" },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setStoryCategoryTab(cat.id)}
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer whitespace-nowrap ${
+                        storyCategoryTab === cat.id
+                          ? "bg-[#7E151E] text-white shadow-2xs"
+                          : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400 hover:bg-stone-200"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Grid of Unique Card Theme Swatches */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto pr-1">
+                  {(Object.keys(STORY_THEMES) as StoryThemeId[])
+                    .filter((tid) => {
+                      if (storyCategoryTab === "all") return true;
+                      return STORY_THEMES[tid].category === storyCategoryTab;
+                    })
+                    .map((tid) => {
+                      const t = STORY_THEMES[tid];
+                      const isSelected = selectedTheme === tid;
+                      return (
+                        <button
+                          key={tid}
+                          type="button"
+                          onClick={() => setSelectedTheme(tid)}
+                          className={`p-2.5 rounded-2xl border text-left transition-all cursor-pointer relative overflow-hidden group ${
+                            isSelected
+                              ? "border-[#7E151E] dark:border-rose-400 bg-rose-50/70 dark:bg-rose-950/30 ring-2 ring-[#7E151E]/30 shadow-xs"
+                              : "border-stone-200 dark:border-stone-800 bg-stone-50/60 dark:bg-stone-900/60 hover:bg-stone-100 dark:hover:bg-stone-800/80"
+                          }`}
+                        >
+                          {/* Mini Story Card Swatch */}
+                          <div
+                            className="w-full h-8 rounded-lg mb-1.5 relative overflow-hidden shadow-2xs border border-white/20 flex items-center justify-center"
+                            style={{
+                              background: `linear-gradient(135deg, ${t.bgGradient[0]}, ${t.bgGradient[1]})`,
+                            }}
+                          >
+                            <div
+                              className="w-14 h-4 rounded-sm border shadow-xs"
+                              style={{
+                                backgroundColor: t.questionBg,
+                                borderColor: t.questionBorder,
+                              }}
+                            />
+                          </div>
+
+                          <div className="space-y-0.5">
+                            <div className="text-[11px] font-bold text-stone-800 dark:text-stone-100 truncate">
+                              {t.nameBn}
+                            </div>
+                            <div className="text-[9.5px] text-stone-500 dark:text-stone-400 truncate">
+                              {t.tagBn || "১০৮০×১৯২০ HD"}
+                            </div>
+                          </div>
+
+                          {isSelected && (
+                            <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-[#7E151E] text-white flex items-center justify-center shadow-xs">
+                              <Check className="w-2.5 h-2.5" />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
 
-              {/* Live Canvas Preview (scaled down smoothly to fit preview) */}
+              {/* Live Canvas Preview (scaled down smoothly in sleek smartphone frame) */}
               <div className="space-y-1.5 text-center">
-                <div className="text-[11px] font-bold text-stone-400">
-                  লাইভ স্টোরি প্রিভিউ (১০৮০ × ১৯২০)
+                <div className="flex items-center justify-center gap-2 text-[11px] font-bold text-stone-400">
+                  <span>লাইভ ফুল এইচডি স্টোরি প্রিভিউ</span>
+                  <span className="px-2 py-0.5 rounded-full bg-stone-100 dark:bg-stone-800 text-[9px] font-mono font-bold text-stone-500">
+                    1080 × 1920
+                  </span>
                 </div>
-                <div className="bg-stone-900/90 rounded-2xl p-3 inline-block max-h-72 overflow-hidden shadow-inner border border-stone-800">
+                <div className="bg-gradient-to-b from-stone-900 to-black rounded-3xl p-3 inline-block shadow-2xl border-2 border-stone-800 relative">
                   <canvas
                     ref={canvasRef}
-                    className="h-64 w-auto rounded-lg shadow-lg mx-auto object-contain"
+                    className="h-64 sm:h-72 w-auto rounded-xl shadow-lg mx-auto object-contain"
                   />
                 </div>
               </div>
