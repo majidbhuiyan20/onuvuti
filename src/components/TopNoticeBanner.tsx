@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Megaphone, ArrowRight, ExternalLink, X } from "lucide-react";
 import { GO_API_BASE_URL } from "@/lib/goApi";
+import { BOOK_INFO } from "@/data/bookData";
 
 interface AdBannerItem {
   slot: string;
@@ -15,7 +16,7 @@ interface AdBannerItem {
 
 const DEFAULT_TOP_NOTICE: AdBannerItem = {
   slot: "top_notice",
-  title: "অনুভূতি পাবলিকেশন্স — ‘স্পর্শের ব্যাকরণ’ বেস্টসেলার ই-বুক এখন মাত্র ১৯০ টাকায় সংগ্রহ করুন!",
+  title: `অনুভূতি পাবলিকেশন্স — ‘${BOOK_INFO.titleBn}’ বেস্টসেলার ই-বুক এখন মাত্র ${BOOK_INFO.offerPriceBn} টাকায় সংগ্রহ করুন!`,
   imageUrl: "",
   linkUrl: "/sporsher-byakoron",
   isActive: true,

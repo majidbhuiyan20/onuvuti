@@ -51,6 +51,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
+import { BOOK_INFO } from "@/data/bookData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
 import { compressImageToDataUrl } from "@/lib/imageCompression";
 import {
@@ -244,7 +245,7 @@ export default function AdminDashboardPage() {
     },
     {
       slot: "top_notice",
-      title: "অনুভূতি পাবলিকেশন্স — ‘স্পর্শের ব্যাকরণ’ বেস্টসেলার ই-বুক এখন মাত্র ১৯০ টাকায় সংগ্রহ করুন!",
+      title: `অনুভূতি পাবলিকেশন্স — ‘${BOOK_INFO.titleBn}’ বেস্টসেলার ই-বুক এখন মাত্র ${BOOK_INFO.offerPriceBn} টাকায় সংগ্রহ করুন!`,
       imageUrl: "",
       linkUrl: "/sporsher-byakoron",
       isActive: true,
@@ -3213,7 +3214,7 @@ export default function AdminDashboardPage() {
                           }
                           placeholder={
                             meta.isNotice
-                              ? "যেমন: স্পর্শের ব্যাকরণ বেস্টসেলার ই-বুক এখন মাত্র ১৯০ টাকায় সংগ্রহ করুন!"
+                              ? `যেমন: স্পর্শের ব্যাকরণ বেস্টসেলার ই-বুক এখন মাত্র ${BOOK_INFO.offerPriceBn} টাকায় সংগ্রহ করুন!`
                               : "যেমন: স্পর্শের ব্যাকরণ - অনুভূতি পাবলিকেশন্স"
                           }
                           className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-[#142230] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#80131E]"

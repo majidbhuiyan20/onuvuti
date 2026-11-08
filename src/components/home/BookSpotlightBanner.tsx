@@ -10,6 +10,7 @@ import {
   Sparkles,
   ShieldCheck,
 } from "lucide-react";
+import { BOOK_INFO } from "@/data/bookData";
 
 export default function BookSpotlightBanner() {
   return (
@@ -75,13 +76,13 @@ export default function BookSpotlightBanner() {
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl sm:text-3xl font-black text-[#80131E] dark:text-rose-400">
-                ৳১৯০
+                ৳{BOOK_INFO.offerPriceBn}
               </span>
               <span className="text-xs text-stone-400 line-through">
-                ৳৪০০
+                ৳{BOOK_INFO.regularPriceBn}
               </span>
               <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300">
-                ৫২% ছাড়
+                {BOOK_INFO.discountPercentBn}
               </span>
             </div>
 

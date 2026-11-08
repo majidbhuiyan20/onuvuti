@@ -145,7 +145,7 @@ func (r *Repository) defaultAds() []models.AdBanner {
 		},
 		{
 			Slot:      "top_notice",
-			Title:     "অনুভূতি পাবলিকেশন্স — ‘স্পর্শের ব্যাকরণ’ বেস্টসেলার ই-বুক এখন মাত্র ১৯০ টাকায় সংগ্রহ করুন!",
+			Title:     "অনুভূতি পাবলিকেশন্স — ‘স্পর্শের ব্যাকরণ’ বেস্টসেলার ই-বুক এখন মাত্র ৯৯ টাকায় সংগ্রহ করুন!",
 			ImageURL:  "",
 			LinkURL:   "/sporsher-byakoron",
 			IsActive:  true,

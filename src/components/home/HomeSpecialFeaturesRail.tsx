@@ -12,6 +12,7 @@ import {
   Heart,
   Clock,
 } from "lucide-react";
+import { BOOK_INFO } from "@/data/bookData";
 
 export default function HomeSpecialFeaturesRail() {
   return (
@@ -111,7 +112,7 @@ export default function HomeSpecialFeaturesRail() {
                 <span>বেস্টসেলার ই-বুক</span>
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#7E151E] text-white font-bold">
-                ১৯০৳
+                {BOOK_INFO.offerPriceBn}৳
               </span>
             </div>
 

@@ -12,6 +12,7 @@ import {
   Mail,
   ArrowRight,
 } from "lucide-react";
+import { BOOK_INFO } from "@/data/bookData";
 
 interface HomeQuickActionsProps {
   onOpenSubmit: () => void;
@@ -68,7 +69,7 @@ export default function HomeQuickActions({
             <BookOpen className="w-3.5 h-3.5 text-amber-600" />
             <span>স্পর্শের ব্যাকরণ (ই-বুক)</span>
             <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-[#80131E] text-white font-black">
-              ১৯০৳
+              {BOOK_INFO.offerPriceBn}৳
             </span>
           </Link>
 
