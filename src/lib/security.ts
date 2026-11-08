@@ -105,11 +105,12 @@ export function getClientIp(headers: Headers): string {
 /**
  * Sanitize user-submitted text to strip XSS payloads, HTML tags, script injections,
  * and dangerous protocols while preserving Bengali Unicode text and normal punctuation.
+ * If maxLength is omitted or <= 0, no truncation is applied (unlimited length).
  */
-export function sanitizeText(input: string, maxLength = 10000): string {
+export function sanitizeText(input: string, maxLength?: number): string {
   if (!input || typeof input !== "string") return "";
 
-  return input
+  const sanitized = input
     // Remove <script>, <iframe>, <object>, <embed>, <style> blocks completely
     .replace(/<(script|iframe|object|embed|style|svg|math)[^>]*>[\s\S]*?<\/\1>/gi, "")
     // Strip any remaining HTML tags
@@ -122,8 +123,12 @@ export function sanitizeText(input: string, maxLength = 10000): string {
     .replace(/\bon\w+\s*=/gi, "")
     // Normalize excessive null bytes or control chars (keep newlines and tabs)
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
-    .trim()
-    .slice(0, maxLength);
+    .trim();
+
+  if (typeof maxLength === "number" && maxLength > 0) {
+    return sanitized.slice(0, maxLength);
+  }
+  return sanitized;
 }
 
 /**

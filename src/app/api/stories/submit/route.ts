@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     const title = sanitizeText(String(body?.title || ""), 180);
-    const content = sanitizeText(String(body?.content || ""), 8000);
+    const content = sanitizeText(String(body?.content || ""));
     const category = sanitizeText(String(body?.category || "না বলা কথা"), 60);
     const isAnonymous = Boolean(body?.isAnonymous);
     const author = isAnonymous

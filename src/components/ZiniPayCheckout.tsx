@@ -14,6 +14,7 @@ import {
   FileText,
 } from "lucide-react";
 import { BOOK_INFO } from "@/data/bookData";
+import { trackInitiateCheckout } from "@/lib/metaPixel";
 
 export default function ZiniPayCheckout() {
   const [loading, setLoading] = useState(false);
@@ -32,6 +33,15 @@ export default function ZiniPayCheckout() {
   const handleBuyNow = async () => {
     setError("");
     setLoading(true);
+
+    // Track Meta Pixel InitiateCheckout
+    trackInitiateCheckout({
+      content_name: BOOK_INFO.titleBn,
+      content_ids: ["sporsher-byakoron"],
+      content_type: "product",
+      value: BOOK_INFO.offerPriceBdt || 99,
+      currency: "BDT",
+    });
 
     try {
       const res = await fetch("/api/payment/create", {

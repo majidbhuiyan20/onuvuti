@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { BOOK_INFO } from "@/data/bookData";
 import ThemeToggle from "@/components/ThemeToggle";
+import { trackPurchase } from "@/lib/metaPixel";
 
 interface VerifiedOrder {
   orderId: string;
@@ -51,6 +52,7 @@ function SuccessContent() {
   const [isPending, setIsPending] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState("");
   const [order, setOrder] = useState<VerifiedOrder | null>(null);
+  const hasTrackedRef = useRef(false);
 
   useEffect(() => {
     // If no order reference, invoice, transaction ID, or token was provided at all, deny access immediately.
@@ -88,6 +90,19 @@ function SuccessContent() {
         if (res.ok && data.ok && data.downloadUrl) {
           setDownloadUrl(data.downloadUrl);
           setOrder(data.order || null);
+
+          // Meta Pixel Purchase Event (Only after backend verified payment)
+          if (!hasTrackedRef.current && (data.order?.orderId || orderId)) {
+            hasTrackedRef.current = true;
+            const finalOrderId = data.order?.orderId || orderId;
+            trackPurchase({
+              order_id: finalOrderId,
+              value: data.order?.amount || BOOK_INFO.offerPriceBdt || 99,
+              currency: "BDT",
+              content_name: BOOK_INFO.titleBn,
+              content_ids: ["sporsher-byakoron"],
+            });
+          }
         } else {
           // If status is still PENDING at provider
           if (data?.status === "PENDING") {

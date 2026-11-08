@@ -12,10 +12,14 @@ import (
 
 type OrderHandler struct {
 	orderSvc *service.OrderService
+	metaSvc  *service.MetaService
 }
 
-func NewOrderHandler(orderSvc *service.OrderService) *OrderHandler {
-	return &OrderHandler{orderSvc: orderSvc}
+func NewOrderHandler(orderSvc *service.OrderService, metaSvc *service.MetaService) *OrderHandler {
+	return &OrderHandler{
+		orderSvc: orderSvc,
+		metaSvc:  metaSvc,
+	}
 }
 
 func (h *OrderHandler) ListAdminOrders(w http.ResponseWriter, r *http.Request) {
@@ -114,6 +118,16 @@ func (h *OrderHandler) MarkPaid(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.Error(w, http.StatusConflict, err.Error())
 		return
+	}
+
+	// Dispatch server-side Meta Conversions API (CAPI) Purchase event
+	if h.metaSvc != nil && updated != nil {
+		clientIP := strings.TrimSpace(strings.Split(r.Header.Get("X-Forwarded-For"), ",")[0])
+		if clientIP == "" {
+			clientIP = r.RemoteAddr
+		}
+		userAgent := r.UserAgent()
+		h.metaSvc.DispatchPurchaseCAPI(*updated, clientIP, userAgent)
 	}
 
 	response.JSON(w, http.StatusOK, map[string]any{

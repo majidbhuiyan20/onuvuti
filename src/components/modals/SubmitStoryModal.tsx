@@ -295,16 +295,22 @@ export default function SubmitStoryModal({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                  আপনার মূল গল্প / কনফেশন *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300">
+                    আপনার মূল গল্প / কনফেশন *
+                  </label>
+                  {storyBody.length > 0 && (
+                    <span className="text-[11px] text-stone-400 font-medium">
+                      {storyBody.length.toLocaleString("bn-BD")} অক্ষর (কোনো সীমা নেই)
+                    </span>
+                  )}
+                </div>
                 <textarea
-                  rows={5}
+                  rows={6}
                   required
-                  maxLength={8000}
                   value={storyBody}
                   onChange={(e) => setStoryBody(e.target.value)}
-                  placeholder="এখানে আপনার মনের কথা, ক্রাশ কনফেশন বা গল্পটি বিস্তারিত লিখুন..."
+                  placeholder="এখানে আপনার মনের কথা, ক্রাশ কনফেশন বা গল্পটি কোনো অক্ষরের সীমাবদ্ধতা ছাড়া সম্পূর্ণ বিস্তারিত লিখুন..."
                   className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white focus:outline-none focus:border-[#7E151E] dark:focus:border-rose-500 focus:bg-white dark:focus:bg-stone-800"
                 />
               </div>

@@ -13,6 +13,8 @@ type Config struct {
 	InternalSecret     string
 	CorsAllowedOrigins []string
 	Environment        string // "production" or "development"
+	MetaPixelID        string
+	MetaAccessToken    string
 }
 
 func Load() *Config {
@@ -42,5 +44,7 @@ func Load() *Config {
 		InternalSecret:     getEnv("INTERNAL_SERVICE_SECRET", ""),
 		CorsAllowedOrigins: origins,
 		Environment:        envMode,
+		MetaPixelID:        getEnv("META_PIXEL_ID", "4121296221505373"),
+		MetaAccessToken:    getEnv("META_ACCESS_TOKEN", ""),
 	}
 }

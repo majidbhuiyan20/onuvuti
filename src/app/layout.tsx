@@ -3,6 +3,7 @@ import "./globals.css";
 import { BOOK_INFO } from "@/data/bookData";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import MetaPixel from "@/components/analytics/MetaPixel";
 
 export const viewport: Viewport = {
   themeColor: "#80131E",
@@ -86,6 +87,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-[#FCFAF6] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] transition-colors duration-200">
         <ThemeProvider>
+          <MetaPixel />
           {children}
           <PWAInstallPrompt />
         </ThemeProvider>

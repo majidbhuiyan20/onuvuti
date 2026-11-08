@@ -59,6 +59,7 @@ func main() {
 	quoteSvc := service.NewQuoteService(repo, memCache)
 	wishSvc := service.NewWishService(repo)
 	secretSvc := service.NewSecretService(repo)
+	metaSvc := service.NewMetaService(cfg, repo)
 
 	// 4. Initialize Middleware & HTTP Handlers
 	rl := middleware.NewRateLimiter()
@@ -69,7 +70,7 @@ func main() {
 		StoryHandler:     handlers.NewStoryHandler(storySvc, analyticsSvc, rl),
 		CommentHandler:   handlers.NewCommentHandler(commentSvc, rl),
 		AdminHandler:     handlers.NewAdminHandler(adminSvc, analyticsSvc, rl),
-		OrderHandler:     handlers.NewOrderHandler(orderSvc),
+		OrderHandler:     handlers.NewOrderHandler(orderSvc, metaSvc),
 		AnalyticsHandler: handlers.NewAnalyticsHandler(analyticsSvc),
 		UserHandler:      handlers.NewUserHandler(userSvc, rl),
 		AdHandler:        handlers.NewAdHandler(adSvc),
@@ -78,6 +79,7 @@ func main() {
 		QuoteHandler:     handlers.NewQuoteHandler(quoteSvc),
 		WishHandler:      handlers.NewWishHandler(wishSvc),
 		SecretHandler:    handlers.NewSecretHandler(secretSvc),
+		MetaHandler:      handlers.NewMetaHandler(metaSvc),
 	})
 
 	// 5. Hardened HTTP Server for Production

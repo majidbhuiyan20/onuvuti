@@ -123,7 +123,7 @@ func (s *StoryService) SubmitPending(req models.SubmitStoryRequest) (*models.Sto
 	}
 
 	title := sanitizer.Text(req.Title, 180)
-	content := sanitizer.Text(req.Content, 8000)
+	content := sanitizer.Text(req.Content, 0)
 	category := sanitizer.Text(req.Category, 60)
 	if category == "" {
 		category = "না বলা কথা"

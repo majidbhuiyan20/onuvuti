@@ -57,7 +57,7 @@ func (s *AdminService) GetDashboardLists() (pending []models.Story, published []
 
 func (s *AdminService) ApproveAndUpdateStory(id string, req models.ApproveOrUpdateStoryRequest) (*models.Story, error) {
 	title := sanitizer.Text(req.Title, 180)
-	content := sanitizer.Text(req.Content, 10000)
+	content := sanitizer.Text(req.Content, 0)
 	category := sanitizer.Text(req.Category, 60)
 	author := sanitizer.Text(req.Author, 80)
 
@@ -112,7 +112,7 @@ func (s *AdminService) ApproveAndUpdateStory(id string, req models.ApproveOrUpda
 
 func (s *AdminService) CreateAdminStory(req models.AdminCreateStoryRequest) (*models.Story, error) {
 	title := sanitizer.Text(req.Title, 180)
-	content := sanitizer.Text(req.Content, 10000)
+	content := sanitizer.Text(req.Content, 0)
 	category := sanitizer.Text(req.Category, 60)
 	author := sanitizer.Text(req.Author, 80)
 	adminNote := sanitizer.Text(req.AdminNote, 1500)

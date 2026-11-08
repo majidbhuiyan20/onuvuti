@@ -24,6 +24,7 @@ type RouterDeps struct {
 	QuoteHandler     *handlers.QuoteHandler
 	WishHandler      *handlers.WishHandler
 	SecretHandler    *handlers.SecretHandler
+	MetaHandler      *handlers.MetaHandler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -130,6 +131,20 @@ func NewRouter(deps RouterDeps) http.Handler {
 		mux.HandleFunc("POST /api/v1/secret/inboxes/{username}/messages/{id}/reply", deps.SecretHandler.ReplyMessage)
 		mux.HandleFunc("DELETE /api/v1/secret/inboxes/{username}/messages/{id}", deps.SecretHandler.DeleteMessage)
 		mux.HandleFunc("GET /api/v1/admin/secret/stats", middleware.RequireInternalOrAdmin(cfg, deps.SecretHandler.AdminStats))
+	}
+
+	// 12. Meta Pixel & Server-Side Conversions API (CAPI) Integration Routes
+	if deps.MetaHandler != nil {
+		// Client public config & browser tracking ingestion
+		mux.HandleFunc("GET /api/v1/meta/config", deps.MetaHandler.GetPublicConfig)
+		mux.HandleFunc("POST /api/v1/meta/events", deps.MetaHandler.LogBrowserEvent)
+
+		// Protected Admin Management & Analytics Routes
+		mux.HandleFunc("GET /api/v1/admin/meta/config", middleware.RequireAdmin(cfg, deps.MetaHandler.GetAdminConfig))
+		mux.HandleFunc("PUT /api/v1/admin/meta/config", middleware.RequireAdmin(cfg, deps.MetaHandler.UpdateAdminConfig))
+		mux.HandleFunc("GET /api/v1/admin/meta/events", middleware.RequireAdmin(cfg, deps.MetaHandler.GetEventsDashboard))
+		mux.HandleFunc("GET /api/v1/admin/meta/analytics", middleware.RequireAdmin(cfg, deps.MetaHandler.GetPurchaseAnalytics))
+		mux.HandleFunc("POST /api/v1/admin/meta/test-capi", middleware.RequireAdmin(cfg, deps.MetaHandler.SendTestCAPI))
 	}
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain

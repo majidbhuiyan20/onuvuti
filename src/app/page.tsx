@@ -40,6 +40,7 @@ import SubmitStoryModal from "@/components/modals/SubmitStoryModal";
 import StoryTrackerModal from "@/components/modals/StoryTrackerModal";
 import AuthModal from "@/components/modals/AuthModal";
 import ProfileModal from "@/components/modals/ProfileModal";
+import { trackCompleteRegistration, trackLead } from "@/lib/metaPixel";
 
 export default function OnuvutiBlogHomePage() {
   const router = useRouter();
@@ -298,6 +299,11 @@ export default function OnuvutiBlogHomePage() {
       }
       setIsAuthModalOpen(false);
       setAuthPassword("");
+
+      if (authMode === "register") {
+        trackCompleteRegistration({ method: "manual" });
+      }
+
       await refreshUserStories(data.token);
     } catch {
       setAuthError("সার্ভারের সাথে সংযোগ স্থাপন করা যায়নি। একটু পর আবার চেষ্টা করুন।");
@@ -585,6 +591,12 @@ export default function OnuvutiBlogHomePage() {
           return next;
         });
       }
+
+      // Track Meta Pixel Lead event for story submission
+      trackLead({
+        content_name: data.story?.title || storyTitle || "পাঠকের গল্প",
+        category: data.story?.category || storyCategory || "সাধারণ",
+      });
 
       setSubmittedSuccess(true);
     } catch {

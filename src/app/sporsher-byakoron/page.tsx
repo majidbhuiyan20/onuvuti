@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ShoppingBag,
@@ -14,9 +14,21 @@ import { BOOK_INFO, BOOK_PARTS, APPENDICES } from "@/data/bookData";
 import BookCover3D from "@/components/BookCover3D";
 import ZiniPayCheckout from "@/components/ZiniPayCheckout";
 import ThemeToggle from "@/components/ThemeToggle";
+import { trackViewContent } from "@/lib/metaPixel";
 
 export default function SporsherByakoronLandingPage() {
   const [openPartId, setOpenPartId] = useState<string | null>("part-1");
+
+  useEffect(() => {
+    // Track ViewContent for eBook details page
+    trackViewContent({
+      content_name: BOOK_INFO.titleBn,
+      content_ids: ["sporsher-byakoron"],
+      content_type: "product",
+      value: BOOK_INFO.offerPriceBdt || 99,
+      currency: "BDT",
+    });
+  }, []);
 
   const scrollToCheckout = () => {
     document.getElementById("checkout")?.scrollIntoView({ behavior: "smooth" });

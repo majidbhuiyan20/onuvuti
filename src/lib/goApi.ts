@@ -141,4 +141,82 @@ export interface AdminUserSummary {
   createdAt: string;
 }
 
+export interface MetaPixelConfig {
+  pixelId: string;
+  isEnabled: boolean;
+  browserTrackingEnabled: boolean;
+  capiEnabled: boolean;
+  testEventCode: string;
+  hasAccessToken: boolean;
+  updatedAt: string;
+}
+
+export interface MetaEventSummary {
+  eventName: string;
+  description: string;
+  status: string;
+  count: number;
+  lastTriggeredAt?: string;
+  source: string;
+  recentRef?: string;
+}
+
+export interface MetaEventLog {
+  id: number;
+  eventName: string;
+  eventId: string;
+  source: string;
+  status: string;
+  orderId?: string;
+  valueBdt: number;
+  currency: string;
+  payloadJson?: string;
+  errorMessage?: string;
+  createdAt: string;
+}
+
+export interface MetaEbookSale {
+  title: string;
+  unitsSold: number;
+  revenueBdt: number;
+}
+
+export interface MetaRecentPurchase {
+  orderId: string;
+  customerName: string;
+  amountBdt: number;
+  browserSent: boolean;
+  serverSent: boolean;
+  serverStatus: string;
+  verifiedAt: string;
+}
+
+export interface MetaSalesTrend {
+  dateKey: string;
+  label: string;
+  purchasesCount: number;
+  revenueBdt: number;
+}
+
+export interface MetaDeliveryStatus {
+  totalPurchases: number;
+  serverSentCount: number;
+  browserSentCount: number;
+  deduplicatedCount: number;
+  failedCount: number;
+  pendingCount: number;
+  deliveryPercentage: number;
+}
+
+export interface MetaPurchaseAnalytics {
+  totalVerifiedPurchases: number;
+  totalRevenueBdt: number;
+  ebookSales: MetaEbookSale[];
+  recentPurchases: MetaRecentPurchase[];
+  dailySales: MetaSalesTrend[];
+  monthlySales: MetaSalesTrend[];
+  deliveryStatus: MetaDeliveryStatus;
+}
+
+
 

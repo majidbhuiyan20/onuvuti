@@ -259,6 +259,57 @@ CREATE TABLE IF NOT EXISTS secret_messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_secret_messages_inbox ON secret_messages(inbox_id, created_at DESC);
+
+-- Meta Pixel & Server-Side Conversions API (CAPI) Integration
+CREATE TABLE IF NOT EXISTS meta_pixel_settings (
+    id VARCHAR(32) PRIMARY KEY DEFAULT 'default',
+    pixel_id VARCHAR(64) NOT NULL DEFAULT '4121296221505373',
+    is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    browser_tracking_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    capi_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    test_event_code VARCHAR(64) NOT NULL DEFAULT '',
+    access_token TEXT NOT NULL DEFAULT '',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO meta_pixel_settings (id, pixel_id, is_enabled, browser_tracking_enabled, capi_enabled)
+VALUES ('default', '4121296221505373', true, true, true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS meta_event_logs (
+    id BIGSERIAL PRIMARY KEY,
+    event_name VARCHAR(64) NOT NULL,
+    event_id VARCHAR(128) NOT NULL DEFAULT '',
+    source VARCHAR(20) NOT NULL DEFAULT 'browser',
+    status VARCHAR(20) NOT NULL DEFAULT 'received',
+    order_id VARCHAR(64) DEFAULT '',
+    value_bdt NUMERIC(10, 2) DEFAULT 0,
+    currency VARCHAR(10) DEFAULT 'BDT',
+    payload_json JSONB DEFAULT '{}'::jsonb,
+    error_message TEXT DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_meta_event_logs_name ON meta_event_logs(event_name);
+CREATE INDEX IF NOT EXISTS idx_meta_event_logs_created ON meta_event_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_meta_event_logs_event_id ON meta_event_logs(event_id) WHERE event_id != '';
+CREATE INDEX IF NOT EXISTS idx_meta_event_logs_order_id ON meta_event_logs(order_id) WHERE order_id != '';
+
+CREATE TABLE IF NOT EXISTS meta_purchase_events (
+    order_id VARCHAR(64) PRIMARY KEY,
+    event_id VARCHAR(128) NOT NULL,
+    amount_bdt NUMERIC(10, 2) NOT NULL DEFAULT 0,
+    currency VARCHAR(10) NOT NULL DEFAULT 'BDT',
+    browser_sent BOOLEAN NOT NULL DEFAULT FALSE,
+    server_sent BOOLEAN NOT NULL DEFAULT FALSE,
+    server_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    server_response TEXT DEFAULT '',
+    server_sent_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_meta_purchase_events_created ON meta_purchase_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_meta_purchase_events_server_status ON meta_purchase_events(server_status);
 `
 
 func RunMigrations(db *sql.DB) error {

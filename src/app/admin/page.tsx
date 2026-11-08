@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
+  Activity,
   CheckCircle2,
   Trash2,
   PlusCircle,
@@ -60,6 +61,7 @@ import {
   AdminUserSummary,
 } from "@/lib/goApi";
 import ThemeToggle from "@/components/ThemeToggle";
+import MetaPixelAdminSection from "@/components/admin/MetaPixelAdminSection";
 
 interface PendingStory {
   id: string;
@@ -152,6 +154,7 @@ export default function AdminDashboardPage() {
     | "analytics"
     | "orders"
     | "users"
+    | "meta-pixel"
     | "pending"
     | "published"
     | "comments"
@@ -1017,8 +1020,7 @@ export default function AdminDashboardPage() {
       180
     );
     const finalContent = sanitizeText(
-      isEditingThis ? editPendingContent : item.content,
-      8000
+      isEditingThis ? editPendingContent : item.content
     );
     const finalCategory = isEditingThis ? editPendingCategory : item.category;
     const finalImage = isEditingThis ? editPendingImage : item.imageUrl;
@@ -1123,7 +1125,7 @@ export default function AdminDashboardPage() {
     if (isSubmittingStory) return;
 
     const cleanTitle = sanitizeText(newTitle, 180);
-    const cleanContent = sanitizeText(newContent, 10000);
+    const cleanContent = sanitizeText(newContent);
     const cleanAuthor = sanitizeText(newAuthor, 80) || "অনুভূতি সম্পাদনা পর্ষদ";
     const cleanAdminNote = sanitizeText(newAdminNote, 1200);
 
@@ -1357,6 +1359,19 @@ export default function AdminDashboardPage() {
           >
             <Users className="w-4 h-4" />
             <span>নিবন্ধিত ব্যবহারকারী ({adminUsers.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("meta-pixel")}
+            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
+              activeTab === "meta-pixel"
+                ? "bg-[#80131E] text-white"
+                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            <span>মেটা পিক্সেল ও ট্র্যাকিং</span>
           </button>
 
           <button
@@ -2325,6 +2340,9 @@ export default function AdminDashboardPage() {
           );
         })()}
 
+        {/* TAB: META PIXEL & CONVERSIONS API MANAGEMENT & ANALYTICS */}
+        {activeTab === "meta-pixel" && <MetaPixelAdminSection />}
+
         {/* Tab 1: Pending User Stories */}
         {activeTab === "pending" && (
           <div className="space-y-4">
@@ -2735,12 +2753,11 @@ export default function AdminDashboardPage() {
                 সম্পূর্ণ লেখা *
               </label>
               <textarea
-                rows={7}
+                rows={8}
                 required
-                maxLength={10000}
                 value={newContent}
                 onChange={(e) => setNewContent(e.target.value)}
-                placeholder="এখানে সম্পূর্ণ গল্প বা আর্টিকেলটি লিখুন..."
+                placeholder="এখানে কোনো অক্ষরের সীমাবদ্ধতা ছাড়া সম্পূর্ণ গল্প বা আর্টিকেলটি লিখুন..."
                 className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-sm text-[#142230] dark:text-white"
               />
             </div>
