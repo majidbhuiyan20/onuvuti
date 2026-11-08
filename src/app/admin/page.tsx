@@ -49,6 +49,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Download,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { BOOK_INFO, BOOK_COVER_IMAGE, BOOK_BACK_IMAGE } from "@/data/bookData";
@@ -157,6 +158,7 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<
     | "analytics"
     | "orders"
+    | "ebook"
     | "users"
     | "meta-pixel"
     | "pending"
@@ -1414,6 +1416,31 @@ export default function AdminDashboardPage() {
               <button
                 type="button"
                 onClick={() => {
+                  setActiveTab("ebook");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "ebook"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <BookOpen className="w-4 h-4 shrink-0 text-amber-500" />
+                  <span>স্পর্শের ব্যাকরণ (PDF পড়ুন)</span>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "ebook"
+                    ? "bg-white/20 text-white"
+                    : "bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300"
+                }`}>
+                  লাইভ ই-বুক
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
                   setActiveTab("users");
                   fetchUsersFromGo();
                   setIsMobileSidebarOpen(false);
@@ -1705,6 +1732,7 @@ export default function AdminDashboardPage() {
             {[
               { id: "analytics", label: "ট্রাফিক", icon: BarChart3 },
               { id: "orders", label: `অর্ডার (${adminOrders.length})`, icon: ShoppingBag, onClick: fetchOrdersFromGo },
+              { id: "ebook", label: "PDF পড়ুন", icon: BookOpen },
               { id: "users", label: `ইউজার (${adminUsers.length})`, icon: Users, onClick: fetchUsersFromGo },
               { id: "meta-pixel", label: "মেটা পিক্সেল", icon: Activity },
               { id: "pending", label: `পাঠক (${pendingStories.length})`, icon: Clock },
@@ -2087,6 +2115,14 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
+                    onClick={() => setActiveTab("ebook")}
+                    className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#80131E]/10 dark:bg-rose-950/60 hover:bg-[#80131E]/20 text-[#80131E] dark:text-rose-300 transition flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>পিডিএফটি পড়ুন</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={fetchOrdersFromGo}
                     disabled={isLoadingOrders}
                     className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 text-stone-700 dark:text-stone-200 cursor-pointer transition flex items-center gap-1.5"
@@ -2387,6 +2423,83 @@ export default function AdminDashboardPage() {
             </div>
           );
         })()}
+
+        {/* TAB: EBOOK READER & FILE INSPECTOR */}
+        {activeTab === "ebook" && (
+          <div className="space-y-5">
+            {/* Header & Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-stone-200 dark:border-stone-800">
+              <div className="space-y-1">
+                <h2 className="text-xl font-black text-[#142230] dark:text-white flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-[#80131E] dark:text-rose-400" />
+                  <span>স্পর্শের ব্যাকরণ (অনলাইন পিডিএফ রিডার)</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold">
+                    সক্রিয় ফাইল
+                  </span>
+                </h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  সার্ভারে সংরক্ষিত সর্বশেষ সংস্করণের সম্পূর্ণ ই-বুক PDF সরাসরি ব্রাউজারে পড়ুন ও পরীক্ষা করুন।
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="/api/admin/ebook?view=1"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#80131E] hover:bg-[#680f18] text-white transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>নতুন ট্যাবে বড় করে পড়ুন</span>
+                </a>
+                <a
+                  href="/api/admin/ebook?download=1"
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 transition flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>PDF ডাউনলোড</span>
+                </a>
+              </div>
+            </div>
+
+            {/* File Info Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-stone-400 block">বইয়ের নাম</span>
+                <span className="text-xs font-bold text-[#142230] dark:text-white truncate block">
+                  স্পর্শের ব্যাকরণ
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-stone-400 block">ফাইল সাইজ</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block">
+                  ~৬.৫ মেগাবাইট (PDF)
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-stone-400 block">সার্ভার লোকেশন</span>
+                <span className="text-xs font-mono text-stone-600 dark:text-stone-300 truncate block">
+                  storage/sporsher_byakoron.pdf
+                </span>
+              </div>
+              <div className="p-3 rounded-xl bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 shadow-2xs">
+                <span className="text-[10px] uppercase font-bold text-stone-400 block">ক্রেতা ডেলিভারি</span>
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block">
+                  স্বয়ংক্রিয় ডাউনলোড সচল
+                </span>
+              </div>
+            </div>
+
+            {/* Embedded Native PDF Viewer Frame */}
+            <div className="rounded-2xl border-2 border-stone-200/90 dark:border-stone-800 overflow-hidden shadow-lg bg-stone-100 dark:bg-stone-900">
+              <iframe
+                src="/api/admin/ebook#toolbar=1&navpanes=1"
+                className="w-full h-[78vh] sm:h-[82vh] border-0 block"
+                title="স্পর্শের ব্যাকরণ সম্পূর্ণ ই-বুক রিডার"
+              />
+            </div>
+          </div>
+        )}
 
         {/* TAB: REGISTERED USERS MANAGEMENT (PostgreSQL Controlled) */}
         {activeTab === "users" && (() => {

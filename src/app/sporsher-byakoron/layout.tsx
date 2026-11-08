@@ -47,3 +47,4 @@ export default function SporsherByakoronLayout({
 }) {
   return <>{children}</>;
 }
+
