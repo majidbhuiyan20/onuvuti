@@ -44,7 +44,7 @@ func Load() *Config {
 		InternalSecret:     getEnv("INTERNAL_SERVICE_SECRET", ""),
 		CorsAllowedOrigins: origins,
 		Environment:        envMode,
-		MetaPixelID:        getEnv("META_PIXEL_ID", "4121296221505373"),
+		MetaPixelID:        getEnv("META_PIXEL_ID", "1519039830282848"),
 		MetaAccessToken:    getEnv("META_ACCESS_TOKEN", ""),
 	}
 }

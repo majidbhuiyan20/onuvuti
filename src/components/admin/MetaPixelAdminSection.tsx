@@ -41,7 +41,7 @@ export default function MetaPixelAdminSection() {
 
   // Configuration State
   const [config, setConfig] = useState<MetaPixelConfig | null>(null);
-  const [pixelIdInput, setPixelIdInput] = useState("4121296221505373");
+  const [pixelIdInput, setPixelIdInput] = useState("1519039830282848");
   const [isEnabled, setIsEnabled] = useState(true);
   const [browserTrackingEnabled, setBrowserTrackingEnabled] = useState(true);
   const [capiEnabled, setCapiEnabled] = useState(true);
@@ -78,7 +78,7 @@ export default function MetaPixelAdminSection() {
         const data = await res.json();
         if (data && data.ok && data.config) {
           setConfig(data.config);
-          setPixelIdInput(data.config.pixelId || "4121296221505373");
+          setPixelIdInput(data.config.pixelId || "1519039830282848");
           setIsEnabled(data.config.isEnabled);
           setBrowserTrackingEnabled(data.config.browserTrackingEnabled);
           setCapiEnabled(data.config.capiEnabled);
@@ -159,7 +159,7 @@ export default function MetaPixelAdminSection() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          pixelId: pixelIdInput.trim() || "4121296221505373",
+          pixelId: pixelIdInput.trim() || "1519039830282848",
           isEnabled,
           browserTrackingEnabled,
           capiEnabled,
@@ -226,7 +226,7 @@ export default function MetaPixelAdminSection() {
     }
   };
 
-  const currentPixelId = config?.pixelId || pixelIdInput || "4121296221505373";
+  const currentPixelId = config?.pixelId || pixelIdInput || "1519039830282848";
   const eventsManagerUrl = `https://business.facebook.com/events_manager2/list/dataset/${encodeURIComponent(currentPixelId)}/overview`;
   const testEventsUrl = `https://business.facebook.com/events_manager2/list/dataset/${encodeURIComponent(currentPixelId)}/test_events`;
 
@@ -423,7 +423,7 @@ export default function MetaPixelAdminSection() {
                   type="text"
                   value={pixelIdInput}
                   onChange={(e) => setPixelIdInput(e.target.value)}
-                  placeholder="4121296221505373"
+                  placeholder="1519039830282848"
                   className="w-full px-4 py-2.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-[#161E2E] text-stone-900 dark:text-white font-mono text-sm focus:outline-hidden focus:ring-2 focus:ring-[#80131E]"
                   required
                 />

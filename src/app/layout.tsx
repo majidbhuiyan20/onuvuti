@@ -83,7 +83,7 @@ export default function RootLayout({
               } catch(e) {}
 
               if (!isDev) {
-                fbq('init', '4121296221505373');
+                fbq('init', '1519039830282848');
                 fbq('track', 'PageView');
                 window._fbq_initialized = true;
               } else {
@@ -98,7 +98,7 @@ export default function RootLayout({
             height="1"
             width="1"
             style={{ display: "none" }}
-            src="https://www.facebook.com/tr?id=4121296221505373&ev=PageView&noscript=1"
+            src="https://www.facebook.com/tr?id=1519039830282848&ev=PageView&noscript=1"
             alt=""
           />
         </noscript>

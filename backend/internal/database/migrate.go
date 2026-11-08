@@ -263,7 +263,7 @@ CREATE INDEX IF NOT EXISTS idx_secret_messages_inbox ON secret_messages(inbox_id
 -- Meta Pixel & Server-Side Conversions API (CAPI) Integration
 CREATE TABLE IF NOT EXISTS meta_pixel_settings (
     id VARCHAR(32) PRIMARY KEY DEFAULT 'default',
-    pixel_id VARCHAR(64) NOT NULL DEFAULT '4121296221505373',
+    pixel_id VARCHAR(64) NOT NULL DEFAULT '1519039830282848',
     is_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     browser_tracking_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     capi_enabled BOOLEAN NOT NULL DEFAULT TRUE,
@@ -273,7 +273,7 @@ CREATE TABLE IF NOT EXISTS meta_pixel_settings (
 );
 
 INSERT INTO meta_pixel_settings (id, pixel_id, is_enabled, browser_tracking_enabled, capi_enabled)
-VALUES ('default', '4121296221505373', true, true, true)
+VALUES ('default', '1519039830282848', true, true, true)
 ON CONFLICT (id) DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS meta_event_logs (

@@ -69,7 +69,7 @@ func (s *MetaService) GetPublicConfig() (map[string]any, error) {
 		pixelID = s.cfg.MetaPixelID
 	}
 	if pixelID == "" {
-		pixelID = "4121296221505373"
+		pixelID = "1519039830282848"
 	}
 
 	return map[string]any{
@@ -95,7 +95,7 @@ func (s *MetaService) GetAdminConfig() (*models.MetaPixelSettings, error) {
 		settings.PixelID = s.cfg.MetaPixelID
 	}
 	if settings.PixelID == "" {
-		settings.PixelID = "4121296221505373"
+		settings.PixelID = "1519039830282848"
 	}
 
 	_ = rawToken // never sent in response
@@ -202,7 +202,7 @@ func (s *MetaService) DispatchPurchaseCAPI(order models.BookOrder, clientIP, use
 			pixelID = strings.TrimSpace(s.cfg.MetaPixelID)
 		}
 		if pixelID == "" {
-			pixelID = "4121296221505373"
+			pixelID = "1519039830282848"
 		}
 
 		// 3. Prepare User Data (hashed with SHA-256)
@@ -341,7 +341,7 @@ func (s *MetaService) SendTestCAPIEvent(testCode string) (map[string]any, error)
 		pixelID = strings.TrimSpace(s.cfg.MetaPixelID)
 	}
 	if pixelID == "" {
-		pixelID = "4121296221505373"
+		pixelID = "1519039830282848"
 	}
 
 	code := strings.TrimSpace(testCode)

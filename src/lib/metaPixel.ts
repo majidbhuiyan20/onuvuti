@@ -1,12 +1,12 @@
 /**
  * Meta Pixel & Conversion Tracking Client Helper
- * Pixel ID: 4121296221505373 (Onuvuti - Digital Products)
+ * Pixel ID: 1519039830282848 (Onuvuti - Digital Products)
  * Supports browser-side tracking with deduplication (eventID) for Meta Conversions API (CAPI).
  */
 
 import { GO_API_BASE_URL } from "./goApi";
 
-export const DEFAULT_META_PIXEL_ID = "4121296221505373";
+export const DEFAULT_META_PIXEL_ID = "1519039830282848";
 
 declare global {
   interface Window {

@@ -13,7 +13,7 @@ import (
 func (r *Repository) GetMetaPixelSettings() (*models.MetaPixelSettings, string, error) {
 	if r.db == nil {
 		return &models.MetaPixelSettings{
-			PixelID:                "4121296221505373",
+			PixelID:                "1519039830282848",
 			IsEnabled:              true,
 			BrowserTrackingEnabled: true,
 			CAPIEnabled:            true,
@@ -36,7 +36,7 @@ func (r *Repository) GetMetaPixelSettings() (*models.MetaPixelSettings, string, 
 		if err == sql.ErrNoRows {
 			// Seed row if missing
 			return &models.MetaPixelSettings{
-				PixelID:                "4121296221505373",
+				PixelID:                "1519039830282848",
 				IsEnabled:              true,
 				BrowserTrackingEnabled: true,
 				CAPIEnabled:            true,
@@ -60,7 +60,7 @@ func (r *Repository) UpdateMetaPixelSettings(s models.MetaPixelSettings, newAcce
 
 	cleanPixelID := strings.TrimSpace(s.PixelID)
 	if cleanPixelID == "" {
-		cleanPixelID = "4121296221505373"
+		cleanPixelID = "1519039830282848"
 	}
 	cleanTestCode := strings.TrimSpace(s.TestEventCode)
 	now := time.Now()
