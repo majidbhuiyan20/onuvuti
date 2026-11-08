@@ -91,3 +91,4 @@ type MetaPurchaseAnalytics struct {
 	MonthlySales           []MetaSalesTrend     `json:"monthlySales"`
 	DeliveryStatus         MetaDeliveryStatus   `json:"deliveryStatus"`
 }
+

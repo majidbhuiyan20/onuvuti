@@ -474,3 +474,4 @@ func (r *Repository) GetMetaPurchaseAnalytics() (*models.MetaPurchaseAnalytics, 
 
 	return analytics, nil
 }
+
