@@ -1,5 +1,5 @@
 // Onuvuti Progressive Web App Service Worker
-const CACHE_NAME = "onuvuti-pwa-v1";
+const CACHE_NAME = "onuvuti-pwa-v2";
 const OFFLINE_URL = "/";
 
 const STATIC_ASSETS = [
