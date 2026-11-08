@@ -51,7 +51,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
-import { BOOK_INFO } from "@/data/bookData";
+import { BOOK_INFO, BOOK_COVER_IMAGE, BOOK_BACK_IMAGE } from "@/data/bookData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
 import { compressImageToDataUrl } from "@/lib/imageCompression";
 import {
@@ -232,14 +232,14 @@ export default function AdminDashboardPage() {
     {
       slot: "left_sidebar",
       title: "স্পর্শের ব্যাকরণ - অনুভূতি পাবলিকেশন্স",
-      imageUrl: "/images/book-cover.png",
+      imageUrl: BOOK_COVER_IMAGE,
       linkUrl: "/sporsher-byakoron",
       isActive: true,
     },
     {
       slot: "right_sidebar",
       title: "স্পর্শের ব্যাকরণ - ই-বুক সংগ্রহ করুন",
-      imageUrl: "/images/book-back.png",
+      imageUrl: BOOK_BACK_IMAGE,
       linkUrl: "/sporsher-byakoron",
       isActive: true,
     },

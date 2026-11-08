@@ -11,6 +11,9 @@ export interface BookPart {
   chapters: ChapterItem[];
 }
 
+export const BOOK_COVER_IMAGE = "/images/book-cover.png?v=20261108c";
+export const BOOK_BACK_IMAGE = "/images/book-back.png?v=20261108c";
+
 export const BOOK_INFO = {
   titleBn: "স্পর্শের ব্যাকরণ",
   subtitleBn: "ভালোবাসা, মনস্তত্ত্ব ও অন্তরঙ্গতার এক অনন্য পাঠ",
@@ -22,6 +25,8 @@ export const BOOK_INFO = {
   departmentBn: "দাম্পত্য সম্পর্ক ও মনোবিজ্ঞান বিভাগ",
   website: "WWW.ONUVUTI.SITE",
   editionBn: "প্রথম সংস্করণ: ২০২৬",
+  coverImage: BOOK_COVER_IMAGE,
+  backCoverImage: BOOK_BACK_IMAGE,
   regularPriceBdt: 220,
   regularPriceBn: "২২০",
   offerPriceBdt: 99,

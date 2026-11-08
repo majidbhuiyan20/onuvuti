@@ -304,7 +304,7 @@ export function HomeRightSidebar({
           <div className="w-20 h-28 rounded-xl overflow-hidden shrink-0 border border-stone-200 dark:border-stone-700 shadow-xs bg-stone-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/images/book-cover.png"
+              src={BOOK_INFO.coverImage}
               alt={BOOK_INFO.titleBn}
               className="w-full h-full object-cover"
             />

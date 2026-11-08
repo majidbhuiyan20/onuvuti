@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { RotateCw } from "lucide-react";
+import { BOOK_COVER_IMAGE, BOOK_BACK_IMAGE } from "@/data/bookData";
 
 export default function BookCover3D() {
   const [showBack, setShowBack] = useState(false);
@@ -20,7 +21,7 @@ export default function BookCover3D() {
         <div className="relative flex-1 aspect-[148/210] rounded-r-xl overflow-hidden bg-[#FDF8F2] shadow-[0_22px_50px_rgba(110,26,44,0.22)] border border-stone-200">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={showBack ? "/images/book-back.png" : "/images/book-cover.png"}
+            src={showBack ? BOOK_BACK_IMAGE : BOOK_COVER_IMAGE}
             alt={
               showBack
                 ? "স্পর্শের ব্যাকরণ — শেষ প্রচ্ছদ"

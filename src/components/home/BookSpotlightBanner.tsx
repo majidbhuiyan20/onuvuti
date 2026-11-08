@@ -31,7 +31,7 @@ export default function BookSpotlightBanner() {
             <div className="relative w-44 sm:w-48 rounded-xl overflow-hidden shadow-2xl border border-stone-200/80 dark:border-stone-700 bg-white dark:bg-stone-900 transform group-hover:-translate-y-1 transition duration-300">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/images/book-cover.png"
+                src={BOOK_INFO.coverImage}
                 alt="স্পর্শের ব্যাকরণ - বইয়ের প্রচ্ছদ"
                 className="w-full h-auto object-cover"
               />

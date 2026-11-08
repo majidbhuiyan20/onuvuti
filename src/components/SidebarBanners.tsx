@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { X, ExternalLink, Sparkles } from "lucide-react";
 import { GO_API_BASE_URL } from "@/lib/goApi";
+import { BOOK_COVER_IMAGE, BOOK_BACK_IMAGE } from "@/data/bookData";
 
 interface AdItem {
   slot: string;
@@ -16,7 +17,7 @@ interface AdItem {
 const DEFAULT_LEFT_AD: AdItem = {
   slot: "left_sidebar",
   title: "স্পর্শের ব্যাকরণ - অনুভূতি পাবলিকেশন্স",
-  imageUrl: "/images/book-cover.png",
+  imageUrl: BOOK_COVER_IMAGE,
   linkUrl: "/sporsher-byakoron",
   isActive: true,
 };
@@ -24,7 +25,7 @@ const DEFAULT_LEFT_AD: AdItem = {
 const DEFAULT_RIGHT_AD: AdItem = {
   slot: "right_sidebar",
   title: "স্পর্শের ব্যাকরণ - আজই সংগ্রহ করুন",
-  imageUrl: "/images/book-back.png",
+  imageUrl: BOOK_BACK_IMAGE,
   linkUrl: "/sporsher-byakoron",
   isActive: true,
 };
