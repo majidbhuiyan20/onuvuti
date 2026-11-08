@@ -46,6 +46,9 @@ import {
   Mic,
   Music,
   Heart,
+  Menu,
+  X,
+  ChevronRight,
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost, StoryCategory } from "@/data/blogData";
 import { sanitizeText, validateImageUpload } from "@/lib/security";
@@ -165,6 +168,7 @@ export default function AdminDashboardPage() {
     | "quotes"
     | "wishes"
   >("analytics");
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // Book Orders & Customers Management State (PostgreSQL Controlled)
   const [adminOrders, setAdminOrders] = useState<BackendBookOrder[]>([]);
@@ -1270,31 +1274,49 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-[#FDF8F2] dark:bg-[#0B0F17] text-[#142230] dark:text-[#E2E8F0] transition-colors duration-200">
       {/* Top Admin Header */}
-      <header className="bg-white dark:bg-[#111827] border-b border-stone-200 dark:border-stone-800">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#111827]/95 backdrop-blur-md border-b border-stone-200 dark:border-stone-800">
+        <div className="w-full px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="bg-white px-2.5 py-1 rounded-xl shadow-xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/Onuvuti-Publications-Logo.png"
-                alt="Onuvuti Publications"
-                className="h-9 sm:h-10 w-auto object-contain"
-              />
-            </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 text-xs font-extrabold">
-              অ্যাডমিন ও অ্যানালিটিক্স ড্যাশবোর্ড
-            </span>
+            {/* Mobile Hamburger Toggle */}
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+              className="lg:hidden p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition cursor-pointer"
+              aria-label="Toggle Navigation"
+            >
+              {isMobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+
+            <Link href="/admin" className="flex items-center gap-2.5">
+              <div className="bg-white px-2 py-0.5 rounded-xl shadow-xs border border-stone-200/80 dark:border-white/20 inline-flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/images/Onuvuti-Publications-Logo.png"
+                  alt="Onuvuti Publications"
+                  className="h-8 w-auto object-contain"
+                />
+              </div>
+              <span className="hidden sm:inline-block px-2.5 py-0.5 rounded-full bg-[#FAF4E6] dark:bg-[#1E293B] border border-[#C59B27]/40 dark:border-[#C59B27]/30 text-[#80131E] dark:text-rose-300 text-xs font-extrabold">
+                অ্যাডমিন স্টুডিও
+              </span>
+            </Link>
           </div>
 
-          <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex items-center gap-2.5 sm:gap-4">
+            <div className="hidden md:flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-semibold px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>সিস্টেম লাইভ</span>
+            </div>
+
             <ThemeToggle />
 
             <Link
               href="/"
-              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-stone-600 dark:text-stone-400 hover:text-[#80131E] dark:hover:text-rose-400"
+              target="_blank"
+              className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-stone-600 dark:text-stone-400 hover:text-[#80131E] dark:hover:text-rose-400 px-2.5 py-1.5 rounded-xl hover:bg-stone-100 dark:hover:bg-stone-800 transition"
             >
-              <ArrowLeft className="w-4 h-4" />
-              <span>মূল ওয়েবসাইট</span>
+              <ExternalLink className="w-4 h-4" />
+              <span className="hidden sm:inline">মূল সাইট</span>
             </Link>
 
             <button
@@ -1304,7 +1326,7 @@ export default function AdminDashboardPage() {
                 sessionStorage.removeItem("onuvuti_admin_token");
                 setIsAuthenticated(false);
               }}
-              className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 dark:text-rose-400 hover:underline cursor-pointer"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 transition cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>লগআউট</span>
@@ -1313,187 +1335,401 @@ export default function AdminDashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
-        {/* Main Navigation Tabs */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("analytics")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "analytics"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>ট্রাফিক ও অ্যানালিটিক্স</span>
-          </button>
+      {/* Main Layout: Left Sidebar + Right Content */}
+      <div className="flex min-h-[calc(100vh-4rem)] relative">
+        {/* Mobile Backdrop Overlay */}
+        {isMobileSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-stone-900/50 backdrop-blur-xs z-30 lg:hidden"
+            onClick={() => setIsMobileSidebarOpen(false)}
+          />
+        )}
 
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("orders");
-              fetchOrdersFromGo();
-            }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "orders"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <ShoppingBag className="w-4 h-4" />
-            <span>বই ক্রেতা ও অর্ডার ({adminOrders.length})</span>
-          </button>
+        {/* LEFT SIDEBAR (Sticky on desktop, Slide-over on mobile) */}
+        <aside
+          className={`fixed lg:sticky top-16 left-0 h-[calc(100vh-4rem)] w-72 bg-white dark:bg-[#111827] border-r border-stone-200 dark:border-stone-800 flex flex-col justify-between z-30 transition-transform duration-300 ease-in-out shrink-0 overflow-y-auto ${
+            isMobileSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
+          }`}
+        >
+          <div className="p-4 space-y-6">
+            {/* GROUP 1: OVERVIEW & SALES */}
+            <div className="space-y-1">
+              <span className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                ওভারভিউ ও সেলস
+              </span>
 
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("users");
-              fetchUsersFromGo();
-            }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "users"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>নিবন্ধিত ব্যবহারকারী ({adminUsers.length})</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("analytics");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "analytics"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <BarChart3 className="w-4 h-4 shrink-0" />
+                  <span>ট্রাফিক ও অ্যানালিটিক্স</span>
+                </div>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("meta-pixel")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "meta-pixel"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            <span>মেটা পিক্সেল ও ট্র্যাকিং</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("orders");
+                  fetchOrdersFromGo();
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "orders"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <ShoppingBag className="w-4 h-4 shrink-0" />
+                  <span>বই ক্রেতা ও অর্ডার</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "orders"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {adminOrders.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("pending")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "pending"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span>পাঠকদের পাঠানো লেখা ({pendingStories.length})</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("users");
+                  fetchUsersFromGo();
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "users"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Users className="w-4 h-4 shrink-0" />
+                  <span>নিবন্ধিত ব্যবহারকারী</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "users"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {adminUsers.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("published")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "published"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>প্রকাশিত লেখাসমূহ ({publishedList.length})</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("meta-pixel");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "meta-pixel"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Activity className="w-4 h-4 shrink-0" />
+                  <span>মেটা পিক্সেল ও ট্র্যাকিং</span>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "meta-pixel"
+                    ? "bg-white/20 text-white"
+                    : "bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400"
+                }`}>
+                  Live
+                </span>
+              </button>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("comments")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "comments"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>কমেন্ট মডারেশন ({commentsList.length})</span>
-          </button>
+            {/* GROUP 2: CONTENT & COMMUNITY */}
+            <div className="space-y-1 pt-2 border-t border-stone-100 dark:border-stone-800/80">
+              <span className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                কনটেন্ট ও মডারেশন
+              </span>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("create")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "create"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>অ্যাডমিন নতুন লেখা প্রকাশ করুন</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("pending");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "pending"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 shrink-0" />
+                  <span>পাঠকদের পাঠানো লেখা</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  pendingStories.length > 0
+                    ? "bg-rose-500 text-white animate-pulse"
+                    : activeTab === "pending"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {pendingStories.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("ads")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "ads"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <Megaphone className="w-4 h-4" />
-            <span>বিজ্ঞাপন ও ব্যানার কন্ট্রোল</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("published");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "published"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <FileText className="w-4 h-4 shrink-0" />
+                  <span>প্রকাশিত লেখাসমূহ</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "published"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {publishedList.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("wellness")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "wellness"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <HeartPulse className="w-4 h-4" />
-            <span>সুস্থতা গাইড কন্ট্রোল ({wellnessTips.length})</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("comments");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "comments"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <MessageSquare className="w-4 h-4 shrink-0" />
+                  <span>কমেন্ট মডারেশন</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "comments"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {commentsList.length}
+                </span>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("polls")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "polls"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <BarChart2 className="w-4 h-4" />
-            <span>আজকের প্রশ্ন ({adminPolls.length})</span>
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("create");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "create"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <PlusCircle className="w-4 h-4 shrink-0" />
+                <span>নতুন লেখা প্রকাশ</span>
+              </button>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab("quotes")}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "quotes"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <MessageSquareHeart className="w-4 h-4" />
-            <span>না বলা কথা ({adminQuotes.length})</span>
-          </button>
+            {/* GROUP 3: ENGAGEMENT & CONTROLS */}
+            <div className="space-y-1 pt-2 border-t border-stone-100 dark:border-stone-800/80">
+              <span className="px-3 text-[10px] font-extrabold uppercase tracking-wider text-stone-400 dark:text-stone-500">
+                ইন্টারেক্টিভ ও কন্ট্রোল
+              </span>
 
-          <button
-            type="button"
-            onClick={() => {
-              setActiveTab("wishes");
-              fetchWishesFromGo();
-            }}
-            className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold inline-flex items-center gap-2 cursor-pointer transition ${
-              activeTab === "wishes"
-                ? "bg-[#80131E] text-white"
-                : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
-            }`}
-          >
-            <Gift className="w-4 h-4" />
-            <span>জন্মদিনের চিঠি ({adminWishes.length})</span>
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("wishes");
+                  fetchWishesFromGo();
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "wishes"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Gift className="w-4 h-4 shrink-0" />
+                  <span>জন্মদিনের চিঠি</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "wishes"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {adminWishes.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("polls");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "polls"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <BarChart2 className="w-4 h-4 shrink-0" />
+                  <span>আজকের প্রশ্ন</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "polls"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {adminPolls.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("quotes");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "quotes"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <MessageSquareHeart className="w-4 h-4 shrink-0" />
+                  <span>না বলা কথা</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "quotes"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {adminQuotes.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("wellness");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "wellness"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <HeartPulse className="w-4 h-4 shrink-0" />
+                  <span>সুস্থতা গাইড কন্ট্রোল</span>
+                </div>
+                <span className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === "wellness"
+                    ? "bg-white/20 text-white"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400"
+                }`}>
+                  {wellnessTips.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("ads");
+                  setIsMobileSidebarOpen(false);
+                }}
+                className={`w-full px-3 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 transition cursor-pointer text-left ${
+                  activeTab === "ads"
+                    ? "bg-[#80131E] text-white shadow-xs"
+                    : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-[#161E2E]"
+                }`}
+              >
+                <Megaphone className="w-4 h-4 shrink-0" />
+                <span>বিজ্ঞাপন ও ব্যানার কন্ট্রোল</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Sidebar Footer Info */}
+          <div className="p-4 border-t border-stone-100 dark:border-stone-800 text-xs text-stone-400 space-y-1">
+            <div className="flex items-center justify-between font-semibold">
+              <span>Onuvuti Engine</span>
+              <span className="font-mono text-[11px] text-stone-500">v2.4 Pro</span>
+            </div>
+            <p className="text-[10px] text-stone-400">PostgreSQL Cloud Database</p>
+          </div>
+        </aside>
+
+        {/* RIGHT MAIN CONTENT AREA */}
+        <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 space-y-6">
+          {/* Quick Mobile Horizontal Tab Navigation */}
+          <div className="flex lg:hidden overflow-x-auto pb-2 gap-2 scrollbar-none">
+            {[
+              { id: "analytics", label: "ট্রাফিক", icon: BarChart3 },
+              { id: "orders", label: `অর্ডার (${adminOrders.length})`, icon: ShoppingBag, onClick: fetchOrdersFromGo },
+              { id: "users", label: `ইউজার (${adminUsers.length})`, icon: Users, onClick: fetchUsersFromGo },
+              { id: "meta-pixel", label: "মেটা পিক্সেল", icon: Activity },
+              { id: "pending", label: `পাঠক (${pendingStories.length})`, icon: Clock },
+              { id: "published", label: `প্রকাশিত (${publishedList.length})`, icon: FileText },
+              { id: "comments", label: `কমেন্ট (${commentsList.length})`, icon: MessageSquare },
+              { id: "create", label: "নতুন লেখা", icon: PlusCircle },
+              { id: "wishes", label: `চিঠি (${adminWishes.length})`, icon: Gift, onClick: fetchWishesFromGo },
+              { id: "polls", label: `প্রশ্ন (${adminPolls.length})`, icon: BarChart2 },
+              { id: "quotes", label: `উক্তি (${adminQuotes.length})`, icon: MessageSquareHeart },
+              { id: "wellness", label: `সুস্থতা (${wellnessTips.length})`, icon: HeartPulse },
+              { id: "ads", label: "বিজ্ঞাপন", icon: Megaphone },
+            ].map((tab) => {
+              const TabIcon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.id as any);
+                    if (tab.onClick) tab.onClick();
+                  }}
+                  className={`px-3 py-2 rounded-xl text-xs font-bold shrink-0 flex items-center gap-1.5 transition ${
+                    isActive
+                      ? "bg-[#80131E] text-white shadow-xs"
+                      : "bg-white dark:bg-[#111827] border border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300"
+                  }`}
+                >
+                  <TabIcon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
         {/* TAB 0: COMPLETE TRAFFIC & ANALYTICS (Daily, 7 Days, Monthly, Yearly, Custom) */}
         {activeTab === "analytics" && (
@@ -3957,6 +4193,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
