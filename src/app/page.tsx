@@ -40,7 +40,7 @@ import SubmitStoryModal from "@/components/modals/SubmitStoryModal";
 import StoryTrackerModal from "@/components/modals/StoryTrackerModal";
 import AuthModal from "@/components/modals/AuthModal";
 import ProfileModal from "@/components/modals/ProfileModal";
-import { trackCompleteRegistration, trackLead } from "@/lib/metaPixel";
+import { trackCompleteRegistration, trackLead, isDeveloperOrAdmin } from "@/lib/metaPixel";
 
 export default function OnuvutiBlogHomePage() {
   const router = useRouter();
@@ -166,12 +166,14 @@ export default function OnuvutiBlogHomePage() {
       // Ignore storage errors
     }
 
-    // Track homepage visit in Go Analytics
-    fetch(`${GO_API_BASE_URL}/analytics/track`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ path: "/" }),
-    }).catch(() => {});
+    // Track homepage visit in Go Analytics (only for genuine readers, skipped for developer/admin)
+    if (!isDeveloperOrAdmin()) {
+      fetch(`${GO_API_BASE_URL}/analytics/track`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: "/" }),
+      }).catch(() => {});
+    }
 
     // Fetch published stories from Go Backend
     async function loadStoriesFromGo() {

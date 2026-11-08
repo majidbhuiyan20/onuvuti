@@ -2,7 +2,7 @@
 
 import { useEffect, Suspense, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { trackPageView } from "@/lib/metaPixel";
+import { trackPageView, isDeveloperOrAdmin } from "@/lib/metaPixel";
 import { GO_API_BASE_URL } from "@/lib/goApi";
 
 function RouteTracker() {
@@ -11,6 +11,11 @@ function RouteTracker() {
   const isFirstMount = useRef(true);
 
   useEffect(() => {
+    // Completely silence tracking for admin paths or developer / admin sessions
+    if (pathname.startsWith("/admin") || isDeveloperOrAdmin()) {
+      return;
+    }
+
     // Prevent double firing on initial mount since script initialization tracks first pageview
     if (isFirstMount.current) {
       isFirstMount.current = false;
@@ -27,6 +32,16 @@ function RouteTracker() {
 
 export default function MetaPixel() {
   useEffect(() => {
+    // If the visitor is an admin/developer, revoke consent to guarantee no automated beacons are sent
+    if (isDeveloperOrAdmin()) {
+      if (typeof window !== "undefined" && window.fbq) {
+        try {
+          window.fbq("consent", "revoke");
+        } catch {}
+      }
+      return;
+    }
+
     // Optionally check if tracking is disabled in backend config
     async function checkBackendConfig() {
       try {

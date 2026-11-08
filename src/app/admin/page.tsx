@@ -876,6 +876,9 @@ export default function AdminDashboardPage() {
       const savedAuth = sessionStorage.getItem("onuvuti_admin_authed");
       if (savedAuth === "true") {
         setIsAuthenticated(true);
+        // Persist admin flags to prevent developer session tracking across tabs
+        localStorage.setItem("onuvuti_is_admin", "true");
+        document.cookie = "onuvuti_is_admin=true; path=/; max-age=31536000; SameSite=Lax";
         fetchDashboardFromGo();
         fetchAnalytics("7d");
         fetchAdsFromGo();
@@ -964,6 +967,9 @@ export default function AdminDashboardPage() {
         sessionStorage.setItem("onuvuti_admin_token", data.token);
       }
       sessionStorage.setItem("onuvuti_admin_authed", "true");
+      // Mark as admin across the browser to mute Meta Pixel & analytics
+      localStorage.setItem("onuvuti_is_admin", "true");
+      document.cookie = "onuvuti_is_admin=true; path=/; max-age=31536000; SameSite=Lax";
       setIsAuthenticated(true);
       setPasswordInput("");
       await fetchDashboardFromGo();
@@ -1324,6 +1330,8 @@ export default function AdminDashboardPage() {
               onClick={() => {
                 sessionStorage.removeItem("onuvuti_admin_authed");
                 sessionStorage.removeItem("onuvuti_admin_token");
+                localStorage.removeItem("onuvuti_is_admin");
+                document.cookie = "onuvuti_is_admin=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
                 setIsAuthenticated(false);
               }}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 px-3 py-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 transition cursor-pointer"

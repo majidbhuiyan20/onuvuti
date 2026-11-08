@@ -18,14 +18,67 @@ declare global {
 }
 
 /**
+ * Checks whether the current visitor is an Admin or Developer.
+ * When active, Meta Pixel events and Internal Analytics logging are completely silenced
+ * so developer testing never distorts production analytics or Pixel data.
+ */
+export function isDeveloperOrAdmin(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    // Force override for testing Meta Pixel explicitly via query parameter: ?force_pixel_test=true
+    if (window.location.search.includes("force_pixel_test=true")) {
+      return false;
+    }
+
+    // 1. Current route is an Admin route
+    if (window.location.pathname.startsWith("/admin")) {
+      return true;
+    }
+
+    // 2. Active Admin Session Storage
+    if (sessionStorage.getItem("onuvuti_admin_authed") === "true") {
+      return true;
+    }
+    if (sessionStorage.getItem("onuvuti_admin_token")) {
+      return true;
+    }
+
+    // 3. Persistent Admin / Developer Local Storage (active across all browser tabs)
+    if (localStorage.getItem("onuvuti_is_admin") === "true") {
+      return true;
+    }
+
+    // 4. Admin Cookie
+    if (document.cookie.includes("onuvuti_is_admin=true")) {
+      return true;
+    }
+
+    // 5. Developer mode query param override: ?dev_mode=true or ?exclude_analytics=true
+    const search = window.location.search;
+    if (search.includes("dev_mode=true") || search.includes("exclude_analytics=true")) {
+      return true;
+    }
+  } catch {
+    // Ignore storage errors safely
+  }
+  return false;
+}
+
+/**
  * Safely calls Meta Pixel fbq if available in browser
  */
 export function callFbq(...args: any[]) {
-  if (typeof window !== "undefined" && typeof window.fbq === "function") {
-    try {
-      window.fbq(...args);
-    } catch (err) {
-      console.warn("[Meta Pixel] fbq call error:", err);
+  if (typeof window !== "undefined") {
+    if (isDeveloperOrAdmin()) {
+      // Developer / Admin mode: silence Meta Pixel
+      return;
+    }
+    if (typeof window.fbq === "function") {
+      try {
+        window.fbq(...args);
+      } catch (err) {
+        console.warn("[Meta Pixel] fbq call error:", err);
+      }
     }
   }
 }
@@ -43,6 +96,10 @@ async function logInternalEvent(data: {
   payload?: Record<string, any>;
 }) {
   if (typeof window === "undefined") return;
+  if (isDeveloperOrAdmin()) {
+    // Developer / Admin mode: silence internal event logging
+    return;
+  }
   try {
     fetch(`${GO_API_BASE_URL}/meta/events`, {
       method: "POST",
@@ -67,6 +124,7 @@ async function logInternalEvent(data: {
  */
 export function trackPageView(path?: string) {
   if (typeof window === "undefined") return;
+  if (isDeveloperOrAdmin()) return;
   const currentPath = path || window.location.pathname + window.location.search;
 
   if (window._fbq_last_page === currentPath) {
@@ -93,6 +151,7 @@ export function trackViewContent(params?: {
   value?: number;
   currency?: string;
 }) {
+  if (isDeveloperOrAdmin()) return;
   const contentName = params?.content_name || "স্পর্শের ব্যাকরণ (ই-বুক)";
   const contentIds = params?.content_ids || ["sporsher-byakoron"];
   const contentType = params?.content_type || "product";
@@ -128,6 +187,7 @@ export function trackInitiateCheckout(params?: {
   value?: number;
   currency?: string;
 }) {
+  if (isDeveloperOrAdmin()) return;
   const contentName = params?.content_name || "স্পর্শের ব্যাকরণ (ই-বুক)";
   const contentIds = params?.content_ids || ["sporsher-byakoron"];
   const contentType = params?.content_type || "product";
@@ -164,6 +224,7 @@ export function trackPurchase(params: {
   content_name?: string;
   content_ids?: string[];
 }) {
+  if (isDeveloperOrAdmin()) return;
   const orderId = String(params.order_id).trim();
   if (!orderId) return;
 
@@ -203,6 +264,7 @@ export function trackCompleteRegistration(params?: {
   method?: string;
   status?: string;
 }) {
+  if (isDeveloperOrAdmin()) return;
   const method = params?.method || "manual";
 
   const eventData = {
@@ -227,6 +289,7 @@ export function trackLead(params?: {
   content_name?: string;
   category?: string;
 }) {
+  if (isDeveloperOrAdmin()) return;
   const contentName = params?.content_name || "Story Submission";
   const category = params?.category || "general";
 

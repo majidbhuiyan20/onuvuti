@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/onuvuti/backend/internal/middleware"
 	"github.com/onuvuti/backend/internal/models"
 	"github.com/onuvuti/backend/internal/repository"
 )
@@ -23,6 +24,11 @@ func NewAnalyticsService(repo *repository.Repository) *AnalyticsService {
 }
 
 func (s *AnalyticsService) TrackVisit(clientIP, path, storyID string) {
+	// Guard against developer/admin IPs and admin paths
+	if middleware.IsDeveloperIP(clientIP) || strings.HasPrefix(strings.ToLower(strings.TrimSpace(path)), "/admin") {
+		return
+	}
+
 	today := time.Now().Format("2006-01-02")
 	visitorKey := today + ":" + clientIP
 

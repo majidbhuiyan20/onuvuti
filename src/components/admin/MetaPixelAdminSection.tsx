@@ -334,6 +334,11 @@ export default function MetaPixelAdminSection() {
             <Server className="w-3.5 h-3.5" />
             <span>Go CAPI সার্ভার: {config?.capiEnabled ? "চালু" : "বন্ধ"}</span>
           </div>
+
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 font-medium" title="আপনার অ্যাডমিন সেশন ও ডেভেলপার আইপি থেকে ভিজিট বা ইভেন্ট ফিল্টার করা হচ্ছে">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span>ডেভেলপার ফিল্টার: সুরক্ষিত</span>
+          </div>
         </div>
       </div>
 

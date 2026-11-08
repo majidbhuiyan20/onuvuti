@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/onuvuti/backend/internal/middleware"
 	"github.com/onuvuti/backend/internal/models"
 	"github.com/onuvuti/backend/internal/pkg/response"
 	"github.com/onuvuti/backend/internal/service"
@@ -30,6 +31,12 @@ func (h *MetaHandler) GetPublicConfig(w http.ResponseWriter, r *http.Request) {
 
 // LogBrowserEvent handles client-side event tracking logs.
 func (h *MetaHandler) LogBrowserEvent(w http.ResponseWriter, r *http.Request) {
+	// Skip logging if the event is submitted from a developer or admin browser
+	if middleware.IsDeveloperOrAdmin(r) {
+		response.JSON(w, http.StatusOK, map[string]any{"ok": true, "skipped": true, "reason": "developer_or_admin"})
+		return
+	}
+
 	var event models.MetaEventLog
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		response.Error(w, http.StatusBadRequest, "ইভেন্ট ডেটা সঠিক নয়।")

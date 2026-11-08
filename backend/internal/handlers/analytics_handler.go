@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/onuvuti/backend/internal/middleware"
 	"github.com/onuvuti/backend/internal/models"
@@ -21,6 +22,12 @@ func NewAnalyticsHandler(analyticsSvc *service.AnalyticsService) *AnalyticsHandl
 
 // TrackVisit — POST /api/v1/analytics/track
 func (h *AnalyticsHandler) TrackVisit(w http.ResponseWriter, r *http.Request) {
+	// Skip tracking completely if the request originates from a developer or admin
+	if middleware.IsDeveloperOrAdmin(r) {
+		response.JSON(w, http.StatusOK, map[string]any{"ok": true, "skipped": true, "reason": "developer_or_admin"})
+		return
+	}
+
 	clientIP := middleware.GetClientIP(r)
 	var req models.TrackVisitRequest
 	_ = json.NewDecoder(r.Body).Decode(&req)
@@ -28,6 +35,10 @@ func (h *AnalyticsHandler) TrackVisit(w http.ResponseWriter, r *http.Request) {
 	path := sanitizer.Text(req.Path, 200)
 	if path == "" {
 		path = "/"
+	}
+	if strings.HasPrefix(path, "/admin") {
+		response.JSON(w, http.StatusOK, map[string]any{"ok": true, "skipped": true, "reason": "admin_path"})
+		return
 	}
 	storyID := sanitizer.Text(req.StoryID, 120)
 
