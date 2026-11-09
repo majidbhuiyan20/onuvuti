@@ -11,8 +11,8 @@ function RouteTracker() {
   const isFirstMount = useRef(true);
 
   useEffect(() => {
-    // Never track admin dashboard pages
-    if (pathname.startsWith("/admin")) {
+    // Never track admin dashboard or adult sections
+    if (pathname.startsWith("/admin") || pathname.startsWith("/adult")) {
       return;
     }
 

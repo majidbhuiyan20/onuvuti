@@ -72,7 +72,10 @@ export default function RootLayout({
               'https://connect.facebook.net/en_US/fbevents.js');
 
               fbq('init', '1519039830282848');
-              if (window.location.pathname.indexOf('/admin') !== 0) {
+              if (
+                window.location.pathname.indexOf('/admin') !== 0 &&
+                window.location.pathname.indexOf('/adult') !== 0
+              ) {
                 fbq('track', 'PageView');
               }
               window._fbq_initialized = true;
