@@ -11,13 +11,14 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  CirclePlay,
   Clock3,
   Eye,
   Film,
+  Flame,
   Heart,
   LockKeyhole,
   Menu,
+  Play,
   Search,
   Share2,
   ShieldCheck,
@@ -45,7 +46,7 @@ type CatalogResponse = {
   next?: string | null;
   results?: Record<string, unknown>[];
 };
-type SortMode = "newest" | "popular";
+type SortMode = "popular" | "newest";
 
 function toVideo(item: Record<string, unknown>): AdultVideo | null {
   if (typeof item.id !== "number" && typeof item.id !== "string") return null;
@@ -61,10 +62,10 @@ function toVideo(item: Record<string, unknown>): AdultVideo | null {
   const category =
     typeof item.category === "string"
       ? item.category
-      : String((categories[0] as { name?: unknown } | undefined)?.name ?? categories[0] ?? "Video");
+      : String((categories[0] as { name?: unknown } | undefined)?.name ?? categories[0] ?? "Featured");
   return {
     id,
-    title: String(item.title ?? "Untitled"),
+    title: String(item.title ?? "Untitled Video"),
     description: String(item.description ?? ""),
     duration: String(item.duration ?? "Unknown"),
     category,
@@ -76,7 +77,7 @@ function toVideo(item: Record<string, unknown>): AdultVideo | null {
     ),
     embedUrl: `https://adultembed.com/player/embed/${encodeURIComponent(id)}/`,
     thumbnailUrl: typeof item.thumbnail === "string" ? item.thumbnail : undefined,
-    quality: typeof item.resolution === "string" && item.resolution ? item.resolution : undefined,
+    quality: typeof item.resolution === "string" && item.resolution ? item.resolution : "HD",
     tags,
     createdAt: String(item.published_at ?? ""),
   };
@@ -102,19 +103,18 @@ function generatePaginationItems(currentPage: number, totalPages: number): (numb
   return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
 }
 
-function VideoCard({ video, onPlay }: { video: AdultVideo; onPlay: () => void }) {
+function VideoCard({ video }: { video: AdultVideo }) {
   return (
     <article className="adult-video-card group">
-      <button
-        type="button"
-        onClick={onPlay}
+      <Link
+        href={`/adult/video/${encodeURIComponent(video.id)}`}
         className="adult-thumbnail"
         aria-label={`Watch ${video.title}`}
       >
         {video.thumbnailUrl ? (
           <Image
             src={video.thumbnailUrl}
-            alt=""
+            alt={video.title}
             fill
             unoptimized
             sizes="(max-width: 640px) 94vw, (max-width: 1024px) 46vw, 30vw"
@@ -122,27 +122,32 @@ function VideoCard({ video, onPlay }: { video: AdultVideo; onPlay: () => void })
           />
         ) : (
           <span className="adult-thumbnail-fallback">
-            <Film size={30} />
+            <Film size={32} />
           </span>
         )}
         <span className="adult-thumbnail-shade" />
         <span className="adult-play">
-          <CirclePlay size={46} strokeWidth={1.25} />
+          <span className="adult-play-inner">
+            <Play size={24} fill="currentColor" />
+          </span>
         </span>
         <span className="adult-duration">
-          <Clock3 size={13} />
+          <Clock3 size={11} />
           {video.duration}
         </span>
         <span className="adult-card-category">{video.category}</span>
-      </button>
+      </Link>
       <div className="adult-card-copy">
-        <button type="button" onClick={onPlay} className="adult-card-title">
+        <Link
+          href={`/adult/video/${encodeURIComponent(video.id)}`}
+          className="adult-card-title"
+          title={video.title}
+        >
           {video.title}
-        </button>
-        <p className="adult-card-description">{video.description || ""}</p>
+        </Link>
         <div className="adult-card-meta">
           <span>
-            <Eye size={14} />
+            <Eye size={13} />
             {formatCount(video.views)} views
           </span>
           {video.quality && <span className="adult-quality">{video.quality}</span>}
@@ -164,6 +169,7 @@ export default function AdultPage() {
   const [sort, setSort] = useState<SortMode>("popular");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [serverPages, setServerPages] = useState<number | null>(null);
   const [hasNext, setHasNext] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -193,23 +199,37 @@ export default function AdultPage() {
       setLoading(true);
       setError("");
       try {
-        const params = new URLSearchParams({ per_page: "24", page: String(page), sort, period: "week" });
+        const params = new URLSearchParams({
+          per_page: "24",
+          page: String(page),
+          sort,
+          period: "week",
+        });
         if (query.trim()) params.set("query", query.trim());
         if (category) params.set("categories", category);
         if (tag) params.set("tags", tag);
+
         const endpoint = sort === "popular" ? "/api/v1/adult/videos/trending" : "/api/v1/adult/videos";
         const response = await fetch(`${endpoint}?${params}`, {
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error("catalogue request failed");
+        if (!response.ok) throw new Error("Catalogue request failed");
         const payload = (await response.json()) as CatalogResponse;
-        setVideos(
-          (payload.results ?? []).map(toVideo).filter((item): item is AdultVideo => item !== null)
-        );
-        setTotal(Number(payload.total ?? payload.count ?? 0));
-        setHasNext(
-          payload.next_page != null ? Number(payload.next_page) > page : Boolean(payload.next)
-        );
+        const normalizedVideos = (payload.results ?? [])
+          .map(toVideo)
+          .filter((item): item is AdultVideo => item !== null);
+        setVideos(normalizedVideos);
+
+        const totalCount = Number(payload.total ?? payload.count ?? 0);
+        setTotal(totalCount);
+
+        const pagesCount =
+          typeof payload.pages === "number" && payload.pages > 0 ? payload.pages : null;
+        setServerPages(pagesCount);
+
+        const nextExists =
+          payload.next_page != null ? Number(payload.next_page) > page : Boolean(payload.next);
+        setHasNext(nextExists);
       } catch {
         if (!controller.signal.aborted) {
           setError("Unable to load video catalogue right now. Please try again shortly.");
@@ -237,19 +257,36 @@ export default function AdultPage() {
         if (!controller.signal.aborted) setCategories([]);
       });
     fetch("/api/v1/adult/tags", { signal: controller.signal })
-      .then((response) => { if (!response.ok) throw new Error(); return response.json(); })
+      .then((response) => {
+        if (!response.ok) throw new Error();
+        return response.json();
+      })
       .then((payload) => setTags(Array.isArray(payload?.results) ? payload.results : []))
-      .catch(() => { if (!controller.signal.aborted) setTags([]); });
+      .catch(() => {
+        if (!controller.signal.aborted) setTags([]);
+      });
     return () => controller.abort();
   }, [isVerified]);
 
-  const pageCount = Math.max(1, Math.ceil(total / 24));
+  const pageCount = useMemo(() => {
+    if (serverPages && serverPages > 0) {
+      return Math.min(serverPages, 500);
+    }
+    if (total > 0) {
+      return Math.min(Math.ceil(total / 24), 500);
+    }
+    if (hasNext) {
+      return Math.max(50, page + 1);
+    }
+    return Math.max(1, page);
+  }, [serverPages, total, hasNext, page]);
+
   const visibleStories = useMemo(() => INITIAL_ADULT_STORIES.slice(0, 3), []);
 
   const handlePageChange = (newPage: number) => {
-    if (newPage === page || newPage < 1 || newPage > pageCount || loading) return;
+    if (newPage === page || newPage < 1 || (pageCount > 0 && newPage > pageCount) || loading) return;
     setPage(newPage);
-    document.getElementById("discover")?.scrollIntoView({ behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const verify = () => {
@@ -321,27 +358,19 @@ export default function AdultPage() {
 
   return (
     <main className="adult-shell" id="top">
-      {/* Top Header */}
+      {/* Netflix-style Top Sticky Navigation */}
       <header className="adult-nav">
         <div className="adult-nav-inner">
-          <Link href="/adult" className="adult-logo" aria-label="Onuvuti 18+ home">
-            <span className="adult-logo-icon">
-              <Sparkles size={18} />
-            </span>
-            <span>
-              onuvuti<span className="adult-logo-dot">.</span>
-              <small>AFTER HOURS</small>
-            </span>
+          <Link href="/adult" className="adult-logo" aria-label="Onuvuti adult streaming home">
+            <span className="adult-logo-brand">ONUVUTI</span>
+            <span className="adult-logo-badge">STREAM</span>
           </Link>
           <nav
             className={`adult-nav-links ${menuOpen ? "is-open" : ""}`}
             aria-label="Main Navigation"
           >
             <a href="#discover" onClick={() => setMenuOpen(false)}>
-              Discover
-            </a>
-            <a href="#categories" onClick={() => setMenuOpen(false)}>
-              Categories
+              Videos
             </a>
             <a href="#stories" onClick={() => setMenuOpen(false)}>
               Stories
@@ -368,206 +397,265 @@ export default function AdultPage() {
       </header>
 
       <div className="adult-content">
+        {/* Top Ad Unit */}
         <div className="adult-ad-top">
           <AdBanner468x60 />
           <AdBanner320x50 />
         </div>
 
-        {/* Discovery & Catalogue */}
-        <section className="adult-discovery" id="discover">
-          <div className="adult-section-heading">
-            <div>
-              <span className="adult-section-kicker">THE COLLECTION</span>
-              <h2>
-                Explore the <em>collection</em>
-              </h2>
-              <p>Discover trending and recently added videos.</p>
-            </div>
-            <div className="adult-total-count">
-              <strong>{formatCount(total)}</strong>
-              <span>videos</span>
-            </div>
-          </div>
-
-          <div className="adult-toolbar">
-            <div className="adult-search">
-              <Search size={17} />
+        {/* Netflix-style Compact Controls Bar */}
+        <div className="adult-browse-header" id="discover">
+          <div className="adult-browse-topline">
+            <div className="adult-search-bar">
+              <Search size={18} className="adult-search-icon" />
               <input
+                type="text"
                 maxLength={100}
                 value={query}
                 onChange={(event) => {
                   setQuery(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Search video titles and descriptions..."
+                placeholder="Search videos, titles, categories..."
                 aria-label="Search videos"
               />
               {query && (
                 <button
                   type="button"
-                  onClick={() => setQuery("")}
+                  onClick={() => {
+                    setQuery("");
+                    setPage(1);
+                  }}
                   aria-label="Clear search query"
+                  className="adult-search-clear"
                 >
-                  <X size={15} />
+                  <X size={16} />
                 </button>
               )}
             </div>
-            <div className="adult-sort" aria-label="Sort videos">
+
+            <div className="adult-sort-pills" aria-label="Sort videos">
               <button
-                className={sort === "popular" ? "active" : ""}
+                type="button"
+                className={`adult-sort-pill ${sort === "popular" ? "is-active" : ""}`}
                 onClick={() => {
                   setSort("popular");
                   setPage(1);
                 }}
               >
-                Popular
+                <Flame size={14} />
+                <span>Trending</span>
               </button>
               <button
-                className={sort === "newest" ? "active" : ""}
+                type="button"
+                className={`adult-sort-pill ${sort === "newest" ? "is-active" : ""}`}
                 onClick={() => {
                   setSort("newest");
                   setPage(1);
                 }}
               >
-                Newest
+                <Sparkles size={14} />
+                <span>Newest</span>
               </button>
             </div>
           </div>
 
-          {/* Video Grid */}
-          <div className="adult-catalog-layout grid items-start">
-          <aside className="adult-category-sidebar" id="categories" aria-label="Video categories">
-            <span className="adult-sidebar-heading">Categories</span>
-            <div className="adult-category-row">
-              <button type="button" onClick={() => { setCategory(""); setPage(1); }} className={`adult-category-pill ${!category ? "selected" : ""}`}>All videos</button>
-              {categories.slice(0, 12).map((item) => <button type="button" key={item.slug} onClick={() => { setCategory(item.slug); setPage(1); }} className={`adult-category-pill ${category === item.slug ? "selected" : ""}`}>{item.name}{item.video_count ? <small>{formatCount(item.video_count)}</small> : null}</button>)}
-            </div>
-            {tags.length > 0 && <div className="adult-tag-list" aria-label="Popular tags"><span className="adult-sidebar-heading">Popular tags</span>{tags.slice(0, 8).map((item) => <button type="button" key={item.slug} onClick={() => { setTag(tag === item.slug ? "" : item.slug); setPage(1); }} className={`adult-tag-button ${tag === item.slug ? "selected" : ""}`}>{item.name}</button>)}</div>}
-          </aside>
-          <div className="adult-catalog-main">
-          <div className="adult-grid-wrap" aria-live="polite">
-            {loading && (
-              <div className="adult-video-grid">
-                {Array.from({ length: 6 }, (_, index) => (
-                  <div className="adult-skeleton" key={index}>
-                    <span />
-                    <i />
-                    <b />
-                  </div>
-                ))}
-              </div>
-            )}
-            {!loading && error && (
-              <div className="adult-empty">
-                <Film size={28} />
-                <h3>Unable to Connect to Catalogue</h3>
-                <p>{error}</p>
+          {/* Quick Categories Bar */}
+          <div className="adult-genre-bar" aria-label="Categories">
+            <button
+              type="button"
+              onClick={() => {
+                setCategory("");
+                setTag("");
+                setPage(1);
+              }}
+              className={`adult-genre-pill ${!category && !tag ? "is-active" : ""}`}
+            >
+              All Videos
+            </button>
+            {categories.slice(0, 16).map((item) => (
+              <button
+                type="button"
+                key={item.slug}
+                onClick={() => {
+                  setCategory(category === item.slug ? "" : item.slug);
+                  setTag("");
+                  setPage(1);
+                }}
+                className={`adult-genre-pill ${category === item.slug ? "is-active" : ""}`}
+              >
+                {item.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Popular Tags Row (if tags available) */}
+          {tags.length > 0 && (
+            <div className="adult-tag-bar" aria-label="Popular tags">
+              <span className="adult-tag-bar-label">Tags:</span>
+              {tags.slice(0, 12).map((item) => (
                 <button
-                  className="adult-outline-button"
                   type="button"
-                  onClick={() => setReloadToken((value) => value + 1)}
-                >
-                  Try Again <ArrowRight size={14} />
-                </button>
-              </div>
-            )}
-            {!loading && !error && videos.length === 0 && (
-              <div className="adult-empty">
-                <Search size={28} />
-                <h3>No Videos Found</h3>
-                <p>Try searching with different keywords or clearing category filters.</p>
-                <button
-                  className="adult-outline-button"
-                  type="button"
+                  key={item.slug}
                   onClick={() => {
-                    setQuery("");
+                    setTag(tag === item.slug ? "" : item.slug);
                     setCategory("");
-                    setTag("");
+                    setPage(1);
                   }}
+                  className={`adult-tag-pill ${tag === item.slug ? "is-active" : ""}`}
                 >
-                  Clear Filters <X size={14} />
+                  #{item.name}
                 </button>
-              </div>
-            )}
-            {!loading && !error && videos.length > 0 && (
-              <div className="adult-video-grid">
-                {videos.map((item, index) => (
-                  <Fragment key={item.id}>
-                    <VideoCard video={item} onPlay={() => router.push(`/adult/video/${encodeURIComponent(item.id)}`)} />
-                    {index === 5 && videos.length > 6 && <AdBanner300x250 />}
-                  </Fragment>
-                ))}
-              </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Video Grid & Sidebar Layout */}
+        <div className="adult-catalog-layout">
+          <div className="adult-catalog-main">
+            <div className="adult-grid-wrap" aria-live="polite">
+              {loading && (
+                <div className="adult-video-grid">
+                  {Array.from({ length: 6 }, (_, index) => (
+                    <div className="adult-skeleton" key={index}>
+                      <span />
+                      <i />
+                      <b />
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!loading && error && (
+                <div className="adult-empty">
+                  <Film size={32} />
+                  <h3>Unable to Load Videos</h3>
+                  <p>{error}</p>
+                  <button
+                    className="adult-primary-button"
+                    type="button"
+                    onClick={() => setReloadToken((value) => value + 1)}
+                  >
+                    Try Again <ArrowRight size={14} />
+                  </button>
+                </div>
+              )}
+
+              {!loading && !error && videos.length === 0 && (
+                <div className="adult-empty">
+                  <Search size={32} />
+                  <h3>No Videos Found</h3>
+                  <p>Try searching with different keywords or clear your active filters.</p>
+                  <button
+                    className="adult-outline-button"
+                    type="button"
+                    onClick={() => {
+                      setQuery("");
+                      setCategory("");
+                      setTag("");
+                    }}
+                  >
+                    Clear Filters <X size={14} />
+                  </button>
+                </div>
+              )}
+
+              {!loading && !error && videos.length > 0 && (
+                <div className="adult-video-grid">
+                  {videos.map((item, index) => (
+                    <Fragment key={item.id}>
+                      <VideoCard video={item} />
+                      {index === 5 && videos.length > 6 && (
+                        <div className="adult-ad-card-wrapper">
+                          <AdBanner300x250 />
+                        </div>
+                      )}
+                    </Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Always Visible Numbered Pagination */}
+            {videos.length > 0 && (pageCount > 1 || hasNext || page > 1) && (
+              <nav className="adult-pagination" aria-label="Pagination">
+                <div className="adult-pagination-info">
+                  {total > 0 ? (
+                    <>
+                      Page <strong>{page}</strong> of <strong>{pageCount}</strong>{" "}
+                      <span className="adult-pagination-total">
+                        ({formatCount(total)} videos available)
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Page <strong>{page}</strong> of <strong>{pageCount}</strong>
+                    </>
+                  )}
+                </div>
+                <div className="adult-pagination-nav">
+                  <button
+                    type="button"
+                    className="adult-page-btn is-nav"
+                    disabled={page <= 1 || loading}
+                    onClick={() => handlePageChange(page - 1)}
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft size={16} />
+                    <span>Prev</span>
+                  </button>
+
+                  {paginationItems.map((item, index) => {
+                    if (item === "...") {
+                      return (
+                        <span key={`ellipsis-${index}`} className="adult-page-ellipsis">
+                          ...
+                        </span>
+                      );
+                    }
+                    const isCurrent = item === page;
+                    return (
+                      <button
+                        key={`page-${item}`}
+                        type="button"
+                        disabled={loading}
+                        className={`adult-page-btn ${isCurrent ? "is-active" : ""}`}
+                        onClick={() => handlePageChange(item)}
+                        aria-current={isCurrent ? "page" : undefined}
+                        aria-label={`Go to page ${item}`}
+                      >
+                        {item}
+                      </button>
+                    );
+                  })}
+
+                  <button
+                    type="button"
+                    className="adult-page-btn is-nav"
+                    disabled={(!hasNext && page >= pageCount) || loading}
+                    onClick={() => handlePageChange(page + 1)}
+                    aria-label="Next page"
+                  >
+                    <span>Next</span>
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </nav>
             )}
           </div>
-          </div>
+
+          {/* Desktop Right Sidebar Advertisement */}
           <aside className="adult-sidebar-ad">
             <AdBanner160x300 />
           </aside>
-          </div>
-
-          {/* Full Rich Pagination Component */}
-          {videos.length > 0 && pageCount > 1 && (
-            <div className="adult-pagination">
-              <div className="adult-pagination-info">
-                Showing Page {page} of {pageCount} ({formatCount(total)} videos available)
-              </div>
-              <div className="adult-pagination-nav" aria-label="Pagination Navigation">
-                <button
-                  type="button"
-                  className="adult-page-btn is-nav"
-                  disabled={page <= 1 || loading}
-                  onClick={() => handlePageChange(page - 1)}
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft size={16} />
-                  <span>Prev</span>
-                </button>
-
-                {paginationItems.map((item, index) => {
-                  if (item === "...") {
-                    return (
-                      <span key={`ellipsis-${index}`} className="adult-page-ellipsis">
-                        ...
-                      </span>
-                    );
-                  }
-                  const isCurrent = item === page;
-                  return (
-                    <button
-                      key={`page-${item}`}
-                      type="button"
-                      disabled={loading}
-                      className={`adult-page-btn ${isCurrent ? "is-active" : ""}`}
-                      onClick={() => handlePageChange(item)}
-                      aria-current={isCurrent ? "page" : undefined}
-                      aria-label={`Go to page ${item}`}
-                    >
-                      {item}
-                    </button>
-                  );
-                })}
-
-                <button
-                  type="button"
-                  className="adult-page-btn is-nav"
-                  disabled={!hasNext || page >= pageCount || loading}
-                  onClick={() => handlePageChange(page + 1)}
-                  aria-label="Next page"
-                >
-                  <span>Next</span>
-                  <ChevronRight size={16} />
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+        </div>
 
         {/* Stories Section */}
         <section className="adult-story-section" id="stories">
           <div className="adult-section-heading">
             <div>
-              <span className="adult-section-kicker">WORDS & FEELINGS</span>
+              <span className="adult-section-kicker">CURATED READS</span>
               <h2>
                 Stories & <em>Reflections</em>
               </h2>
@@ -629,6 +717,7 @@ export default function AdultPage() {
           </div>
         </section>
 
+        {/* Native Ad Container */}
         <AdNative />
 
         {/* Disclaimer Note */}
@@ -651,16 +740,11 @@ export default function AdultPage() {
 
       {/* Footer */}
       <footer className="adult-footer">
-        <Link href="/" className="adult-logo">
-          <span className="adult-logo-icon">
-            <Sparkles size={16} />
-          </span>
-          <span>
-            onuvuti<span className="adult-logo-dot">.</span>
-            <small>AFTER HOURS</small>
-          </span>
+        <Link href="/adult" className="adult-logo">
+          <span className="adult-logo-brand">ONUVUTI</span>
+          <span className="adult-logo-badge">STREAM</span>
         </Link>
-        <span>© 2026 Onuvuti · Private Curated Collection</span>
+        <span>© 2026 Onuvuti · Streaming Discovery Platform</span>
         <a href="#top">Back to Top ↑</a>
       </footer>
       <AdAdditional />

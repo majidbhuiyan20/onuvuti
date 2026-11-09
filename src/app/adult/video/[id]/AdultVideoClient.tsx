@@ -82,7 +82,17 @@ export default function AdultVideoClient({ id }: { id: string }) {
 
   return (
     <main className="adult-shell adult-detail-page">
-      <header className="adult-nav"><div className="adult-nav-inner"><Link href="/adult" className="adult-logo"><span className="adult-logo-icon"><Film size={18} /></span><span>onuvuti<span className="adult-logo-dot">.</span><small>AFTER HOURS</small></span></Link><Link href="/adult" className="adult-back-link"><ArrowLeft size={15} /> Back to collection</Link></div></header>
+      <header className="adult-nav">
+        <div className="adult-nav-inner">
+          <Link href="/adult" className="adult-logo" aria-label="Onuvuti adult streaming home">
+            <span className="adult-logo-brand">ONUVUTI</span>
+            <span className="adult-logo-badge">STREAM</span>
+          </Link>
+          <Link href="/adult" className="adult-back-link">
+            <ArrowLeft size={15} /> Back to Browse
+          </Link>
+        </div>
+      </header>
       <div className="adult-content">
         <div className="adult-detail-top-ad"><AdBanner468x60 /><AdBanner320x50 /></div>
         {error ? <section className="adult-empty"><Film size={28} /><h1>Video unavailable</h1><p>{error}</p><Link className="adult-outline-button" href="/adult">Return to collection</Link></section> : !video ? <div className="adult-detail-loading"><span className="adult-spinner" aria-label="Loading video" /></div> : (
@@ -103,9 +113,51 @@ export default function AdultVideoClient({ id }: { id: string }) {
             </div>
             <section className="adult-related-section">
               <div className="adult-section-heading"><div><span className="adult-section-kicker">KEEP EXPLORING</span><h2>Related <em>videos</em></h2><p>More from the collection, selected by AdultEmbed.</p></div></div>
-              {related.length ? <div className="adult-video-grid">{related.map((item) => <Link className="adult-video-card adult-related-card" href={`/adult/video/${encodeURIComponent(item.id)}`} key={item.id}><span className="adult-thumbnail">{item.thumbnailUrl ? <Image src={item.thumbnailUrl} alt="" fill unoptimized sizes="(max-width: 640px) 94vw, 30vw" className="adult-thumbnail-image" /> : <span className="adult-thumbnail-fallback"><Play /></span>}<span className="adult-thumbnail-shade" /><span className="adult-play"><Play size={38} /></span><span className="adult-duration">{item.duration}</span></span><span className="adult-card-copy"><span className="adult-card-title">{item.title}</span><span className="adult-card-meta">{count(item.views)} views</span></span></Link>)}</div> : <p className="adult-related-empty">Related videos are unavailable right now.</p>}
+              {related.length ? (
+                <div className="adult-video-grid">
+                  {related.map((item) => (
+                    <Link
+                      className="adult-video-card adult-related-card"
+                      href={`/adult/video/${encodeURIComponent(item.id)}`}
+                      key={item.id}
+                    >
+                      <span className="adult-thumbnail">
+                        {item.thumbnailUrl ? (
+                          <Image
+                            src={item.thumbnailUrl}
+                            alt={item.title}
+                            fill
+                            unoptimized
+                            sizes="(max-width: 640px) 94vw, 30vw"
+                            className="adult-thumbnail-image"
+                          />
+                        ) : (
+                          <span className="adult-thumbnail-fallback">
+                            <Play size={32} />
+                          </span>
+                        )}
+                        <span className="adult-thumbnail-shade" />
+                        <span className="adult-play">
+                          <span className="adult-play-inner">
+                            <Play size={20} fill="currentColor" />
+                          </span>
+                        </span>
+                        <span className="adult-duration">{item.duration}</span>
+                      </span>
+                      <span className="adult-card-copy">
+                        <span className="adult-card-title">{item.title}</span>
+                        <span className="adult-card-meta">{count(item.views)} views</span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="adult-related-empty">Related videos are unavailable right now.</p>
+              )}
               <AdNative />
-              <Link className="adult-outline-button adult-return-button" href="/adult"><ArrowLeft size={14} /> Back to collection</Link>
+              <Link className="adult-outline-button adult-return-button" href="/adult">
+                <ArrowLeft size={14} /> Back to Browse
+              </Link>
             </section>
           </>
         )}
