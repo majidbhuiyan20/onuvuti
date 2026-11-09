@@ -26,7 +26,7 @@ All backend routes are registered in `backend/internal/routes/router.go`, under 
 | GET `/admin/secret/stats` | Inbox stats | Internal/admin | Implemented |
 | GET `/meta/config`; POST `/meta/events` | Public analytics config/event ingestion | Public | Implemented |
 | GET/PUT `/admin/meta/config`; GET `/admin/meta/events`, `/admin/meta/analytics`; POST `/admin/meta/test-capi` | Meta admin integration | Admin | Implemented |
-| GET `/adult/videos` | Proxies search query, page, per_page (max 48), sort, and category slugs to AdultEmbed `/search`; response is provider JSON (`count`, pagination, `results`) | Public; adult UI gates access | Implemented; 10-minute in-memory cache, 8-second upstream timeout |
+| GET `/adult/videos` | Proxies search query, page, per_page (max 48), sort, and category slugs to AdultEmbed `/search`; response is provider JSON (`total`, `pages`, `next_page`, `results`) | Public; adult UI gates access | Implemented; 10-minute in-memory cache, 8-second upstream timeout |
 | GET `/adult/categories` | Proxies AdultEmbed category list | Public; adult UI gates access | Implemented; 10-minute in-memory cache |
 
 Error handling for the adult proxy returns HTTP 502 with a localized error object for timeout/provider failure or malformed JSON. The proxy currently forwards upstream JSON fields without a strongly typed Go response model.

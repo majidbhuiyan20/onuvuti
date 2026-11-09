@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "অনুভূতি ১৮+ — এক্সক্লুসিভ প্রাপ্তবয়স্ক কর্নার",
-  description: "শুধুমাত্র ১৮+ প্রাপ্তবয়স্কদের জন্য নির্ধারিত বিশেষ কর্নার।",
+  title: "Onuvuti 18+ — After Hours Private Collection",
+  description: "Age-restricted private media collection. Strictly 18+.",
   robots: {
     index: false,
     follow: false,

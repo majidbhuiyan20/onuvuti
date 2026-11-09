@@ -19,7 +19,7 @@ export interface AdultStory {
   title: string;
   excerpt: string;
   author: string;
-  category: "দাম্পত্য কথন" | "অন্তরঙ্গ মনস্তত্ত্ব" | "গোপন অনুভূতি" | "রোমান্টিক ফিকশন";
+  category: string;
   readTime: string;
   likes: number;
   views: number;
@@ -29,116 +29,114 @@ export interface AdultStory {
 }
 
 export const ADULT_CATEGORIES = [
-  "সকল কনটেন্ট",
-  "ভিডিও গ্যালারি",
-  "অন্তরঙ্গ গল্প",
-  "দাম্পত্য মনস্তত্ত্ব",
-  "গোপন কথন",
+  "All Content",
+  "Video Gallery",
+  "Intimate Stories",
+  "Psychology of Intimacy",
+  "Secret Confessions",
 ] as const;
 
 /**
  * Initial Video Library (Template/Framework)
- * আপনি এখানে নিজের ভিডিও URL (videoUrl বা embedUrl) বসাতে পারেন।
  */
 export const INITIAL_ADULT_VIDEOS: AdultVideo[] = [
   {
     id: "vid-1",
-    title: "অন্তরঙ্গ মুহূর্ত ও স্পর্শের শিল্প — পর্ব ১",
-    description: "দাম্পত্য সম্পর্কের গভীর টানাপোড়েন এবং অনুভূতি প্রকাশের শিল্প নিয়ে বিশেষ ভিজ্যুয়াল আলোচনা।",
-    duration: "০৮:৪৫ মিনিট",
-    category: "এক্সক্লুসিভ",
+    title: "Intimate Moments & The Art of Touch — Part 1",
+    description: "A nuanced exploration of relationship dynamics, sensual psychology, and intimate connection.",
+    duration: "08:45 min",
+    category: "Exclusive",
     views: 1240,
     likes: 312,
-    videoUrl: "", // আপনার ভিডিও ফাইলের ডিরেক্ট লিংক (যেমন: /videos/example.mp4)
-    embedUrl: "", // অথবা কোনো হোস্টিংয়ের এমবেড আইফ্রেম লিংক
+    videoUrl: "",
+    embedUrl: "",
     thumbnailUrl: "",
-    tags: ["দাম্পত্য", "স্পর্শের ভাষা", "১৮+"],
-    createdAt: "২০২৬-১১-১০",
+    tags: ["Relationship", "Touch", "18+"],
+    createdAt: "2026-11-10",
   },
   {
     id: "vid-2",
-    title: "রাতের নিস্তব্ধতায় সম্পর্কের গভীরতা — বিশেষ পর্ব",
-    description: "মন ও শরীরের মেলবন্ধনের মনস্তাত্ত্বিক ব্যাখ্যা ও অন্তরঙ্গ মুহূর্তের অনুভূতি।",
-    duration: "১২:২০ মিনিট",
-    category: "রোমান্টিক",
+    title: "Quiet Hours: The Depth of Connection",
+    description: "Understanding emotional vulnerability and bodily harmony in midnight solitude.",
+    duration: "12:20 min",
+    category: "Romantic",
     views: 980,
     likes: 245,
     videoUrl: "",
     embedUrl: "",
     thumbnailUrl: "",
-    tags: ["রোমান্স", "অন্তরঙ্গতা", "মনস্তত্ত্ব"],
-    createdAt: "২০২৬-১১-১০",
+    tags: ["Romance", "Intimacy", "Psychology"],
+    createdAt: "2026-11-10",
   },
   {
     id: "vid-3",
-    title: "গোপন আকাঙ্ক্ষা ও অনুভূতির ভাষা — পর্ব ৩",
-    description: "যে কথাগুলো সহজে মুখে বলা যায় না, চোখের ভাষায় এবং স্পর্শে ফুটিয়ে তোলার বিশেষ আলোচনা।",
-    duration: "১০:১৫ মিনিট",
-    category: "স্পেশাল",
+    title: "Unspoken Desires & The Secret Language",
+    description: "Words left unsaid, whispered through quiet gestures and the rhythm of breath.",
+    duration: "10:15 min",
+    category: "Special",
     views: 1520,
     likes: 410,
     videoUrl: "",
     embedUrl: "",
     thumbnailUrl: "",
-    tags: ["গোপন কথা", "আকাঙ্ক্ষা", "১৮+"],
-    createdAt: "২০২৬-১১-১০",
+    tags: ["Desire", "Subtle Touch", "18+"],
+    createdAt: "2026-11-10",
   },
 ];
 
 /**
- * Initial Stories Library (Template/Framework)
- * আপনি এখানে আপনার নিজস্ব গল্প, অধ্যায় বা অনুচ্ছেদ যুক্ত করতে পারেন।
+ * Initial Stories Library (English by default)
  */
 export const INITIAL_ADULT_STORIES: AdultStory[] = [
   {
     id: "story-1",
-    title: "নিশুতি রাতের আলোছায়া",
-    excerpt: "ঘরের বাতিটা নেভানোর পর জানালার পর্দা চিরে আসা চাঁদের আলো তখন আমাদের দুজনের ওপর পড়েছিল। স্তব্ধ ঘরের ভেতরে কেবল দুটি দ্রুত হয়ে আসা নিঃশ্বাসের শব্দ...",
-    author: "বেনামী লেখক",
-    category: "দাম্পত্য কথন",
-    readTime: "৫ মিনিট",
+    title: "Shadows in the Moonlight",
+    excerpt: "When the lights faded, moonlight sliced through the sheer curtains, washing over us. In the quiet room, there was only the gentle cadence of hurried breaths...",
+    author: "Anonymous",
+    category: "Intimate Narrative",
+    readTime: "5 min read",
     likes: 420,
     views: 1890,
     content: [
-      "ঘরের বাতিটা নেভানোর পর জানালার পর্দা চিরে আসা হালকা চাঁদের আলো তখন আমাদের দুজনের ওপর এসে পড়েছিল। স্তব্ধ ঘরের ভেতরে কেবল দুটি দ্রুত হয়ে আসা নিঃশ্বাসের ছন্দ ছাড়া আর কোনো শব্দ ছিল না।",
-      "সে আলতো করে আমার আঙুলগুলো নিজের হাতের মুঠোয় নিল। অনেকদিনের না বলা এক অতৃপ্ত চাওয়া যেন আজ তার প্রতিটি স্পর্শে স্পষ্ট হয়ে উঠছিল। শরীরের প্রতিটি কোণায় অনুভূতির উষ্ণ স্রোত বয়ে যাচ্ছিল।",
-      "তার কাছে আসার ধরনটায় কোনো তাড়াহুড়ো ছিল না, ছিল গভীর অধিকারবোধ। চোখের ভাষায় সে যেন নিঃশব্দে বলে চলেছিল ভালোবাসার গোপন সব ব্যাকরণ। সেই রাতে দুটি মন ও শরীর মিলেমিশে এক অচেনা উষ্ণতায় ডুব দিয়েছিল।",
+      "When the room lights finally dimmed, moonlight slipped through the linen drapes, painting gentle silver lines across the bed. In the quiet expanse of the room, there was nothing but the soft cadence of two synchronizing breaths.",
+      "His fingers found mine with an unhurried certainty. Months of restrained desire dissolved into a single, deliberate stroke across my shoulder, sending ripples of warmth beneath my skin.",
+      "There was no haste in the way we drew closer, only a profound sense of belonging. In the language of eyes and breathless murmurs, the night surrendered entirely to us.",
     ],
-    tags: ["দাম্পত্য", "নিশুতি রাত", "স্পর্শ"],
-    createdAt: "২০২৬-১১-১০",
+    tags: ["Midnight", "Desire", "Connection"],
+    createdAt: "2026-11-10",
   },
   {
     id: "story-2",
-    title: "বৃষ্টিভেজা সন্ধ্যায় একান্তে",
-    excerpt: "বাইরে তখন অঝোর ধারায় বৃষ্টি নামছিল। জানালার কাঁচে বৃষ্টির ফোঁটার শব্দ আর ঘরের ভেতরের উষ্ণতার মধ্যে এক অন্যরকম টান তৈরি হচ্ছিল...",
-    author: "নীল আকাশ",
-    category: "রোমান্টিক ফিকশন",
-    readTime: "৬ মিনিট",
+    title: "Whispers in the Rain",
+    excerpt: "Outside, torrential rain tapped rhythmically against the glass pane. Inside, warm tea sat untouched as distance collapsed between us...",
+    author: "Velvet Sky",
+    category: "Romantic Fiction",
+    readTime: "6 min read",
     likes: 380,
     views: 1450,
     content: [
-      "বাইরে তখন অঝোর ধারায় শ্রাবণের বৃষ্টি নামছিল। জানালার কাঁচ ঝাপসা হয়ে আসছিল জলকণায়। ঘরের ভেতরে উষ্ণ এক কাপ চায়ের সাথে আমাদের দীর্ঘদিনের চাপা অনুভূতিগুলো যেন নতুন করে মাথাচাড়া দিয়ে উঠেছিল।",
-      "হঠাৎ করেই তার হাতটা আমার কাঁধে এসে ঠেকল। তার ভেজা চুলের সুবাস আর শরীরের উষ্ণতা আমাকে পুরো আচ্ছন্ন করে ফেলল। দূরত্বের সব বাধা যেন এক নিমেষেই মুছে গেল।",
-      "বৃষ্টির শব্দকে ছাপিয়ে আমাদের প্রতিটি নিঃশ্বাস যেন এক অদৃশ্য সুর তৈরি করছিল। সেই সন্ধ্যাটা চিরদিনের জন্য মনের ডায়েরিতে বন্দি হয়ে রইল এক অবিস্মরণীয় অন্তরঙ্গ স্মারক হিসেবে।",
+      "Outside, the monsoon rain fell in relentless sheets, drumming steadily against the foggy glass. Inside, our cold cups of tea sat forgotten on the table as the space between us narrowed to an electric hum.",
+      "Her hand grazed my collarbone, her damp perfume and radiant warmth instantly commanding all my senses. Every barrier built by time and distance crumbled in that singular heartbeat.",
+      "Over the drone of the rain, every whisper became an intimate melody. That evening remains etched in memory as an unforgettable sanctuary of quiet indulgence.",
     ],
-    tags: ["বৃষ্টি", "রোমান্স", "একান্তে"],
-    createdAt: "২০২৬-১১-১০",
+    tags: ["Rain", "Romance", "Intimacy"],
+    createdAt: "2026-11-10",
   },
   {
     id: "story-3",
-    title: "স্পর্শের অদেখা সীমানা",
-    excerpt: "যে স্পর্শ কথা বলে, যে স্পর্শ মনের গভীরে অদ্ভুত এক কাঁপন ধরিয়ে দেয়—সেই অনুভূতির কোনো প্রচলিত নাম হয় না...",
-    author: "অনুভূতির ক্যানভাস",
-    category: "অন্তরঙ্গ মনস্তত্ত্ব",
-    readTime: "৪ মিনিট",
+    title: "The Architecture of Touch",
+    excerpt: "Touch is not merely skin against skin; it is the soul's most honest dialect. When surrender replaces restraint, intimacy begins...",
+    author: "Canvas of Senses",
+    category: "Psychology & Art",
+    readTime: "4 min read",
     likes: 512,
     views: 2100,
     content: [
-      "স্পর্শ কেবল চামড়ার সাথে চামড়ার ঘষা নয়; এটি আত্মার গভীরের এক অলিখিত সংলাপ। যখন একজন মানুষ তার সমস্ত নিয়ন্ত্রণ হারিয়ে অন্যজনের বাহুডোরে আত্মসমর্পণ করে, তখনই জন্ম নেয় আসল অন্তরঙ্গতা।",
-      "শরীরের ব্যাকরণ অত্যন্ত জটিল কিন্তু স্পষ্ট। যেখানে শব্দের প্রয়োজন ফুরিয়ে যায়, সেখানে শুরু হয় আঙুলের আলতো ছোঁয়া, কাঁধের বাঁকে লুকানো শিহরণ আর নিঃশ্বাসের উত্তাপ।",
-      "ভালোবাসার মানুষটির বুকে মাথা রেখে পৃথিবীর সমস্ত কোলাহল ভুলে যাওয়ার চেয়ে বড় কোনো মাদকতা এই পৃথিবীতে দ্বিতীয়টি নেই।",
+      "Touch is far more than physical contact; it is the oldest, most honest dialogue known to humanity. When two people surrender their everyday shields, intimacy transforms into an unspoken art form.",
+      "The body speaks a nuanced grammar. Where words falter, fingertips take over—tracing the nape of the neck, reading the pulse at the wrist, and breathing warmth into silent spaces.",
+      "Resting in someone's embrace, letting the noise of the world recede into oblivion—there is hardly any intoxicating comfort quite like it.",
     ],
-    tags: ["মনস্তত্ত্ব", "আত্মসমর্পণ", "স্পর্শের ব্যাকরণ"],
-    createdAt: "২০২৬-১১-১০",
+    tags: ["Psychology", "Surrender", "The Language of Touch"],
+    createdAt: "2026-11-10",
   },
 ];

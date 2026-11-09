@@ -24,7 +24,7 @@ The route was a single large client component combining age acknowledgement, loc
 - Replaced the adult route's old red palette with scoped midnight-green, sage and muted-gold tokens.
 - Added a new editorial hero, responsive navigation, live category chips, search, sort, pagination, skeleton/empty/error states, discreet thumbnail treatment, story cards, player modal and reader modal.
 - Added keyboard focus styling, reduced-motion handling, server-side provider proxying and bounded query validation for category slugs.
-- Existing API caching is in-memory and per process. The API service has a request timeout; frontend requests are abortable.
+- Existing API caching is in-memory and per process. The provider request has a four-second timeout per attempt, a single transient retry, and the frontend request is abortable.
 
 ## Remaining risks / observations
 
