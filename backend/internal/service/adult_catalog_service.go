@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -14,6 +15,8 @@ import (
 )
 
 const adultEmbedBaseURL = "https://adultembed.com/api/v1"
+
+var adultSlugList = regexp.MustCompile(`^[a-z0-9-]+(?:,[a-z0-9-]+){0,5}$`)
 
 type AdultCatalogService struct {
 	client *http.Client
@@ -62,6 +65,9 @@ func (s *AdultCatalogService) Search(ctx context.Context, query url.Values) ([]b
 		clean.Set(key, value)
 	}
 	clean.Set("quality", "complete")
+	if categories := strings.ToLower(strings.TrimSpace(query.Get("categories"))); len(categories) <= 180 && adultSlugList.MatchString(categories) {
+		clean.Set("categories", categories)
+	}
 	return s.fetch(ctx, "/search?"+clean.Encode())
 }
 

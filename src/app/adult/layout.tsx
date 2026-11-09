@@ -21,7 +21,7 @@ export default function AdultLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-stone-100 selection:bg-[#80131E] selection:text-white">
+    <div className="adult-layout min-h-screen">
       {children}
     </div>
   );

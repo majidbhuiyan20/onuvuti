@@ -9,6 +9,7 @@ export interface AdultVideo {
   videoUrl?: string; // Direct video source (mp4/webm/m3u8)
   embedUrl?: string; // Embed iframe src (e.g. YouTube, Vimeo, custom CDN)
   thumbnailUrl?: string;
+  quality?: string;
   tags: string[];
   createdAt: string;
 }
