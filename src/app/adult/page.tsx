@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   ShieldAlert,
   Lock,
@@ -16,25 +18,23 @@ import {
   Eye,
   Sparkles,
   Search,
-  Filter,
   CheckCircle2,
-  FileText,
-  Volume2,
 } from "lucide-react";
 import {
   AdultVideo,
   AdultStory,
-  INITIAL_ADULT_VIDEOS,
   INITIAL_ADULT_STORIES,
-  ADULT_CATEGORIES,
 } from "@/data/adultContent";
 
 export default function AdultPage() {
+  const router = useRouter();
   // Age Verification Gate State
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "videos" | "stories">("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("সকল কনটেন্ট");
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState("");
+  const [catalogVideos, setCatalogVideos] = useState<AdultVideo[]>([]);
 
   // Active Media Modals
   const [activeVideo, setActiveVideo] = useState<AdultVideo | null>(null);
@@ -46,14 +46,58 @@ export default function AdultPage() {
   const [copiedLink, setCopiedLink] = useState(false);
 
   useEffect(() => {
-    // Check Age Verification in localStorage
-    try {
-      const verified = localStorage.getItem("onuvuti_adult_verified");
-      setIsVerified(verified === "true");
-    } catch {
-      setIsVerified(false);
-    }
+    const timer = window.setTimeout(() => {
+      try {
+        setIsVerified(localStorage.getItem("onuvuti_adult_verified") === "true");
+      } catch {
+        setIsVerified(false);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (isVerified !== true) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      setCatalogLoading(true);
+      setCatalogError("");
+      try {
+        const params = new URLSearchParams({ per_page: "24", page: "1", sort: "newest" });
+        if (searchQuery.trim()) params.set("query", searchQuery.trim());
+        const response = await fetch(`/api/v1/adult/videos?${params}`, { signal: controller.signal });
+        if (!response.ok) throw new Error("catalogue unavailable");
+        const payload = await response.json();
+        const results = Array.isArray(payload?.results) ? payload.results : [];
+        const videos: AdultVideo[] = results
+          .filter((item: Record<string, unknown>) => item && (typeof item.id === "number" || typeof item.id === "string"))
+          .map((item: Record<string, unknown>) => {
+            const id = String(item.id);
+            const tags = Array.isArray(item.tags)
+              ? item.tags.map((tag: unknown) => typeof tag === "string" ? tag : String((tag as { name?: unknown })?.name ?? "")).filter(Boolean)
+              : [];
+            const categories = Array.isArray(item.categories) ? item.categories : [];
+            const category = typeof item.category === "string"
+              ? item.category
+              : String((categories[0] as { name?: unknown } | undefined)?.name ?? categories[0] ?? "ভিডিও");
+            return {
+              id, title: String(item.title ?? "শিরোনাম নেই"), description: String(item.description ?? ""),
+              duration: String(item.duration ?? "সময় অজানা"), category,
+              views: Number(item.views ?? item.view_count ?? 0), likes: Number(item.likes ?? item.like_count ?? 0),
+              embedUrl: `https://adultembed.com/player/embed/${encodeURIComponent(id)}/`,
+              thumbnailUrl: typeof item.thumbnail === "string" ? item.thumbnail : undefined,
+              tags, createdAt: String(item.published_at ?? ""),
+            };
+          });
+        setCatalogVideos(videos);
+      } catch {
+        if (!controller.signal.aborted) setCatalogError("ভিডিও তালিকা লোড করা যায়নি। পরে আবার চেষ্টা করুন।");
+      } finally {
+        if (!controller.signal.aborted) setCatalogLoading(false);
+      }
+    }, searchQuery ? 300 : 0);
+    return () => { window.clearTimeout(timer); controller.abort(); };
+  }, [isVerified, searchQuery]);
 
   const handleVerifyAge = () => {
     try {
@@ -66,7 +110,7 @@ export default function AdultPage() {
     try {
       localStorage.removeItem("onuvuti_adult_verified");
     } catch {}
-    window.location.href = "/";
+    router.push("/");
   };
 
   const toggleLike = (id: string) => {
@@ -82,7 +126,7 @@ export default function AdultPage() {
   };
 
   // Filter Videos & Stories
-  const filteredVideos = INITIAL_ADULT_VIDEOS.filter((v) => {
+  const filteredVideos = catalogVideos.filter((v) => {
     if (activeTab === "stories") return false;
     const matchesSearch =
       v.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -242,7 +286,7 @@ export default function AdultPage() {
                     : "text-stone-400 hover:text-stone-200"
                 }`}
               >
-                <span>সবগুলো ({INITIAL_ADULT_VIDEOS.length + INITIAL_ADULT_STORIES.length})</span>
+                <span>সবগুলো ({catalogVideos.length + INITIAL_ADULT_STORIES.length})</span>
               </button>
               <button
                 type="button"
@@ -254,7 +298,7 @@ export default function AdultPage() {
                 }`}
               >
                 <Film className="w-3.5 h-3.5" />
-                <span>ভিডিও ({INITIAL_ADULT_VIDEOS.length})</span>
+                <span>ভিডিও ({catalogVideos.length})</span>
               </button>
               <button
                 type="button"
@@ -297,6 +341,9 @@ export default function AdultPage() {
               </div>
             </div>
 
+            {catalogLoading && <p className="text-sm text-stone-400">ভিডিও লোড হচ্ছে…</p>}
+            {catalogError && <p role="status" className="text-sm text-rose-300">{catalogError}</p>}
+            {!catalogLoading && !catalogError && filteredVideos.length === 0 && <p className="text-sm text-stone-400">কোনো ভিডিও পাওয়া যায়নি।</p>}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredVideos.map((video) => {
                 const isLiked = likedIds[video.id];
@@ -308,8 +355,12 @@ export default function AdultPage() {
                     {/* Thumbnail & Play Action */}
                     <div
                       onClick={() => setActiveVideo(video)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setActiveVideo(video); }}
                       className="relative aspect-video bg-gradient-to-tr from-stone-900 via-rose-950/20 to-stone-900 flex items-center justify-center cursor-pointer overflow-hidden"
                     >
+                      {video.thumbnailUrl && <Image src={video.thumbnailUrl} alt="" fill unoptimized sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover opacity-80 transition group-hover:scale-[1.02]" />}
                       {/* Play Button Overlay */}
                       <div className="w-14 h-14 rounded-full bg-[#80131E]/90 group-hover:bg-[#80131E] group-hover:scale-110 text-white flex items-center justify-center transition shadow-xl z-10">
                         <Play className="w-6 h-6 ml-0.5" />

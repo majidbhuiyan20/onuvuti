@@ -3,7 +3,7 @@ export interface AdultVideo {
   title: string;
   description: string;
   duration: string;
-  category: "এক্সক্লুসিভ" | "রোমান্টিক" | "দাম্পত্য" | "স্পেশাল";
+  category: string;
   views: number;
   likes: number;
   videoUrl?: string; // Direct video source (mp4/webm/m3u8)

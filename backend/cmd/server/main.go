@@ -60,26 +60,28 @@ func main() {
 	wishSvc := service.NewWishService(repo)
 	secretSvc := service.NewSecretService(repo)
 	metaSvc := service.NewMetaService(cfg, repo)
+	adultCatalogSvc := service.NewAdultCatalogService(memCache)
 
 	// 4. Initialize Middleware & HTTP Handlers
 	rl := middleware.NewRateLimiter()
 	router := routes.NewRouter(routes.RouterDeps{
-		Config:           cfg,
-		RateLimiter:      rl,
-		HealthHandler:    handlers.NewHealthHandler(repo),
-		StoryHandler:     handlers.NewStoryHandler(storySvc, analyticsSvc, rl),
-		CommentHandler:   handlers.NewCommentHandler(commentSvc, rl),
-		AdminHandler:     handlers.NewAdminHandler(adminSvc, analyticsSvc, rl),
-		OrderHandler:     handlers.NewOrderHandler(orderSvc, metaSvc),
-		AnalyticsHandler: handlers.NewAnalyticsHandler(analyticsSvc),
-		UserHandler:      handlers.NewUserHandler(userSvc, rl),
-		AdHandler:        handlers.NewAdHandler(adSvc),
-		WellnessHandler:  handlers.NewWellnessHandler(wellnessSvc),
-		PollHandler:      handlers.NewPollHandler(pollSvc),
-		QuoteHandler:     handlers.NewQuoteHandler(quoteSvc),
-		WishHandler:      handlers.NewWishHandler(wishSvc),
-		SecretHandler:    handlers.NewSecretHandler(secretSvc),
-		MetaHandler:      handlers.NewMetaHandler(metaSvc),
+		Config:              cfg,
+		RateLimiter:         rl,
+		HealthHandler:       handlers.NewHealthHandler(repo),
+		StoryHandler:        handlers.NewStoryHandler(storySvc, analyticsSvc, rl),
+		CommentHandler:      handlers.NewCommentHandler(commentSvc, rl),
+		AdminHandler:        handlers.NewAdminHandler(adminSvc, analyticsSvc, rl),
+		OrderHandler:        handlers.NewOrderHandler(orderSvc, metaSvc),
+		AnalyticsHandler:    handlers.NewAnalyticsHandler(analyticsSvc),
+		UserHandler:         handlers.NewUserHandler(userSvc, rl),
+		AdHandler:           handlers.NewAdHandler(adSvc),
+		WellnessHandler:     handlers.NewWellnessHandler(wellnessSvc),
+		PollHandler:         handlers.NewPollHandler(pollSvc),
+		QuoteHandler:        handlers.NewQuoteHandler(quoteSvc),
+		WishHandler:         handlers.NewWishHandler(wishSvc),
+		SecretHandler:       handlers.NewSecretHandler(secretSvc),
+		MetaHandler:         handlers.NewMetaHandler(metaSvc),
+		AdultCatalogHandler: handlers.NewAdultCatalogHandler(adultCatalogSvc),
 	})
 
 	// 5. Hardened HTTP Server for Production

@@ -9,22 +9,23 @@ import (
 )
 
 type RouterDeps struct {
-	Config           *config.Config
-	RateLimiter      *middleware.RateLimiter
-	HealthHandler    *handlers.HealthHandler
-	StoryHandler     *handlers.StoryHandler
-	CommentHandler   *handlers.CommentHandler
-	AdminHandler     *handlers.AdminHandler
-	OrderHandler     *handlers.OrderHandler
-	AnalyticsHandler *handlers.AnalyticsHandler
-	UserHandler      *handlers.UserHandler
-	AdHandler        *handlers.AdHandler
-	WellnessHandler  *handlers.WellnessHandler
-	PollHandler      *handlers.PollHandler
-	QuoteHandler     *handlers.QuoteHandler
-	WishHandler      *handlers.WishHandler
-	SecretHandler    *handlers.SecretHandler
-	MetaHandler      *handlers.MetaHandler
+	Config              *config.Config
+	RateLimiter         *middleware.RateLimiter
+	HealthHandler       *handlers.HealthHandler
+	StoryHandler        *handlers.StoryHandler
+	CommentHandler      *handlers.CommentHandler
+	AdminHandler        *handlers.AdminHandler
+	OrderHandler        *handlers.OrderHandler
+	AnalyticsHandler    *handlers.AnalyticsHandler
+	UserHandler         *handlers.UserHandler
+	AdHandler           *handlers.AdHandler
+	WellnessHandler     *handlers.WellnessHandler
+	PollHandler         *handlers.PollHandler
+	QuoteHandler        *handlers.QuoteHandler
+	WishHandler         *handlers.WishHandler
+	SecretHandler       *handlers.SecretHandler
+	MetaHandler         *handlers.MetaHandler
+	AdultCatalogHandler *handlers.AdultCatalogHandler
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -147,10 +148,15 @@ func NewRouter(deps RouterDeps) http.Handler {
 		mux.HandleFunc("POST /api/v1/admin/meta/test-capi", middleware.RequireAdmin(cfg, deps.MetaHandler.SendTestCAPI))
 	}
 
+	// 13. Adult video catalogue proxy (provider requests stay on the Go server)
+	if deps.AdultCatalogHandler != nil {
+		mux.HandleFunc("GET /api/v1/adult/videos", deps.AdultCatalogHandler.Search)
+		mux.HandleFunc("GET /api/v1/adult/categories", deps.AdultCatalogHandler.Categories)
+	}
+
 	// Apply Firewall + Rate Limiter + CORS middleware chain
 	handler := middleware.Firewall(mux, deps.RateLimiter)
 	handler = middleware.CORS(handler, cfg.CorsAllowedOrigins)
 
 	return handler
 }
-
