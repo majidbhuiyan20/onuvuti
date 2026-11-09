@@ -3,16 +3,8 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Onuvuti 18+ — After Hours Private Collection",
   description: "Age-restricted private media collection. Strictly 18+.",
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    googleBot: {
-      index: false,
-      follow: false,
-      noimageindex: true,
-    },
-  },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true } },
+  other: { rating: "adult" },
 };
 
 export default function AdultLayout({

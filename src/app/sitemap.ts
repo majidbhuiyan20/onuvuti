@@ -94,6 +94,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.9,
   }));
 
-  return [...staticRoutes, ...categoryRoutes, ...storyRoutes];
+  const adultRoutes: MetadataRoute.Sitemap = [{
+    url: `${siteUrl}/adult`,
+    changeFrequency: "daily",
+    priority: 0.7,
+  }];
+  return [...staticRoutes, ...categoryRoutes, ...storyRoutes, ...adultRoutes];
 }
 
