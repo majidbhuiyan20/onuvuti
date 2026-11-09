@@ -41,6 +41,7 @@ func (s *AdultCatalogService) Search(ctx context.Context, query url.Values) ([]b
 	clean.Set("per_page", "24")
 	for key, allowed := range map[string]map[string]bool{
 		"query":    nil,
+		"tags":     nil,
 		"page":     nil,
 		"per_page": nil,
 		"sort":     {"newest": true, "oldest": true, "popular": true, "longest": true, "shortest": true, "updated": true},
@@ -71,11 +72,72 @@ func (s *AdultCatalogService) Search(ctx context.Context, query url.Values) ([]b
 	if categories := strings.ToLower(strings.TrimSpace(query.Get("categories"))); len(categories) <= 180 && adultSlugList.MatchString(categories) {
 		clean.Set("categories", categories)
 	}
+	if tags := strings.ToLower(strings.TrimSpace(query.Get("tags"))); len(tags) <= 180 && adultSlugList.MatchString(tags) {
+		clean.Set("tags", tags)
+	}
 	return s.fetch(ctx, "/search?"+clean.Encode())
 }
 
 func (s *AdultCatalogService) Categories(ctx context.Context) ([]byte, error) {
 	return s.fetch(ctx, "/categories?per_page=100&sort=popular")
+}
+
+func (s *AdultCatalogService) Trending(ctx context.Context, query url.Values) ([]byte, error) {
+	clean := url.Values{"period": {"week"}, "per_page": {"24"}, "page": {"1"}}
+	for _, key := range []string{"period", "page", "per_page", "query", "categories", "tags"} {
+		value := strings.TrimSpace(query.Get(key))
+		if value == "" || len(value) > 100 {
+			continue
+		}
+		if key == "period" && value != "day" && value != "week" && value != "month" {
+			continue
+		}
+		if key == "page" || key == "per_page" {
+			n, err := strconv.Atoi(value)
+			if err != nil || n < 1 {
+				continue
+			}
+			if key == "page" && n > 50 {
+				n = 50
+			}
+			if key == "per_page" && n > 48 {
+				n = 48
+			}
+			value = strconv.Itoa(n)
+		}
+		if key == "categories" && (len(value) > 180 || !adultSlugList.MatchString(strings.ToLower(value))) {
+			continue
+		}
+		clean.Set(key, value)
+	}
+	return s.fetch(ctx, "/videos/trending?"+clean.Encode())
+}
+
+func (s *AdultCatalogService) Tags(ctx context.Context) ([]byte, error) {
+	return s.fetch(ctx, "/tags?per_page=100&sort=popular")
+}
+
+func (s *AdultCatalogService) Video(ctx context.Context, id string) ([]byte, error) {
+	if !regexp.MustCompile(`^[0-9]+$`).MatchString(id) {
+		return nil, fmt.Errorf("invalid video id")
+	}
+	return s.fetch(ctx, "/videos/"+id)
+}
+
+func (s *AdultCatalogService) Related(ctx context.Context, id string, query url.Values) ([]byte, error) {
+	if !regexp.MustCompile(`^[0-9]+$`).MatchString(id) {
+		return nil, fmt.Errorf("invalid video id")
+	}
+	limit := 12
+	if value := query.Get("limit"); value != "" {
+		if n, err := strconv.Atoi(value); err == nil && n > 0 {
+			if n > 24 {
+				n = 24
+			}
+			limit = n
+		}
+	}
+	return s.fetch(ctx, "/videos/"+id+"/related?limit="+strconv.Itoa(limit))
 }
 
 func (s *AdultCatalogService) fetch(ctx context.Context, path string) ([]byte, error) {

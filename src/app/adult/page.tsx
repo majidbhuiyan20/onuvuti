@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ArrowDown,
   ArrowLeft,
   ArrowRight,
   BookOpen,
@@ -37,6 +36,7 @@ import {
 import "./adult.css";
 
 type Category = { id?: number; name: string; slug: string; video_count?: number };
+type Tag = { id?: number; name: string; slug: string; video_count?: number };
 type CatalogResponse = {
   total?: number;
   count?: number;
@@ -126,9 +126,6 @@ function VideoCard({ video, onPlay }: { video: AdultVideo; onPlay: () => void })
           </span>
         )}
         <span className="adult-thumbnail-shade" />
-        <span className="adult-preview-note">
-          <LockKeyhole size={13} /> PREVIEW HIDDEN
-        </span>
         <span className="adult-play">
           <CirclePlay size={46} strokeWidth={1.25} />
         </span>
@@ -160,8 +157,10 @@ export default function AdultPage() {
   const [isVerified, setIsVerified] = useState<boolean | null>(null);
   const [videos, setVideos] = useState<AdultVideo[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
+  const [tag, setTag] = useState("");
   const [sort, setSort] = useState<SortMode>("popular");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -169,7 +168,6 @@ export default function AdultPage() {
   const [reloadToken, setReloadToken] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [video, setVideo] = useState<AdultVideo | null>(null);
   const [story, setStory] = useState<AdultStory | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -195,10 +193,12 @@ export default function AdultPage() {
       setLoading(true);
       setError("");
       try {
-        const params = new URLSearchParams({ per_page: "24", page: String(page), sort });
+        const params = new URLSearchParams({ per_page: "24", page: String(page), sort, period: "week" });
         if (query.trim()) params.set("query", query.trim());
         if (category) params.set("categories", category);
-        const response = await fetch(`/api/v1/adult/videos?${params}`, {
+        if (tag) params.set("tags", tag);
+        const endpoint = sort === "popular" ? "/api/v1/adult/videos/trending" : "/api/v1/adult/videos";
+        const response = await fetch(`${endpoint}?${params}`, {
           signal: controller.signal,
         });
         if (!response.ok) throw new Error("catalogue request failed");
@@ -222,7 +222,7 @@ export default function AdultPage() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [isVerified, query, category, sort, page, reloadToken]);
+  }, [isVerified, query, category, tag, sort, page, reloadToken]);
 
   useEffect(() => {
     if (isVerified !== true) return;
@@ -236,6 +236,10 @@ export default function AdultPage() {
       .catch(() => {
         if (!controller.signal.aborted) setCategories([]);
       });
+    fetch("/api/v1/adult/tags", { signal: controller.signal })
+      .then((response) => { if (!response.ok) throw new Error(); return response.json(); })
+      .then((payload) => setTags(Array.isArray(payload?.results) ? payload.results : []))
+      .catch(() => { if (!controller.signal.aborted) setTags([]); });
     return () => controller.abort();
   }, [isVerified]);
 
@@ -368,50 +372,6 @@ export default function AdultPage() {
           <AdBanner468x60 />
           <AdBanner320x50 />
         </div>
-        {/* Hero Section */}
-        <section className="adult-hero">
-          <div className="adult-hero-copy">
-            <div className="adult-hero-kicker">
-              <span className="adult-live-dot" /> ONUVUTI · PRIVATE COLLECTION
-            </div>
-            <h1>
-              PRIVATE<br />MOMENTS,<em>AFTER HOURS</em>
-            </h1>
-            <p>
-              Curated cinematic moments, immersive stories, and an exclusive private collection for
-              adults. Explore at your own pace.
-            </p>
-            <div className="adult-hero-actions">
-              <a href="#discover" className="adult-primary-button">
-                Explore Collection <ArrowDown size={16} />
-              </a>
-              <span>
-                <LockKeyhole size={14} /> 18+ Adults Only
-              </span>
-            </div>
-          </div>
-          <div className="adult-hero-art" aria-hidden="true">
-            <div className="adult-orbit orbit-one" />
-            <div className="adult-orbit orbit-two" />
-            <div className="adult-moon" />
-            <div className="adult-art-glass">
-              <span>
-                AFTER<br />HOURS
-              </span>
-              <i />
-              <small>EST. 2026</small>
-            </div>
-            <div className="adult-art-caption">
-              A QUIETER KIND<br />OF ESCAPE
-            </div>
-          </div>
-          <div className="adult-hero-bottom">
-            <span>CURATED FOR YOUR PRIVATE MOMENTS</span>
-            <span>
-              SCROLL TO EXPLORE <ArrowDown size={13} />
-            </span>
-          </div>
-        </section>
 
         {/* Discovery & Catalogue */}
         <section className="adult-discovery" id="discover">
@@ -419,9 +379,9 @@ export default function AdultPage() {
             <div>
               <span className="adult-section-kicker">THE COLLECTION</span>
               <h2>
-                Explore The <em>Catalogue</em>
+                Explore the <em>collection</em>
               </h2>
-              <p>Handpicked video catalogue, updated continuously.</p>
+              <p>Discover trending and recently added videos.</p>
             </div>
             <div className="adult-total-count">
               <strong>{formatCount(total)}</strong>
@@ -439,7 +399,7 @@ export default function AdultPage() {
                   setQuery(event.target.value);
                   setPage(1);
                 }}
-                placeholder="Search by title, performer or tag..."
+                placeholder="Search video titles and descriptions..."
                 aria-label="Search videos"
               />
               {query && (
@@ -474,36 +434,16 @@ export default function AdultPage() {
             </div>
           </div>
 
-          {/* Categories Pill Row */}
-          <div className="adult-category-row" id="categories">
-            <button
-              type="button"
-              onClick={() => {
-                setCategory("");
-                setPage(1);
-              }}
-              className={`adult-category-pill ${!category ? "selected" : ""}`}
-            >
-              All Videos
-            </button>
-            {categories.slice(0, 12).map((item) => (
-              <button
-                type="button"
-                key={item.slug}
-                onClick={() => {
-                  setCategory(item.slug);
-                  setPage(1);
-                }}
-                className={`adult-category-pill ${category === item.slug ? "selected" : ""}`}
-              >
-                {item.name}
-                {item.video_count ? <small>{formatCount(item.video_count)}</small> : null}
-              </button>
-            ))}
-          </div>
-
           {/* Video Grid */}
-          <div className="adult-catalog-layout">
+          <div className="adult-catalog-layout grid items-start">
+          <aside className="adult-category-sidebar" id="categories" aria-label="Video categories">
+            <span className="adult-sidebar-heading">Categories</span>
+            <div className="adult-category-row">
+              <button type="button" onClick={() => { setCategory(""); setPage(1); }} className={`adult-category-pill ${!category ? "selected" : ""}`}>All videos</button>
+              {categories.slice(0, 12).map((item) => <button type="button" key={item.slug} onClick={() => { setCategory(item.slug); setPage(1); }} className={`adult-category-pill ${category === item.slug ? "selected" : ""}`}>{item.name}{item.video_count ? <small>{formatCount(item.video_count)}</small> : null}</button>)}
+            </div>
+            {tags.length > 0 && <div className="adult-tag-list" aria-label="Popular tags"><span className="adult-sidebar-heading">Popular tags</span>{tags.slice(0, 8).map((item) => <button type="button" key={item.slug} onClick={() => { setTag(tag === item.slug ? "" : item.slug); setPage(1); }} className={`adult-tag-button ${tag === item.slug ? "selected" : ""}`}>{item.name}</button>)}</div>}
+          </aside>
           <div className="adult-catalog-main">
           <div className="adult-grid-wrap" aria-live="polite">
             {loading && (
@@ -542,6 +482,7 @@ export default function AdultPage() {
                   onClick={() => {
                     setQuery("");
                     setCategory("");
+                    setTag("");
                   }}
                 >
                   Clear Filters <X size={14} />
@@ -552,7 +493,7 @@ export default function AdultPage() {
               <div className="adult-video-grid">
                 {videos.map((item, index) => (
                   <Fragment key={item.id}>
-                    <VideoCard video={item} onPlay={() => setVideo(item)} />
+                    <VideoCard video={item} onPlay={() => router.push(`/adult/video/${encodeURIComponent(item.id)}`)} />
                     {index === 5 && videos.length > 6 && <AdBanner300x250 />}
                   </Fragment>
                 ))}
@@ -723,51 +664,6 @@ export default function AdultPage() {
         <a href="#top">Back to Top ↑</a>
       </footer>
       <AdAdditional />
-
-      {/* Video Player Modal */}
-      {video && (
-        <div
-          className="adult-modal-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setVideo(null);
-          }}
-        >
-          <section
-            className="adult-player-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={video.title}
-          >
-            <header>
-              <div>
-                <span>NOW PLAYING</span>
-                <h2>{video.title}</h2>
-              </div>
-              <button type="button" onClick={() => setVideo(null)} aria-label="Close">
-                <X size={19} />
-              </button>
-            </header>
-            <div className="adult-player-frame">
-              <iframe
-                src={video.embedUrl}
-                title={video.title}
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            </div>
-            <div className="adult-player-meta">
-              <span>{video.category}</span>
-              <span>{video.duration}</span>
-              <span>
-                <Eye size={14} /> {formatCount(video.views)} views
-              </span>
-            </div>
-            <p>{video.description}</p>
-          </section>
-        </div>
-      )}
 
       {/* Story Reader Modal */}
       {story && (

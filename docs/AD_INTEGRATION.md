@@ -4,8 +4,8 @@ Ad slots are configured centrally in `src/components/adult/AdUnits.tsx` and only
 
 ## Active placements
 
-- Desktop: 468×60 below navigation; 160×300 right of the catalog on wide screens; 300×250 after the first six results; one native slot below stories.
-- Mobile: 320×50 below navigation; 300×250 in the catalog after six results; one native slot below stories.
+- Desktop: 468×60 below navigation; 160×300 right of the catalog on wide screens; 300×250 after the first six results; one native slot below stories. Video pages also show a sidebar banner, a banner below video details, and a native slot after related videos.
+- Mobile: 320×50 below navigation; 300×250 in the catalog after six results; one native slot below stories. Video pages use the mobile banner above the player and place the related native slot below the related-video list.
 - Banner requests are near-viewport lazy loaded, use a serialized queue for Adsterra's global `atOptions`, and time out after 10 seconds. The native snippet is mounted once in the single native slot. Failed script requests hide the slot.
 
 ## Additional units

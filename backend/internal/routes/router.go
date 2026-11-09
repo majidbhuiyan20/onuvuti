@@ -151,7 +151,11 @@ func NewRouter(deps RouterDeps) http.Handler {
 	// 13. Adult video catalogue proxy (provider requests stay on the Go server)
 	if deps.AdultCatalogHandler != nil {
 		mux.HandleFunc("GET /api/v1/adult/videos", deps.AdultCatalogHandler.Search)
+		mux.HandleFunc("GET /api/v1/adult/videos/trending", deps.AdultCatalogHandler.Trending)
+		mux.HandleFunc("GET /api/v1/adult/videos/{id}/related", deps.AdultCatalogHandler.Related)
+		mux.HandleFunc("GET /api/v1/adult/videos/{id}", deps.AdultCatalogHandler.Video)
 		mux.HandleFunc("GET /api/v1/adult/categories", deps.AdultCatalogHandler.Categories)
+		mux.HandleFunc("GET /api/v1/adult/tags", deps.AdultCatalogHandler.Tags)
 	}
 
 	// Apply Firewall + Rate Limiter + CORS middleware chain

@@ -31,6 +31,26 @@ func (h *AdultCatalogHandler) Categories(w http.ResponseWriter, r *http.Request)
 	})
 }
 
+func (h *AdultCatalogHandler) Trending(w http.ResponseWriter, r *http.Request) {
+	h.respond(w, r, func(ctx context.Context, query url.Values) ([]byte, error) { return h.service.Trending(ctx, query) })
+}
+
+func (h *AdultCatalogHandler) Tags(w http.ResponseWriter, r *http.Request) {
+	h.respond(w, r, func(ctx context.Context, _ url.Values) ([]byte, error) { return h.service.Tags(ctx) })
+}
+
+func (h *AdultCatalogHandler) Video(w http.ResponseWriter, r *http.Request) {
+	h.respond(w, r, func(ctx context.Context, _ url.Values) ([]byte, error) {
+		return h.service.Video(ctx, r.PathValue("id"))
+	})
+}
+
+func (h *AdultCatalogHandler) Related(w http.ResponseWriter, r *http.Request) {
+	h.respond(w, r, func(ctx context.Context, query url.Values) ([]byte, error) {
+		return h.service.Related(ctx, r.PathValue("id"), query)
+	})
+}
+
 func (h *AdultCatalogHandler) respond(w http.ResponseWriter, r *http.Request, fetch func(context.Context, url.Values) ([]byte, error)) {
 	ctx, cancel := context.WithTimeout(r.Context(), 9*time.Second)
 	defer cancel()
