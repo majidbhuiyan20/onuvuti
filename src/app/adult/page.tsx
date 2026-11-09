@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,6 +26,14 @@ import {
   X,
 } from "lucide-react";
 import { AdultStory, AdultVideo, INITIAL_ADULT_STORIES } from "@/data/adultContent";
+import {
+  AdAdditional,
+  AdBanner160x300,
+  AdBanner300x250,
+  AdBanner320x50,
+  AdBanner468x60,
+  AdNative,
+} from "@/components/adult/AdUnits";
 import "./adult.css";
 
 type Category = { id?: number; name: string; slug: string; video_count?: number };
@@ -356,6 +364,10 @@ export default function AdultPage() {
       </header>
 
       <div className="adult-content">
+        <div className="adult-ad-top">
+          <AdBanner468x60 />
+          <AdBanner320x50 />
+        </div>
         {/* Hero Section */}
         <section className="adult-hero">
           <div className="adult-hero-copy">
@@ -491,6 +503,8 @@ export default function AdultPage() {
           </div>
 
           {/* Video Grid */}
+          <div className="adult-catalog-layout">
+          <div className="adult-catalog-main">
           <div className="adult-grid-wrap" aria-live="polite">
             {loading && (
               <div className="adult-video-grid">
@@ -536,11 +550,19 @@ export default function AdultPage() {
             )}
             {!loading && !error && videos.length > 0 && (
               <div className="adult-video-grid">
-                {videos.map((item) => (
-                  <VideoCard key={item.id} video={item} onPlay={() => setVideo(item)} />
+                {videos.map((item, index) => (
+                  <Fragment key={item.id}>
+                    <VideoCard video={item} onPlay={() => setVideo(item)} />
+                    {index === 5 && videos.length > 6 && <AdBanner300x250 />}
+                  </Fragment>
                 ))}
               </div>
             )}
+          </div>
+          </div>
+          <aside className="adult-sidebar-ad">
+            <AdBanner160x300 />
+          </aside>
           </div>
 
           {/* Full Rich Pagination Component */}
@@ -666,6 +688,8 @@ export default function AdultPage() {
           </div>
         </section>
 
+        <AdNative />
+
         {/* Disclaimer Note */}
         <section className="adult-note">
           <div className="adult-note-icon">
@@ -698,6 +722,7 @@ export default function AdultPage() {
         <span>© 2026 Onuvuti · Private Curated Collection</span>
         <a href="#top">Back to Top ↑</a>
       </footer>
+      <AdAdditional />
 
       {/* Video Player Modal */}
       {video && (

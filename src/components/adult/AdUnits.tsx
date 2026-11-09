@@ -4,8 +4,8 @@ import { useEffect, useId, useRef, useState } from "react";
 
 type BannerConfig = { key: string; width: number; height: number; enabled: boolean };
 
-// Keep network units and rollout switches in one place. Popunder is opt-in
-// because it opens a new browsing context; the afders vendor is not verified.
+// Keep network units and rollout switches in one place. Popunder waits for a
+// visitor gesture because it can open a new browsing context; afders is unverified.
 export const adultAdConfig = {
   enabled: true,
   banner468x60: { key: "5f726f0112bc8d3436e060b63c912f0c", width: 468, height: 60, enabled: true },
@@ -13,7 +13,7 @@ export const adultAdConfig = {
   banner320x50: { key: "0b2a60152acedb9457eb08525cb44ffe", width: 320, height: 50, enabled: true },
   banner300x250: { key: "ae7e679dbe72e0bb8df14559cd0be972", width: 300, height: 250, enabled: true },
   native: { key: "4c546bc31ba15c03f52c27ba8582ac4c", enabled: true },
-  popunder: { src: "https://bicea.org/14/dc50dad050a291ae7e903256828161a6", enabled: false },
+  popunder: { src: "https://bicea.org/14/dc50dad050a291ae7e903256828161a6", enabled: true },
   afders: { src: "https://afders.org/1/f6b1a3ea8d959aacd0fb180e925eba2a", enabled: false },
 } as const;
 
@@ -144,20 +144,36 @@ export function AdNative() {
 
 export function AdAdditional() {
   useEffect(() => {
-    const optional = [adultAdConfig.popunder, adultAdConfig.afders].filter((item) => item.enabled);
-    if (!adultAdConfig.enabled || optional.length === 0) return;
+    if (!adultAdConfig.enabled) return;
     const globalWindow = window as AdWindow;
-    globalWindow.__adultLoadedScripts ??= new Set<string>();
-    for (const item of optional) {
-      if (globalWindow.__adultLoadedScripts.has(item.src)) continue;
-      globalWindow.__adultLoadedScripts.add(item.src);
+    const loadedScripts = globalWindow.__adultLoadedScripts ??= new Set<string>();
+
+    const loadScript = (item: { src: string; enabled: boolean }) => {
+      if (!item.enabled) return;
+      if (loadedScripts.has(item.src)) return;
+      loadedScripts.add(item.src);
       const script = document.createElement("script");
       script.src = item.src;
-      script.async = true;
+      script.async = false;
       script.setAttribute("data-cfasync", "false");
-      script.onerror = () => globalWindow.__adultLoadedScripts?.delete(item.src);
+      script.onerror = () => loadedScripts.delete(item.src);
       document.head.appendChild(script);
-    }
+    };
+
+    const popunderKey = "onuvuti-adult-popunder-loaded";
+    const onFirstGesture = () => {
+      try {
+        if (sessionStorage.getItem(popunderKey)) return;
+        sessionStorage.setItem(popunderKey, "1");
+      } catch { return; }
+      loadScript(adultAdConfig.popunder);
+    };
+    document.addEventListener("pointerdown", onFirstGesture, { once: true, passive: true });
+    document.addEventListener("keydown", onFirstGesture, { once: true });
+    return () => {
+      document.removeEventListener("pointerdown", onFirstGesture);
+      document.removeEventListener("keydown", onFirstGesture);
+    };
   }, []);
   return null;
 }

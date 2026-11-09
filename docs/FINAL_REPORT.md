@@ -22,8 +22,8 @@ Date: 2026-11-10
 
 ## Advertising
 
-- Active: the four owner-supplied banner units and one copy of the supplied native unit at responsive placements.
-- Disabled by default: the Popunder script and the unverified `afders.org` script. Details and evidence are documented in `AD_INTEGRATION.md`.
+- Active: the four owner-supplied banner units, one copy of the supplied native unit, and the Popunder script after first visitor interaction (once per tab).
+- Disabled: the unverified `afders.org` script. Details and evidence are documented in `AD_INTEGRATION.md`.
 - Actual advertiser approval and ad delivery could not be confirmed without access to the publisher dashboard/network responses.
 
 ## Verification
