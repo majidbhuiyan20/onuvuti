@@ -4,8 +4,8 @@ import { useEffect, useId, useRef, useState } from "react";
 
 type BannerConfig = { key: string; width: number; height: number; enabled: boolean };
 
-// Keep network units and rollout switches in one place. Popunder waits for a
-// visitor gesture because it can open a new browsing context; afders is unverified.
+// Keep network units and rollout switches in one place. The legacy popunder
+// stays disabled after switching the adult section to the TwinRed zone.
 export const adultAdConfig = {
   enabled: true,
   banner468x60: { key: "5f726f0112bc8d3436e060b63c912f0c", width: 468, height: 60, enabled: true },
@@ -13,7 +13,12 @@ export const adultAdConfig = {
   banner320x50: { key: "0b2a60152acedb9457eb08525cb44ffe", width: 320, height: 50, enabled: true },
   banner300x250: { key: "ae7e679dbe72e0bb8df14559cd0be972", width: 300, height: 250, enabled: true },
   native: { key: "4c546bc31ba15c03f52c27ba8582ac4c", enabled: true },
-  popunder: { src: "https://bicea.org/14/dc50dad050a291ae7e903256828161a6", enabled: true },
+  popunder: { src: "https://bicea.org/14/dc50dad050a291ae7e903256828161a6", enabled: false },
+  twinredZones: [
+    "01M7210413E1VMS1NEZJBP4Y09", // Popunder
+    "01M72143ZYGB4KB0R9AFTHCP18", // Interstitial
+  ],
+  twinredScript: "https://s.ad.twinrdengine.com/adlib.js",
   afders: { src: "https://afders.org/1/f6b1a3ea8d959aacd0fb180e925eba2a", enabled: false },
 } as const;
 
@@ -147,33 +152,21 @@ export function AdAdditional() {
     if (!adultAdConfig.enabled) return;
     const globalWindow = window as AdWindow;
     const loadedScripts = globalWindow.__adultLoadedScripts ??= new Set<string>();
+    for (const zoneId of adultAdConfig.twinredZones) {
+      const zoneKey = `${adultAdConfig.twinredScript}#${zoneId}`;
+      if (loadedScripts.has(zoneKey)) continue;
+      loadedScripts.add(zoneKey);
 
-    const loadScript = (item: { src: string; enabled: boolean }) => {
-      if (!item.enabled) return;
-      if (loadedScripts.has(item.src)) return;
-      loadedScripts.add(item.src);
+      const zone = document.createElement("ins");
+      zone.dataset.trZone = zoneId;
       const script = document.createElement("script");
-      script.src = item.src;
-      script.async = false;
-      script.setAttribute("data-cfasync", "false");
-      script.onerror = () => loadedScripts.delete(item.src);
-      document.head.appendChild(script);
-    };
-
-    const popunderKey = "onuvuti-adult-popunder-loaded";
-    const onFirstGesture = () => {
-      try {
-        if (sessionStorage.getItem(popunderKey)) return;
-        sessionStorage.setItem(popunderKey, "1");
-      } catch { return; }
-      loadScript(adultAdConfig.popunder);
-    };
-    document.addEventListener("pointerdown", onFirstGesture, { once: true, passive: true });
-    document.addEventListener("keydown", onFirstGesture, { once: true });
-    return () => {
-      document.removeEventListener("pointerdown", onFirstGesture);
-      document.removeEventListener("keydown", onFirstGesture);
-    };
+      script.type = "text/javascript";
+      script.async = true;
+      script.src = adultAdConfig.twinredScript;
+      script.onerror = () => loadedScripts.delete(zoneKey);
+      zone.appendChild(script);
+      document.body.appendChild(zone);
+    }
   }, []);
   return null;
 }

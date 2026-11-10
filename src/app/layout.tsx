@@ -21,6 +21,55 @@ export const metadata: Metadata = {
   title: `অনুভূতি (Onuvuti) — ${BOOK_INFO.titleBn}`,
   description:
     "অনুভূতি (Onuvuti) — মনস্তত্ত্ব, সম্পর্ক ও জীবনদর্শন ব্লগ এবং স্পর্শের ব্যাকরণ ই-বুক।",
+  keywords: [
+    "অনুভূতি",
+    "অনলাইন গল্প",
+    "মনের কথা",
+    "কনফেশন",
+    "স্পর্শের ব্যাকরণ",
+    "অনুভূতি পাবলিকেশন্স",
+    "বাংলা ইবুক",
+    "রোমান্টিক গল্প",
+    "Onuvuti",
+    "Onuvuti site",
+  ],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: `অনুভূতি (Onuvuti) — ${BOOK_INFO.titleBn}`,
+    description:
+      "মনস্তত্ত্ব, সম্পর্ক, ভালোবাসার গল্প ও জীবনদর্শন ব্লগ এবং ‘স্পর্শের ব্যাকরণ’ ই-বুক।",
+    url: "https://onuvuti.site",
+    siteName: "অনুভূতি (Onuvuti)",
+    images: [
+      {
+        url: "/images/Onuvuti-Publications-Logo.png",
+        width: 1200,
+        height: 630,
+        alt: "অনুভূতি পাবলিকেশন্স",
+      },
+    ],
+    locale: "bn_BD",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "অনুভূতি (Onuvuti)",
+    description: "মনস্তত্ত্ব, সম্পর্ক ও জীবনদর্শন ব্লগ এবং ‘স্পর্শের ব্যাকরণ’ ই-বুক।",
+    images: ["/images/Onuvuti-Publications-Logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   applicationName: "অনুভূতি",
   appleWebApp: {
     capable: true,
@@ -48,6 +97,28 @@ export default function RootLayout({
   return (
     <html lang="bn" className="h-full antialiased" suppressHydrationWarning>
       <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "অনুভূতি (Onuvuti)",
+              url: "https://onuvuti.site",
+              description:
+                "অনুভূতি (Onuvuti) — মনস্তত্ত্ব, সম্পর্ক ও জীবনদর্শন ব্লগ এবং স্পর্শের ব্যাকরণ ই-বুক।",
+              inLanguage: "bn-BD",
+              publisher: {
+                "@type": "Organization",
+                name: "অনুভূতি পাবলিকেশন্স",
+                logo: {
+                  "@type": "ImageObject",
+                  url: "https://onuvuti.site/images/Onuvuti-Publications-Logo.png",
+                },
+              },
+            }),
+          }}
+        />
         {adsenseClientId && (
           <>
             <meta name="google-adsense-account" content={adsenseClientId} />
