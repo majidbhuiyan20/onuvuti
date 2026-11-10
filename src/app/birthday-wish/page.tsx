@@ -40,6 +40,7 @@ import PhotoPicker from "@/features/wish/components/PhotoPicker";
 import SpecialOptions, { SpecialOptionsValue } from "@/features/wish/components/SpecialOptions";
 import VoiceRecorder from "@/features/wish/components/VoiceRecorder";
 import useGoogleFont from "@/features/wish/useGoogleFont";
+import { AdsterraResponsiveBanner } from "@/components/ads/AdsterraUnits";
 
 const FONT_CHOICES: { id: WishFont; label: string }[] = [
   { id: "classic", label: "ক্লাসিক ফন্ট" },
@@ -718,106 +719,6 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
               <MusicPicker value={music} onChange={setMusic} />
             </div>
 
-            {/* Digital Salami / E-Gift Voucher */}
-            <div className="rounded-2xl border border-amber-300/50 dark:border-amber-700/50 p-4 bg-amber-50/40 dark:bg-amber-950/20 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5 cursor-pointer">
-                  <Gift className="w-4 h-4 text-amber-500" />
-                  <span>ডিজিটাল সালামি বা শুভেচ্ছা উপহার (ঐচ্ছিক)</span>
-                </label>
-                <input
-                  type="checkbox"
-                  checked={includeGift}
-                  onChange={(e) => setIncludeGift(e.target.checked)}
-                  className="w-4 h-4 accent-[#7E151E] cursor-pointer"
-                />
-              </div>
-
-              {includeGift && (
-                <div className="space-y-3 pt-2 border-t border-amber-200/60 dark:border-amber-800/40 animate-fade-in">
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400">
-                    চিঠির শেষে একটি থ্রি-ডি উপহার বক্স থাকবে, ট্যাপ করলে ফিতা খুলে আপনার উপহারের বিবরণ ফুটে উঠবে।
-                  </p>
-
-                  {/* Preset Quick Chips */}
-                  <div className="flex flex-wrap gap-1.5 text-xs">
-                    {[
-                      "মিষ্টি সালামি",
-                      "জন্মদিনের বিশেষ উপহার",
-                      "ভালোবাসার সারপ্রাইজ",
-                      "বিয়ের প্রীতি উপহার",
-                    ].map((title) => (
-                      <button
-                        key={title}
-                        type="button"
-                        onClick={() => setGiftTitle(title)}
-                        className={`px-2.5 py-1 rounded-full text-[11px] font-bold transition cursor-pointer border ${
-                          giftTitle === title
-                            ? "bg-amber-500 text-white border-amber-600 shadow-xs"
-                            : "bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700"
-                        }`}
-                      >
-                        {title}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                      <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block mb-1">
-                        উপহারের নাম / টাইটেল
-                      </span>
-                      <input
-                        type="text"
-                        value={giftTitle}
-                        onChange={(e) => setGiftTitle(e.target.value)}
-                        placeholder="যেমন: ঈদের মিষ্টি সালামি"
-                        className={fieldCls}
-                      />
-                    </div>
-                    <div>
-                      <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block mb-1">
-                        উপহারের পরিমাণ বা আইটেম
-                      </span>
-                      <input
-                        type="text"
-                        value={giftAmount}
-                        onChange={(e) => setGiftAmount(e.target.value)}
-                        placeholder="যেমন: ৫০০ টাকা / এক কাপ কফি"
-                        className={fieldCls}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block mb-1">
-                      উপহারের সাথে মিষ্টি বার্তা বা দোয়া
-                    </span>
-                    <input
-                      type="text"
-                      value={giftNote}
-                      onChange={(e) => setGiftNote(e.target.value)}
-                      placeholder="যেমন: তোমার জন্য আমার ছোট্ট একটি উপহার ও অনেক দোয়া!"
-                      className={fieldCls}
-                    />
-                  </div>
-
-                  <div>
-                    <span className="text-[11px] font-bold text-stone-600 dark:text-stone-300 block mb-1">
-                      বিকাশ / নগদ নম্বর বা কুপন কোড (ঐচ্ছিক - প্রাপক ১ ক্লিকে কপি করতে পারবেন)
-                    </span>
-                    <input
-                      type="text"
-                      value={giftToken}
-                      onChange={(e) => setGiftToken(e.target.value)}
-                      placeholder="যেমন: বিকাশ: 017XXXXXXXX"
-                      className={fieldCls}
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
             {/* Special options */}
             <div>
               <label className={`${labelCls} mb-2 flex items-center gap-1.5`}>
@@ -1025,12 +926,6 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
                     <span>একবার পাঠ্য</span>
                   </span>
                 )}
-                {includeGift && (
-                  <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 flex items-center gap-1">
-                    <Gift className="w-3 h-3 text-amber-300" />
-                    <span>উপহার যুক্ত ({giftTitle || "সালামি"})</span>
-                  </span>
-                )}
               </div>
 
               <div className="mt-3 flex items-start gap-2 text-xs text-stone-400 leading-relaxed text-left">
@@ -1070,6 +965,8 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
             </div>
           </div>
         </div>
+
+        <AdsterraResponsiveBanner className="mt-12" />
       </main>
     </div>
   );

@@ -30,8 +30,8 @@ export default function EnvelopeStage({
     : isAnniv
     ? "বিবাহবার্ষিকীর বিশেষ চিঠি"
     : isLove
-    ? "এক টুকরো গোপন অনুভূতি"
-    : "একটি বিশেষ অনুভূতির উপহার";
+    ? "ভালোবাসার বিশেষ চিঠি"
+    : "জন্মদিনের শুভেচ্ছা চিঠি";
 
   const greeting = isWedding
     ? recipientName.startsWith("জনাব") || recipientName.startsWith("প্রিয়")

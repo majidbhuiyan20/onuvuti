@@ -71,7 +71,7 @@ export function detectOccasion(
     : isLove
     ? isProposal
       ? "ভালোবাসার প্রস্তাব ও অনুভূতি"
-      : "এক টুকরো গোপন অনুভূতি"
+      : "হৃদয়ের না বলা অনুভূতি"
     : "শুভ জন্মদিন";
 
   const badgeTitle = isWedding

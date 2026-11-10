@@ -33,6 +33,7 @@ import EnvelopeCard, {
 } from "@/features/secret/EnvelopeCard";
 import LetterDispatchAnimation from "@/features/secret/LetterDispatchAnimation";
 import { letterSound } from "@/lib/letterSound";
+import { AdsterraBanner300x250, AdsterraResponsiveBanner } from "@/components/ads/AdsterraUnits";
 
 const WAX_SEALS = [
   { id: "crush", label: "ক্রাশ ও প্রেম", icon: Heart },
@@ -320,6 +321,8 @@ function PublicSecretMessageContent() {
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
+
+            <AdsterraBanner300x250 className="my-3" />
 
             <button
               type="button"
@@ -638,6 +641,8 @@ function PublicSecretMessageContent() {
             <LiveStoryShowcase />
           </div>
         )}
+
+        <AdsterraResponsiveBanner className="mt-8" />
       </main>
 
       <SecretFooter />

@@ -306,8 +306,8 @@ export async function generateStoryCanvas(input: StoryCardInput): Promise<HTMLCa
     : isLove
     ? relationship?.includes("প্রস্তাব")
       ? "ভালোবাসার প্রস্তাব"
-      : "এক টুকরো গোপন অনুভূতি"
-    : "জন্মদিনের বিশেষ উপহার";
+      : "হৃদয়ের অনুভূতি"
+    : "জন্মদিনের শুভেচ্ছা";
 
   const storyTitle = isWedding
     ? "শুভ বিবাহ নিমন্ত্রণপত্র"
@@ -615,7 +615,7 @@ export async function shareStoryCardFile(input: StoryCardInput): Promise<boolean
     : isAnniv
     ? `প্রিয় ${input.recipient}-এর জন্য বিবাহবার্ষিকীর বিশেষ চিঠি!`
     : isLove
-    ? `প্রিয় ${input.recipient}-এর জন্য হৃদয়ের গোপন অনুভূতির চিঠি!`
+    ? `প্রিয় ${input.recipient}-এর জন্য ভালোবাসার মিষ্টি চিঠি!`
     : `প্রিয় ${input.recipient}-এর জন্য জন্মদিনের বিশেষ অনুভূতির চিঠি!`;
 
   if (navigator.canShare && navigator.canShare({ files: [file] })) {

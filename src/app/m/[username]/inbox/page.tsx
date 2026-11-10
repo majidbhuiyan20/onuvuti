@@ -58,6 +58,7 @@ import EnvelopeCard, { WAX_SEAL_ICONS } from "@/features/secret/EnvelopeCard";
 import LetterRevealModal from "@/features/secret/LetterRevealModal";
 import StoryStickerCardModal from "@/features/secret/StoryStickerCardModal";
 import QRCodeCardModal from "@/features/secret/QRCodeCardModal";
+import { AdsterraBanner300x250, AdsterraResponsiveBanner } from "@/components/ads/AdsterraUnits";
 import SecretFooter from "@/features/secret/SecretFooter";
 
 type FilterTab = "all" | "unopened" | "replied" | "favorites";
@@ -624,6 +625,8 @@ function PrivateInboxContent() {
               </div>
             </div>
 
+            <AdsterraResponsiveBanner className="mb-6" />
+
             {/* Messages Feed */}
             {inboxView.messages.length === 0 ? (
               <div className="bg-white dark:bg-[#111827] rounded-3xl p-12 text-center border border-stone-200 dark:border-stone-800 shadow-sm space-y-4">
@@ -737,7 +740,7 @@ function PrivateInboxContent() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {filteredMessages.map((msg) => {
+                    {filteredMessages.map((msg, msgIndex) => {
                       const isOpened = Boolean(
                         openedMessageIds[msg.id] || msg.isRead || msg.replyText
                       );
@@ -943,8 +946,9 @@ function PrivateInboxContent() {
                         </div>
                       );
                     })}
-                </div>
-              )}
+                  </div>
+                )}
+                <AdsterraResponsiveBanner className="my-8" />
             </div>
           )}
         </div>

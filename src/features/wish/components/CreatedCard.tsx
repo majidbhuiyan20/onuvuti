@@ -6,6 +6,7 @@ import { BarChart3, Check, Copy, ExternalLink, RefreshCw, Clock, Key, Flame, Loc
 import type { CreatedWish } from "../types";
 import { absoluteWishUrl, inviteText, manageUrl } from "../share";
 import ShareBar from "./ShareBar";
+import { AdsterraBanner300x250 } from "@/components/ads/AdsterraUnits";
 
 interface CreatedCardProps {
   wish: CreatedWish;
@@ -121,6 +122,8 @@ export default function CreatedCard({
             )}
           </div>
         </div>
+
+        <AdsterraBanner300x250 className="my-4" />
 
         <div className="text-center">
           <button

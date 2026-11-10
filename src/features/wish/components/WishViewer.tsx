@@ -21,6 +21,7 @@ import WeddingInteractiveCard from "./WeddingInteractiveCard";
 import LoveProposalInteractiveCard from "./LoveProposalInteractiveCard";
 import StoryExportModal from "./StoryExportModal";
 import { detectOccasion } from "../occasionHelper";
+import { AdsterraBanner300x250 } from "@/components/ads/AdsterraUnits";
 
 export default function WishViewer({ initialWish }: { initialWish: WishPublic }) {
   const [wish, setWish] = useState(initialWish);
@@ -374,6 +375,8 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
             <span>নিজের জন্য এমন একটি চিঠি তৈরি করুন →</span>
           </Link>
         </div>
+
+        <AdsterraBanner300x250 className="mt-6" />
 
         {/* 1080x1920 Story Export Modal */}
         {showStoryModal && content && (
