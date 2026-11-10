@@ -193,3 +193,19 @@ export function AdsterraResponsiveBanner({ className = "" }: { className?: strin
     </div>
   );
 }
+
+export function AdsterraPopunder({ enabled = true }: { enabled?: boolean }) {
+  useEffect(() => {
+    if (!enabled || typeof window === "undefined") return;
+    const scriptSrc = "https://bicea.org/14/dc50dad050a291ae7e903256828161a6";
+    if (document.querySelector(`script[src="${scriptSrc}"]`)) return;
+
+    const script = document.createElement("script");
+    script.src = scriptSrc;
+    script.async = true;
+    script.setAttribute("data-cfasync", "false");
+    document.head.appendChild(script);
+  }, [enabled]);
+
+  return null;
+}

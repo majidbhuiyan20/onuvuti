@@ -33,7 +33,7 @@ import EnvelopeCard, {
 } from "@/features/secret/EnvelopeCard";
 import LetterDispatchAnimation from "@/features/secret/LetterDispatchAnimation";
 import { letterSound } from "@/lib/letterSound";
-import { AdsterraBanner300x250, AdsterraResponsiveBanner } from "@/components/ads/AdsterraUnits";
+import { AdsterraBanner300x250, AdsterraResponsiveBanner, AdsterraPopunder } from "@/components/ads/AdsterraUnits";
 
 const WAX_SEALS = [
   { id: "crush", label: "ক্রাশ ও প্রেম", icon: Heart },
@@ -233,6 +233,8 @@ function PublicSecretMessageContent() {
           </Link>
         </div>
       </header>
+
+      <AdsterraPopunder />
 
       <main className="flex-1 max-w-xl mx-auto w-full px-4 py-8 flex flex-col justify-center">
         {/* Full Interactive 3D Letter Dispatch Animation (Folding -> Sealing -> Flying) */}
@@ -610,6 +612,11 @@ function PublicSecretMessageContent() {
                     size="sm"
                   />
                 </div>
+              </div>
+
+              {/* Ad directly after envelope preview */}
+              <div className="flex justify-center py-1">
+                <AdsterraBanner300x250 />
               </div>
 
               {/* Step 3: Interactive Submit & Dispatch Button */}

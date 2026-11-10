@@ -21,7 +21,7 @@ import WeddingInteractiveCard from "./WeddingInteractiveCard";
 import LoveProposalInteractiveCard from "./LoveProposalInteractiveCard";
 import StoryExportModal from "./StoryExportModal";
 import { detectOccasion } from "../occasionHelper";
-import { AdsterraBanner300x250 } from "@/components/ads/AdsterraUnits";
+import { AdsterraBanner300x250, AdsterraPopunder } from "@/components/ads/AdsterraUnits";
 
 export default function WishViewer({ initialWish }: { initialWish: WishPublic }) {
   const [wish, setWish] = useState(initialWish);
@@ -239,6 +239,11 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
           isMusicPlaying={soundEnabled && wish.music !== "none"}
         />
 
+        {/* Ad directly after Letter Card */}
+        <div className="w-full max-w-md my-6 flex justify-center">
+          <AdsterraBanner300x250 />
+        </div>
+
         {/* Occasion Interactive Ceremony Card */}
         {occasion.isWedding ? (
           <div className="mt-8 w-full max-w-xl">
@@ -402,6 +407,7 @@ export default function WishViewer({ initialWish }: { initialWish: WishPublic })
     <div
       className={`min-h-screen relative overflow-hidden bg-gradient-to-b ${theme.bgGradient} text-white flex flex-col justify-between selection:bg-rose-500 selection:text-white`}
     >
+      <AdsterraPopunder />
       <canvas ref={balloonRef} className="fixed inset-0 pointer-events-none z-40 w-full h-full" />
       <canvas ref={confettiRef} className="fixed inset-0 pointer-events-none z-50 w-full h-full" />
 

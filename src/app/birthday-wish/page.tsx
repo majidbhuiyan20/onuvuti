@@ -40,7 +40,7 @@ import PhotoPicker from "@/features/wish/components/PhotoPicker";
 import SpecialOptions, { SpecialOptionsValue } from "@/features/wish/components/SpecialOptions";
 import VoiceRecorder from "@/features/wish/components/VoiceRecorder";
 import useGoogleFont from "@/features/wish/useGoogleFont";
-import { AdsterraResponsiveBanner } from "@/components/ads/AdsterraUnits";
+import { AdsterraResponsiveBanner, AdsterraPopunder } from "@/components/ads/AdsterraUnits";
 
 const FONT_CHOICES: { id: WishFont; label: string }[] = [
   { id: "classic", label: "ক্লাসিক ফন্ট" },
@@ -312,6 +312,8 @@ ${c ? `মোবাইল: ${c}` : ""}`.trim();
           </div>
         </div>
       </header>
+
+      <AdsterraPopunder />
 
       <main className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
         {/* Hero Header */}

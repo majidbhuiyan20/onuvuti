@@ -58,7 +58,7 @@ import EnvelopeCard, { WAX_SEAL_ICONS } from "@/features/secret/EnvelopeCard";
 import LetterRevealModal from "@/features/secret/LetterRevealModal";
 import StoryStickerCardModal from "@/features/secret/StoryStickerCardModal";
 import QRCodeCardModal from "@/features/secret/QRCodeCardModal";
-import { AdsterraBanner300x250, AdsterraResponsiveBanner } from "@/components/ads/AdsterraUnits";
+import { AdsterraBanner300x250, AdsterraResponsiveBanner, AdsterraPopunder } from "@/components/ads/AdsterraUnits";
 import SecretFooter from "@/features/secret/SecretFooter";
 
 type FilterTab = "all" | "unopened" | "replied" | "favorites";
@@ -383,6 +383,7 @@ function PrivateInboxContent() {
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#0B0F17] text-stone-800 dark:text-stone-100 flex flex-col font-sans transition-colors">
+      <AdsterraPopunder />
       {/* Top Navbar */}
       <header className="sticky top-0 z-30 backdrop-blur-md bg-[#FAF7F2]/95 dark:bg-[#0B0F17]/95 border-b border-stone-200/80 dark:border-stone-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between gap-3">

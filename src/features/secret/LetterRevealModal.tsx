@@ -33,6 +33,7 @@ import {
   downloadPostcardImage,
 } from "./postcardGenerator";
 import LetterAmbientParticles from "./LetterAmbientParticles";
+import { AdsterraBanner300x250 } from "@/components/ads/AdsterraUnits";
 
 interface LetterRevealModalProps {
   isOpen: boolean;
@@ -592,6 +593,11 @@ export default function LetterRevealModal({
                   </button>
                 )}
               </div>
+            </div>
+
+            {/* Adsterra ad banner directly after letter card content & actions */}
+            <div className="mt-4 pt-3 border-t border-stone-200/80 dark:border-stone-800 relative z-10 flex justify-center">
+              <AdsterraBanner300x250 />
             </div>
           </div>
         )}

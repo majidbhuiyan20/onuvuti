@@ -37,6 +37,7 @@ import LiveStoryShowcase from "@/features/secret/LiveStoryShowcase";
 import StoryStickerCardModal from "@/features/secret/StoryStickerCardModal";
 import QRCodeCardModal from "@/features/secret/QRCodeCardModal";
 import SecretFooter from "@/features/secret/SecretFooter";
+import { AdsterraResponsiveBanner, AdsterraPopunder } from "@/components/ads/AdsterraUnits";
 
 interface PromptCategory {
   id: string;
@@ -976,6 +977,11 @@ export default function CreateSecretInboxPage() {
           displayName={activeQRCodeInbox.displayName}
         />
       )}
+
+      <AdsterraPopunder />
+      <div className="max-w-4xl mx-auto px-4 w-full">
+        <AdsterraResponsiveBanner className="my-8" />
+      </div>
 
       <SecretFooter />
     </div>
