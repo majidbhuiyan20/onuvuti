@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
       const amount = Number(
         req.nextUrl.searchParams.get("amount") ||
         req.nextUrl.searchParams.get("charged_amount") ||
-        "99"
+        "199"
       );
       const cusName = (
         req.nextUrl.searchParams.get("cus_name") ||

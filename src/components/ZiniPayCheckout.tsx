@@ -39,7 +39,7 @@ export default function ZiniPayCheckout() {
       content_name: BOOK_INFO.titleBn,
       content_ids: ["sporsher-byakoron"],
       content_type: "product",
-      value: BOOK_INFO.offerPriceBdt || 99,
+      value: BOOK_INFO.offerPriceBdt || 199,
       currency: "BDT",
     });
 

@@ -278,7 +278,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 7. Validate exact payment amount against expected book price (৳99)
+    // 7. Validate exact payment amount against expected book price (৳199)
     const expectedAmount = existingOrder.amount || getBookPriceBdt();
     if (typeof verification.amount === "number" && verification.amount > 0) {
       if (verification.amount < expectedAmount) {

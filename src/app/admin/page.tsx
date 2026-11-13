@@ -1930,7 +1930,7 @@ export default function AdminDashboardPage() {
                   কপি
                 </div>
                 <p className="text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
-                  প্রতি কপি ৳৯৯ (৫৫% ছাড়)
+                  প্রতি কপি ৳{BOOK_INFO.offerPriceBn} ({BOOK_INFO.discountPercentBn})
                 </p>
               </div>
 

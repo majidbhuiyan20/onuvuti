@@ -25,7 +25,7 @@ func (s *OrderService) CreatePendingOrder(order models.BookOrder) (*models.BookO
 	order.CusEmail = sanitizer.Text(order.CusEmail, 120)
 	order.TransactionID = sanitizer.Text(order.TransactionID, 40)
 	if order.Amount <= 0 {
-		order.Amount = 99
+		order.Amount = 199
 	}
 	if order.Currency == "" {
 		order.Currency = "BDT"

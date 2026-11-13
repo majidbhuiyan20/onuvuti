@@ -97,7 +97,7 @@ function SuccessContent() {
             const finalOrderId = data.order?.orderId || orderId;
             trackPurchase({
               order_id: finalOrderId,
-              value: data.order?.amount || BOOK_INFO.offerPriceBdt || 99,
+              value: data.order?.amount || BOOK_INFO.offerPriceBdt || 199,
               currency: "BDT",
               content_name: BOOK_INFO.titleBn,
               content_ids: ["sporsher-byakoron"],

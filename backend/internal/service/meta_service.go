@@ -362,7 +362,7 @@ func (s *MetaService) SendTestCAPIEvent(testCode string) (map[string]any, error)
 		},
 		"custom_data": map[string]any{
 			"currency":     "BDT",
-			"value":        99.00,
+			"value":        199.00,
 			"content_name": "স্পর্শের ব্যাকরণ (টেস্ট ইভেন্ট)",
 			"content_ids":  []string{"sporsher-byakoron-test"},
 			"content_type": "product",
@@ -410,7 +410,7 @@ func (s *MetaService) SendTestCAPIEvent(testCode string) (map[string]any, error)
 		EventID:     testEventID,
 		Source:      "server",
 		Status:      "sent",
-		ValueBDT:    99.0,
+		ValueBDT:    199.0,
 		Currency:    "BDT",
 		PayloadJSON: string(payloadBytes),
 	})

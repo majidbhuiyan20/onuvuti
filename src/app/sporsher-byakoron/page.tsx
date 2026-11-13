@@ -63,7 +63,7 @@ const READER_REVIEWS = [
     rating: 5,
     date: "১ সপ্তাহ আগে",
     comment:
-      "অক্সিটসিন হরমোন ও স্নায়বিক সংযোগের সাথে ভালোবাসার মেলবন্ধনটা দারুণভাবে তুলে ধরা হয়েছে। কোনো অশ্লীলতা নেই, পুরোপুরি বিজ্ঞান ও সম্পর্কের মনোবিজ্ঞান। ৯৯ টাকায় এমন জ্ঞান অমূল্য।",
+      "অক্সিটসিন হরমোন ও স্নায়বিক সংযোগের সাথে ভালোবাসার মেলবন্ধনটা দারুণভাবে তুলে ধরা হয়েছে। কোনো অশ্লীলতা নেই, পুরোপুরি বিজ্ঞান ও সম্পর্কের মনোবিজ্ঞান। ১৯৯ টাকায় এমন জ্ঞান অমূল্য।",
   },
   {
     name: "মাহমুদ ও সাবরিনা",
@@ -159,7 +159,7 @@ export default function SporsherByakoronLandingPage() {
       content_name: BOOK_INFO.titleBn,
       content_ids: ["sporsher-byakoron"],
       content_type: "product",
-      value: BOOK_INFO.offerPriceBdt || 99,
+      value: BOOK_INFO.offerPriceBdt || 199,
       currency: "BDT",
     });
 
@@ -222,7 +222,7 @@ export default function SporsherByakoronLandingPage() {
           <span>সীমিত সময়ের স্পেশাল ক্যাম্পেইন</span>
         </span>
         <span className="text-stone-100 font-extrabold">
-          ৫৫% ছাড়ে এখন মাত্র ৯৯ টাকায় সম্পূর্ণ ই-বুক!
+          {BOOK_INFO.discountPercentBn} এখন মাত্র ৳{BOOK_INFO.offerPriceBn} টাকায় সম্পূর্ণ ই-বুক!
         </span>
         <div className="inline-flex items-center gap-1 bg-black/30 px-2.5 py-0.5 rounded-md font-mono text-amber-300 text-xs">
           <Timer className="w-3.5 h-3.5 text-amber-300" />
@@ -654,7 +654,7 @@ export default function SporsherByakoronLandingPage() {
                     onClick={scrollToCheckout}
                     className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-[#80131E] text-white font-extrabold text-xs sm:text-sm inline-flex items-center justify-center gap-2 shadow-md hover:bg-[#630d16] transition cursor-pointer"
                   >
-                    <span>আমার জন্য নির্ধারিত বইটি সংগ্রহ করুন (৳৯৯)</span>
+                    <span>আমার জন্য নির্ধারিত বইটি সংগ্রহ করুন (৳{BOOK_INFO.offerPriceBn})</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
 

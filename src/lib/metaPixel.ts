@@ -154,7 +154,7 @@ export function trackViewContent(params?: {
   const contentName = params?.content_name || "স্পর্শের ব্যাকরণ (ই-বুক)";
   const contentIds = params?.content_ids || ["sporsher-byakoron"];
   const contentType = params?.content_type || "product";
-  const value = params?.value ?? 99;
+  const value = params?.value ?? 199;
   const currency = params?.currency || "BDT";
 
   const eventData = {
@@ -189,7 +189,7 @@ export function trackInitiateCheckout(params?: {
   const contentName = params?.content_name || "স্পর্শের ব্যাকরণ (ই-বুক)";
   const contentIds = params?.content_ids || ["sporsher-byakoron"];
   const contentType = params?.content_type || "product";
-  const value = params?.value ?? 99;
+  const value = params?.value ?? 199;
   const currency = params?.currency || "BDT";
 
   const eventData = {
@@ -226,7 +226,7 @@ export function trackPurchase(params: {
   if (!orderId) return;
 
   const eventID = "purchase_" + orderId;
-  const value = Number(params.value) || 99;
+  const value = Number(params.value) || 199;
   const currency = params.currency || "BDT";
   const contentName = params.content_name || "স্পর্শের ব্যাকরণ (ই-বুক)";
   const contentIds = params.content_ids || ["sporsher-byakoron"];
